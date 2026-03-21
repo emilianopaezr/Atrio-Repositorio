@@ -1,0 +1,543 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../config/supabase/supabase_config.dart';
+import '../utils/constants.dart';
+
+/// Generic database service for Supabase PostgREST queries
+class DatabaseService {
+  DatabaseService._();
+
+  static SupabaseClient get _client => SupabaseConfig.client;
+
+  // =============================================
+  // LISTINGS
+  // =============================================
+
+  /// Fetch all published listings with optional filters
+  static Future<List<Map<String, dynamic>>> getPublishedListings({
+    String? type,
+    String? city,
+    String? category,
+    String? search,
+    int limit = AppConstants.pageSize,
+    int offset = 0,
+    String orderBy = 'created_at',
+    bool ascending = false,
+  }) async {
+    var query = _client
+        .from(AppConstants.tableListings)
+        .select('*, host:profiles!host_id(id, display_name, photo_url, is_verified)')
+        .eq('status', 'published');
+
+    if (type != null) {
+      query = query.eq('type', type);
+    }
+    if (city != null) {
+      query = query.eq('city', city);
+    }
+    if (category != null) {
+      query = query.eq('category', category);
+    }
+    if (search != null && search.isNotEmpty) {
+      query = query.or('title.ilike.%$search%,description.ilike.%$search%');
+    }
+
+    final response = await query
+        .order(orderBy, ascending: ascending)
+        .range(offset, offset + limit - 1);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Fetch featured listings
+  static Future<List<Map<String, dynamic>>> getFeaturedListings({
+    int limit = 10,
+  }) async {
+    final response = await _client
+        .from(AppConstants.tableListings)
+        .select('*, host:profiles!host_id(id, display_name, photo_url, is_verified)')
+        .eq('status', 'published')
+        .eq('is_featured', true)
+        .order('rating', ascending: false)
+        .limit(limit);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Fetch a single listing by ID
+  static Future<Map<String, dynamic>?> getListingById(String id) async {
+    final response = await _client
+        .from(AppConstants.tableListings)
+        .select('*, host:profiles!host_id(id, display_name, photo_url, is_verified, bio)')
+        .eq('id', id)
+        .maybeSingle();
+
+    if (response == null) return null;
+
+    // Fetch host_profile separately (no direct FK from listings to host_profiles)
+    final hostId = response['host_id'] as String?;
+    if (hostId != null) {
+      try {
+        final hostProfile = await _client
+            .from(AppConstants.tableHostProfiles)
+            .select('is_superhost, response_rate, total_earnings')
+            .eq('id', hostId)
+            .maybeSingle();
+        if (hostProfile != null && response['host'] != null) {
+          final host = Map<String, dynamic>.from(response['host'] as Map<String, dynamic>);
+          host.addAll(hostProfile);
+          response['host'] = host;
+        }
+      } catch (_) {
+        // Host profile may not exist
+      }
+    }
+
+    return response;
+  }
+
+  /// Fetch listings by host ID
+  static Future<List<Map<String, dynamic>>> getHostListings(String hostId) async {
+    final response = await _client
+        .from(AppConstants.tableListings)
+        .select()
+        .eq('host_id', hostId)
+        .order('created_at', ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Create a new listing
+  static Future<Map<String, dynamic>> createListing(Map<String, dynamic> data) async {
+    final response = await _client
+        .from(AppConstants.tableListings)
+        .insert(data)
+        .select()
+        .single();
+
+    return response;
+  }
+
+  /// Update a listing
+  static Future<Map<String, dynamic>> updateListing(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _client
+        .from(AppConstants.tableListings)
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+    return response;
+  }
+
+  /// Delete a listing
+  static Future<void> deleteListing(String id) async {
+    await _client.from(AppConstants.tableListings).delete().eq('id', id);
+  }
+
+  /// Increment view count
+  static Future<void> incrementViewCount(String listingId) async {
+    await _client.rpc('increment_view_count', params: {'listing_id_param': listingId});
+  }
+
+  // =============================================
+  // PROFILES
+  // =============================================
+
+  /// Get user profile
+  static Future<Map<String, dynamic>?> getProfile(String userId) async {
+    final response = await _client
+        .from(AppConstants.tableProfiles)
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
+
+    return response;
+  }
+
+  /// Update user profile
+  static Future<Map<String, dynamic>> updateProfile(
+    String userId,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _client
+        .from(AppConstants.tableProfiles)
+        .update(data)
+        .eq('id', userId)
+        .select()
+        .single();
+
+    return response;
+  }
+
+  /// Toggle favorite listing
+  static Future<void> toggleFavorite(String userId, String listingId) async {
+    final profile = await getProfile(userId);
+    if (profile == null) return;
+
+    final favorites = List<String>.from(profile['favorite_listing_ids'] ?? []);
+
+    if (favorites.contains(listingId)) {
+      favorites.remove(listingId);
+    } else {
+      favorites.add(listingId);
+    }
+
+    await _client
+        .from(AppConstants.tableProfiles)
+        .update({'favorite_listing_ids': favorites})
+        .eq('id', userId);
+  }
+
+  /// Become a host
+  static Future<void> becomeHost(String userId) async {
+    await _client
+        .from(AppConstants.tableProfiles)
+        .update({'is_host': true})
+        .eq('id', userId);
+
+    // Create host profile if not exists
+    await _client.from(AppConstants.tableHostProfiles).upsert({
+      'id': userId,
+      'joined_as_host_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // =============================================
+  // BOOKINGS
+  // =============================================
+
+  /// Create a booking
+  static Future<Map<String, dynamic>> createBooking(Map<String, dynamic> data) async {
+    final response = await _client
+        .from(AppConstants.tableBookings)
+        .insert(data)
+        .select('*, listing:listings(id, title, images, type, base_price, price_unit, city)')
+        .single();
+
+    return response;
+  }
+
+  /// Get guest bookings
+  static Future<List<Map<String, dynamic>>> getGuestBookings(
+    String guestId, {
+    String? status,
+  }) async {
+    var query = _client
+        .from(AppConstants.tableBookings)
+        .select('*, listing:listings(id, title, images, type, base_price, price_unit, city), host:profiles!host_id(id, display_name, photo_url)')
+        .eq('guest_id', guestId);
+
+    if (status != null) {
+      query = query.eq('status', status);
+    }
+
+    final response = await query.order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Get host bookings
+  static Future<List<Map<String, dynamic>>> getHostBookings(
+    String hostId, {
+    String? status,
+  }) async {
+    var query = _client
+        .from(AppConstants.tableBookings)
+        .select('*, listing:listings(id, title, images, type), guest:profiles!guest_id(id, display_name, photo_url)')
+        .eq('host_id', hostId);
+
+    if (status != null) {
+      query = query.eq('status', status);
+    }
+
+    final response = await query.order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Get a single booking by ID with listing and host/guest info
+  static Future<Map<String, dynamic>?> getBookingById(String bookingId) async {
+    final response = await _client
+        .from(AppConstants.tableBookings)
+        .select('*, listing:listings(id, title, images, type, base_price, price_unit, city, rating, address), host:profiles!host_id(id, display_name, photo_url, is_verified), guest:profiles!guest_id(id, display_name, photo_url)')
+        .eq('id', bookingId)
+        .maybeSingle();
+
+    return response;
+  }
+
+  /// Update booking status
+  static Future<void> updateBookingStatus(String bookingId, String status) async {
+    await _client
+        .from(AppConstants.tableBookings)
+        .update({'status': status})
+        .eq('id', bookingId);
+  }
+
+  // =============================================
+  // AVAILABILITY
+  // =============================================
+
+  /// Get availability for a listing in a date range
+  static Future<List<Map<String, dynamic>>> getAvailability(
+    String listingId, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    var query = _client
+        .from(AppConstants.tableAvailability)
+        .select()
+        .eq('listing_id', listingId);
+
+    if (startDate != null) {
+      query = query.gte('date', startDate.toIso8601String().split('T')[0]);
+    }
+    if (endDate != null) {
+      query = query.lte('date', endDate.toIso8601String().split('T')[0]);
+    }
+
+    final response = await query.order('date');
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Set date availability
+  static Future<void> setDateAvailability(
+    String listingId,
+    DateTime date,
+    bool isAvailable, {
+    double? customPrice,
+  }) async {
+    await _client.from(AppConstants.tableAvailability).upsert({
+      'listing_id': listingId,
+      'date': date.toIso8601String().split('T')[0],
+      'is_available': isAvailable,
+      if (customPrice != null) 'custom_price': customPrice,
+    });
+  }
+
+  // =============================================
+  // CONVERSATIONS & MESSAGES
+  // =============================================
+
+  /// Get conversations for a user
+  static Future<List<Map<String, dynamic>>> getConversations(String userId) async {
+    final response = await _client
+        .from(AppConstants.tableConversations)
+        .select('*, listing:listings(id, title, images)')
+        .contains('participant_ids', [userId])
+        .order('last_message_at', ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Get or create conversation between two users
+  static Future<Map<String, dynamic>> getOrCreateConversation({
+    required String userId1,
+    required String userId2,
+    String? listingId,
+    String? bookingId,
+  }) async {
+    // Try to find existing conversation
+    final existing = await _client
+        .from(AppConstants.tableConversations)
+        .select()
+        .contains('participant_ids', [userId1])
+        .contains('participant_ids', [userId2]);
+
+    final existingList = List<Map<String, dynamic>>.from(existing);
+
+    if (existingList.isNotEmpty) {
+      return existingList.first;
+    }
+
+    // Create new conversation
+    final response = await _client
+        .from(AppConstants.tableConversations)
+        .insert({
+          'participant_ids': [userId1, userId2],
+          if (listingId != null) 'listing_id': listingId,
+          if (bookingId != null) 'booking_id': bookingId,
+        })
+        .select()
+        .single();
+
+    return response;
+  }
+
+  /// Get messages for a conversation
+  static Future<List<Map<String, dynamic>>> getMessages(
+    String conversationId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final response = await _client
+        .from(AppConstants.tableMessages)
+        .select('*, sender:profiles!sender_id(id, display_name, photo_url)')
+        .eq('conversation_id', conversationId)
+        .order('sent_at', ascending: false)
+        .range(offset, offset + limit - 1);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Send a message
+  static Future<Map<String, dynamic>> sendMessage({
+    required String conversationId,
+    required String senderId,
+    required String text,
+    String type = 'text',
+    String? imageUrl,
+  }) async {
+    final message = await _client
+        .from(AppConstants.tableMessages)
+        .insert({
+          'conversation_id': conversationId,
+          'sender_id': senderId,
+          'text': text,
+          'type': type,
+          if (imageUrl != null) 'image_url': imageUrl,
+        })
+        .select()
+        .single();
+
+    // Update conversation last message
+    await _client
+        .from(AppConstants.tableConversations)
+        .update({
+          'last_message_text': text,
+          'last_message_sender': senderId,
+          'last_message_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', conversationId);
+
+    return message;
+  }
+
+  // =============================================
+  // REVIEWS
+  // =============================================
+
+  /// Get reviews for a listing
+  static Future<List<Map<String, dynamic>>> getListingReviews(
+    String listingId, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final response = await _client
+        .from(AppConstants.tableReviews)
+        .select('*, reviewer:profiles!reviewer_id(id, display_name, photo_url)')
+        .eq('listing_id', listingId)
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Create a review
+  static Future<Map<String, dynamic>> createReview(Map<String, dynamic> data) async {
+    final response = await _client
+        .from(AppConstants.tableReviews)
+        .insert(data)
+        .select()
+        .single();
+
+    return response;
+  }
+
+  // =============================================
+  // HOST WALLET / TRANSACTIONS
+  // =============================================
+
+  /// Get host profile (financial)
+  static Future<Map<String, dynamic>?> getHostProfile(String hostId) async {
+    final response = await _client
+        .from(AppConstants.tableHostProfiles)
+        .select()
+        .eq('id', hostId)
+        .maybeSingle();
+
+    return response;
+  }
+
+  /// Get transactions for host
+  static Future<List<Map<String, dynamic>>> getHostTransactions(
+    String hostId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final response = await _client
+        .from(AppConstants.tableTransactions)
+        .select()
+        .eq('host_id', hostId)
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  // =============================================
+  // NOTIFICATIONS
+  // =============================================
+
+  /// Get notifications for user
+  static Future<List<Map<String, dynamic>>> getNotifications(
+    String userId, {
+    int limit = 30,
+  }) async {
+    final response = await _client
+        .from(AppConstants.tableNotifications)
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Mark notification as read
+  static Future<void> markNotificationRead(String notificationId) async {
+    await _client
+        .from(AppConstants.tableNotifications)
+        .update({'is_read': true})
+        .eq('id', notificationId);
+  }
+
+  /// Get unread notification count
+  static Future<int> getUnreadNotificationCount(String userId) async {
+    final response = await _client
+        .from(AppConstants.tableNotifications)
+        .select()
+        .eq('user_id', userId)
+        .eq('is_read', false)
+        .count(CountOption.exact);
+
+    return response.count;
+  }
+
+  // =============================================
+  // STORAGE
+  // =============================================
+
+  /// Upload an image to a bucket
+  static Future<String> uploadImage({
+    required String bucket,
+    required String path,
+    required List<int> fileBytes,
+    String contentType = 'image/jpeg',
+  }) async {
+    await _client.storage.from(bucket).uploadBinary(
+      path,
+      fileBytes as dynamic,
+      fileOptions: FileOptions(contentType: contentType, upsert: true),
+    );
+
+    final publicUrl = _client.storage.from(bucket).getPublicUrl(path);
+    return publicUrl;
+  }
+
+  /// Delete an image from a bucket
+  static Future<void> deleteImage(String bucket, String path) async {
+    await _client.storage.from(bucket).remove([path]);
+  }
+}
