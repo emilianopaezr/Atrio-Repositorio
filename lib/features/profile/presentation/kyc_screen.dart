@@ -123,7 +123,7 @@ class KycScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   _BenefitRow(
                     icon: Icons.verified_user_outlined,
-                    text: 'Mayor confianza de anfitriones y huéspedes',
+                    text: 'Mayor confianza de anfitriones y usuarios',
                   ),
                   _BenefitRow(
                     icon: Icons.speed_outlined,

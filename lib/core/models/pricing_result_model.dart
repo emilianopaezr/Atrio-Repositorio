@@ -74,8 +74,12 @@ class PricingResult {
   /// User-friendly label for the pricing model
   String get modelLabel {
     switch (pricingModel) {
+      case 'PROMO_1_PERCENT':
+        return 'Promo 1% (primeras 5 reservas)';
       case 'HOOK_1_PERCENT':
         return 'Gancho 1%';
+      case 'STANDARD_7_CAP99':
+        return 'Comisión 7% (máx \$99)';
       case 'FLAT_FEE_CAP':
         return 'Comisión con Tope';
       case 'EARLY_ADOPTER':
@@ -102,8 +106,12 @@ class PricingResult {
   /// Description for the guest showing what model applies
   String get guestDescription {
     switch (pricingModel) {
+      case 'PROMO_1_PERCENT':
+        return 'Tarifa promocional 1% (primeras 5 reservas del host)';
       case 'HOOK_1_PERCENT':
         return 'Tarifa especial de lanzamiento';
+      case 'STANDARD_7_CAP99':
+        return 'Tarifa estándar (7%, máx \$99)';
       case 'FLAT_FEE_CAP':
         return 'Tarifa protegida con tope máximo';
       case 'EARLY_ADOPTER':
@@ -115,6 +123,11 @@ class PricingResult {
     }
   }
 
-  bool get hasCommissionCap =>
-      pricingModel == 'FLAT_FEE_CAP' && hostCommissionAmount >= 99;
+  bool get hasCommissionCap => guestServiceFeeAmount >= 99;
+
+  /// Whether the fee was capped at $99
+  bool get isFeeCapped {
+    final raw = (baseTotal + cleaningFee) * guestServiceFeeRate;
+    return raw > 99 && guestServiceFeeAmount <= 99;
+  }
 }

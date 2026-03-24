@@ -20,7 +20,7 @@ class CreateListingScreen extends StatefulWidget {
 
 class _CreateListingScreenState extends State<CreateListingScreen> {
   int _currentStep = 0;
-  final _totalSteps = 5;
+  final _totalSteps = 6;
   String? _selectedType;
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -28,10 +28,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _addressController = TextEditingController();
   final _cityController = TextEditingController();
   final _countryController = TextEditingController();
+  final _capacityController = TextEditingController();
   final List<XFile> _pickedImages = [];
   final List<Uint8List> _imageBytes = [];
   bool _isPublishing = false;
   String _priceUnit = 'night';
+  String _rentalMode = 'nights';
+  String _cancellationPolicy = 'flexible';
+  bool _instantBooking = false;
+  String _availableFrom = '09:00';
+  String _availableUntil = '22:00';
 
   @override
   void dispose() {
@@ -41,6 +47,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     _addressController.dispose();
     _cityController.dispose();
     _countryController.dispose();
+    _capacityController.dispose();
     super.dispose();
   }
 
@@ -112,6 +119,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             : null,
         'base_price': double.tryParse(_priceController.text.trim()) ?? 0,
         'price_unit': _priceUnit,
+        'rental_mode': _rentalMode,
+        'cancellation_policy': _cancellationPolicy,
+        'instant_booking': _instantBooking,
+        'capacity': int.tryParse(_capacityController.text.trim()),
+        if (_rentalMode == 'hours') ...{
+          'available_from': _availableFrom,
+          'available_until': _availableUntil,
+        },
         'status': 'published',
       });
 
@@ -258,6 +273,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       case 3:
         return _buildLocationStep();
       case 4:
+        return _buildRentalModeStep();
+      case 5:
         return _buildPricingStep();
       default:
         return const SizedBox.shrink();
@@ -306,7 +323,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Solo 1% de comisión',
+                      'Comisión del 7% (máx \$99)',
                       style: AtrioTypography.labelLarge.copyWith(
                         color: AtrioColors.neonLimeDark,
                         fontWeight: FontWeight.w800,
@@ -314,7 +331,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Como adoptador temprano, tú recibes el 99% de cada reserva',
+                      'Si el 7% supera \$99, solo se cobran \$99. Transparencia total.',
                       style: AtrioTypography.bodySmall.copyWith(
                         color: AtrioColors.hostTextSecondary,
                       ),
@@ -616,6 +633,182 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
+  Widget _buildRentalModeStep() {
+    // Services: only hours and full_day (no nights)
+    // Experiences: only hours and full_day (no nights)
+    // Spaces: all 3 modes
+    final isService = _selectedType == 'service';
+    final isExperience = _selectedType == 'experience';
+    final restrictedType = isService || isExperience;
+
+    final allModes = [
+      if (!restrictedType) {'id': 'nights', 'icon': Icons.nightlight_round, 'label': 'Por noches', 'desc': 'Check-in / Check-out por noches'},
+      {'id': 'full_day', 'icon': Icons.today, 'label': 'Día completo', 'desc': isService ? 'Precio por sesión / día' : isExperience ? 'Experiencia de día completo' : 'Reserva de un día completo'},
+      {'id': 'hours', 'icon': Icons.access_time, 'label': 'Por horas', 'desc': isService ? 'Precio por hora' : isExperience ? 'Experiencia con horario específico' : 'Bloques horarios personalizados'},
+    ];
+
+    // Auto-correct if service/experience had nights selected
+    if (restrictedType && _rentalMode == 'nights') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _rentalMode = 'hours';
+          _priceUnit = 'hour';
+        });
+      });
+    }
+
+    final typeLabel = isService ? 'tu servicio' : isExperience ? 'tu experiencia' : 'tu espacio';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Modalidad de reserva', style: AtrioTypography.headingLarge.copyWith(color: AtrioColors.hostTextPrimary)),
+        const SizedBox(height: 8),
+        Text('¿Cómo quieres que reserven $typeLabel?', style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.hostTextSecondary)),
+        const SizedBox(height: 24),
+        ...allModes.map((m) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _rentalMode = m['id'] as String;
+                if (_rentalMode == 'hours') {
+                  _priceUnit = 'hour';
+                } else if (_rentalMode == 'full_day') {
+                  _priceUnit = 'session';
+                } else {
+                  _priceUnit = 'night';
+                }
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AtrioColors.hostSurface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: _rentalMode == m['id'] ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder,
+                  width: _rentalMode == m['id'] ? 2 : 1,
+                ),
+              ),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: _rentalMode == m['id'] ? AtrioColors.neonLimeDark.withValues(alpha: 0.2) : AtrioColors.hostSurfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(m['icon'] as IconData, color: _rentalMode == m['id'] ? AtrioColors.neonLimeDark : AtrioColors.hostTextSecondary),
+                ),
+                const SizedBox(width: 14),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(m['label'] as String, style: AtrioTypography.labelLarge.copyWith(color: AtrioColors.hostTextPrimary)),
+                  Text(m['desc'] as String, style: AtrioTypography.bodySmall.copyWith(color: AtrioColors.hostTextSecondary)),
+                ])),
+                if (_rentalMode == m['id']) const Icon(Icons.check_circle, color: AtrioColors.neonLimeDark),
+              ]),
+            ),
+          ),
+        )),
+        if (_rentalMode == 'hours') ...[
+          const SizedBox(height: 16),
+          Text('Horario disponible', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: GestureDetector(
+              onTap: () async {
+                final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 9, minute: 0));
+                if (t != null) setState(() => _availableFrom = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AtrioColors.hostCardBorder)),
+                child: Row(children: [
+                  const Icon(Icons.schedule, size: 18, color: AtrioColors.neonLimeDark),
+                  const SizedBox(width: 8),
+                  Text('Desde: $_availableFrom', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                ]),
+              ),
+            )),
+            const SizedBox(width: 12),
+            Expanded(child: GestureDetector(
+              onTap: () async {
+                final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 22, minute: 0));
+                if (t != null) setState(() => _availableUntil = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AtrioColors.hostCardBorder)),
+                child: Row(children: [
+                  const Icon(Icons.schedule, size: 18, color: AtrioColors.neonLimeDark),
+                  const SizedBox(width: 8),
+                  Text('Hasta: $_availableUntil', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                ]),
+              ),
+            )),
+          ]),
+        ],
+        const SizedBox(height: 20),
+        // Capacity
+        AtrioTextField(
+          controller: _capacityController,
+          label: 'Capacidad máxima',
+          hint: 'Ej: 10',
+          keyboardType: TextInputType.number,
+          prefixIcon: const Icon(Icons.people_outline, size: 20),
+        ),
+        const SizedBox(height: 20),
+        // Instant booking toggle
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
+          child: Row(children: [
+            Icon(Icons.flash_on, size: 20, color: _instantBooking ? AtrioColors.neonLimeDark : AtrioColors.hostTextTertiary),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Reserva instantánea', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
+              Text('Se confirma automáticamente', style: AtrioTypography.caption.copyWith(color: AtrioColors.hostTextSecondary)),
+            ])),
+            Switch(
+              value: _instantBooking,
+              onChanged: (v) => setState(() => _instantBooking = v),
+              activeTrackColor: AtrioColors.neonLimeDark,
+            ),
+          ]),
+        ),
+        const SizedBox(height: 16),
+        // Cancellation policy
+        Text('Política de cancelación', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, children: [
+          for (final p in [
+            {'id': 'flexible', 'label': 'Flexible'},
+            {'id': 'moderate', 'label': 'Moderada'},
+            {'id': 'strict', 'label': 'Estricta'},
+          ])
+            GestureDetector(
+              onTap: () => setState(() => _cancellationPolicy = p['id']!),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: _cancellationPolicy == p['id'] ? AtrioColors.neonLime : AtrioColors.hostSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _cancellationPolicy == p['id'] ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder),
+                ),
+                child: Text(p['label']!, style: GoogleFonts.roboto(
+                  fontSize: 13,
+                  fontWeight: _cancellationPolicy == p['id'] ? FontWeight.w700 : FontWeight.w500,
+                  color: _cancellationPolicy == p['id'] ? Colors.black : AtrioColors.hostTextSecondary,
+                )),
+              ),
+            ),
+        ]),
+      ],
+    );
+  }
+
   Widget _buildPricingStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -651,10 +844,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           spacing: 8,
           children: [
             for (final u in [
-              {'id': 'night', 'label': 'Noche'},
-              {'id': 'hour', 'label': 'Hora'},
-              {'id': 'session', 'label': 'Sesion'},
-              {'id': 'person', 'label': 'Persona'},
+              if (_selectedType == 'space' && _rentalMode == 'nights') {'id': 'night', 'label': 'Noche'},
+              if (_rentalMode == 'hours') {'id': 'hour', 'label': 'Hora'},
+              if (_rentalMode == 'full_day') {'id': 'session', 'label': 'Sesión'},
+              if (_selectedType == 'experience') {'id': 'person', 'label': 'Persona'},
             ])
               GestureDetector(
                 onTap: () => setState(() => _priceUnit = u['id']!),
@@ -697,7 +890,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Atrio solo cobra 1% en tus primeras reservas. Máximo \$99 USD por reserva.',
+                  'Atrio cobra 7% de comisión por reserva. Si el 7% supera \$99 USD, solo se cobran \$99.',
                   style: AtrioTypography.bodySmall.copyWith(
                     color: AtrioColors.hostTextPrimary,
                   ),

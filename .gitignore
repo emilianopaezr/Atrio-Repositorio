@@ -1,3 +1,9 @@
+# Signing keys & secrets
+android/key.properties
+**/*.jks
+**/*.keystore
+.env
+
 # Miscellaneous
 *.class
 *.log

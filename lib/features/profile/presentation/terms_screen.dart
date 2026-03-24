@@ -43,7 +43,7 @@ class TermsScreen extends StatelessWidget {
 
             _SectionTitle('2. Descripción del Servicio', isDark),
             _SectionBody(
-              'Atrio es una plataforma de marketplace premium que conecta a anfitriones con huéspedes, facilitando la reserva de espacios, experiencias y servicios profesionales. La Plataforma actúa como intermediario entre las partes, proporcionando las herramientas tecnológicas necesarias para que los usuarios publiquen, descubran y reserven ofertas.',
+              'Atrio es una plataforma de marketplace premium que conecta a anfitriones con usuarios, facilitando la reserva de espacios, experiencias y servicios profesionales. La Plataforma actúa como intermediario entre las partes, proporcionando las herramientas tecnológicas necesarias para que los usuarios publiquen, descubran y reserven ofertas.',
               isDark,
             ),
 
@@ -55,7 +55,7 @@ class TermsScreen extends StatelessWidget {
 
             _SectionTitle('4. Roles de Usuario', isDark),
             _SectionBody(
-              'Los usuarios pueden operar en dos modalidades dentro de Atrio:\n\n• Modo Huésped: Permite explorar, buscar y reservar espacios, experiencias y servicios publicados por los anfitriones.\n\n• Modo Anfitrión: Permite publicar y gestionar espacios, experiencias y servicios, recibir reservas y administrar ingresos a través del panel de control.',
+              'Los usuarios pueden operar en dos modalidades dentro de Atrio:\n\n• Modo Usuario: Permite explorar, buscar y reservar espacios, experiencias y servicios publicados por los anfitriones.\n\n• Modo Anfitrión: Permite publicar y gestionar espacios, experiencias y servicios, recibir reservas y administrar ingresos a través del panel de control.',
               isDark,
             ),
 
@@ -67,7 +67,7 @@ class TermsScreen extends StatelessWidget {
 
             _SectionTitle('6. Cancelaciones y Reembolsos', isDark),
             _SectionBody(
-              'Las políticas de cancelación varían según el tipo de reserva y las condiciones establecidas por cada anfitrión. Los huéspedes podrán cancelar reservas según la política aplicable. Los reembolsos se procesarán dentro de los 5-10 días hábiles siguientes a la aprobación de la cancelación, utilizando el mismo método de pago original.',
+              'Las políticas de cancelación varían según el tipo de reserva y las condiciones establecidas por cada anfitrión. Los usuarios podrán cancelar reservas según la política aplicable. Los reembolsos se procesarán dentro de los 5-10 días hábiles siguientes a la aprobación de la cancelación, utilizando el mismo método de pago original.',
               isDark,
             ),
 

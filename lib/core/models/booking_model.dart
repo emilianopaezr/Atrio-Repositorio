@@ -21,6 +21,13 @@ abstract class Booking with _$Booking {
     @JsonKey(name: 'payment_status') @Default('pending') String paymentStatus,
     @JsonKey(name: 'special_requests') String? specialRequests,
     @JsonKey(name: 'conversation_id') String? conversationId,
+    // V2: Booking system fields
+    @JsonKey(name: 'rental_mode') @Default('nights') String rentalMode,
+    @JsonKey(name: 'time_slots') @Default([]) List<dynamic> timeSlots,
+    @JsonKey(name: 'booking_date') String? bookingDate,
+    @JsonKey(name: 'start_time') String? startTime,
+    @JsonKey(name: 'end_time') String? endTime,
+    @JsonKey(name: 'duration_hours') double? durationHours,
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
     // Joined data

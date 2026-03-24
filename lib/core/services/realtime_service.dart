@@ -129,6 +129,67 @@ class RealtimeService {
     return channel;
   }
 
+  /// Subscribe to availability changes for a listing (real-time calendar updates)
+  static RealtimeChannel subscribeToAvailability(
+    String listingId, {
+    required void Function() onChange,
+  }) {
+    final channel = _client.channel('availability:$listingId');
+
+    // Listen to availability table changes
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.all,
+      schema: 'public',
+      table: 'availability',
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'listing_id',
+        value: listingId,
+      ),
+      callback: (payload) => onChange(),
+    );
+
+    // Listen to booking changes for this listing
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.all,
+      schema: 'public',
+      table: AppConstants.tableBookings,
+      filter: PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: 'listing_id',
+        value: listingId,
+      ),
+      callback: (payload) => onChange(),
+    );
+
+    channel.subscribe();
+    return channel;
+  }
+
+  /// Subscribe to time slot changes for a listing
+  static RealtimeChannel subscribeToTimeSlots(
+    String listingId, {
+    required void Function() onChange,
+  }) {
+    final channel = _client.channel('timeslots:$listingId');
+
+    channel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'time_slot_bookings',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'listing_id',
+            value: listingId,
+          ),
+          callback: (payload) => onChange(),
+        )
+        .subscribe();
+
+    return channel;
+  }
+
   /// Unsubscribe from a channel
   static Future<void> unsubscribe(RealtimeChannel channel) async {
     await _client.removeChannel(channel);

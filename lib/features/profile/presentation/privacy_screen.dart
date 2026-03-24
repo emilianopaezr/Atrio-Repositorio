@@ -43,7 +43,7 @@ class PrivacyScreen extends StatelessWidget {
 
             _SectionTitle('2. Uso de la Información', isDark),
             _SectionBody(
-              'Utilizamos su información personal para:\n\n• Facilitar la creación y gestión de su cuenta\n• Procesar reservas y transacciones de pago\n• Conectar huéspedes con anfitriones de manera eficiente\n• Enviar notificaciones relevantes sobre reservas y mensajes\n• Mejorar y personalizar su experiencia en la plataforma\n• Prevenir fraudes y garantizar la seguridad de la comunidad\n• Cumplir con obligaciones legales y regulatorias\n• Generar análisis estadísticos anónimos para mejorar el servicio',
+              'Utilizamos su información personal para:\n\n• Facilitar la creación y gestión de su cuenta\n• Procesar reservas y transacciones de pago\n• Conectar usuarios con anfitriones de manera eficiente\n• Enviar notificaciones relevantes sobre reservas y mensajes\n• Mejorar y personalizar su experiencia en la plataforma\n• Prevenir fraudes y garantizar la seguridad de la comunidad\n• Cumplir con obligaciones legales y regulatorias\n• Generar análisis estadísticos anónimos para mejorar el servicio',
               isDark,
             ),
 

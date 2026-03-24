@@ -1,5 +1,107 @@
 enum AppMode { guest, host }
 
+enum RentalMode {
+  hours,
+  fullDay,
+  nights;
+
+  String get dbValue {
+    switch (this) {
+      case RentalMode.hours:
+        return 'hours';
+      case RentalMode.fullDay:
+        return 'full_day';
+      case RentalMode.nights:
+        return 'nights';
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case RentalMode.hours:
+        return 'Por horas';
+      case RentalMode.fullDay:
+        return 'Día completo';
+      case RentalMode.nights:
+        return 'Por noches';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case RentalMode.hours:
+        return 'Las personas reservan bloques horarios';
+      case RentalMode.fullDay:
+        return 'Reserva de un día completo';
+      case RentalMode.nights:
+        return 'Check-in / Check-out por noches';
+    }
+  }
+
+  String get emoji {
+    switch (this) {
+      case RentalMode.hours:
+        return '⏱️';
+      case RentalMode.fullDay:
+        return '📅';
+      case RentalMode.nights:
+        return '🌙';
+    }
+  }
+
+  static RentalMode fromDb(String? value) {
+    switch (value) {
+      case 'hours':
+        return RentalMode.hours;
+      case 'full_day':
+        return RentalMode.fullDay;
+      case 'nights':
+        return RentalMode.nights;
+      default:
+        return RentalMode.nights;
+    }
+  }
+}
+
+enum CancellationPolicy {
+  flexible,
+  moderate,
+  strict;
+
+  String get label {
+    switch (this) {
+      case CancellationPolicy.flexible:
+        return 'Flexible';
+      case CancellationPolicy.moderate:
+        return 'Moderada';
+      case CancellationPolicy.strict:
+        return 'Estricta';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case CancellationPolicy.flexible:
+        return 'Cancelación gratis hasta 24h antes';
+      case CancellationPolicy.moderate:
+        return 'Cancelación gratis hasta 5 días antes';
+      case CancellationPolicy.strict:
+        return 'Reembolso del 50% hasta 7 días antes';
+    }
+  }
+
+  static CancellationPolicy fromDb(String? value) {
+    switch (value) {
+      case 'moderate':
+        return CancellationPolicy.moderate;
+      case 'strict':
+        return CancellationPolicy.strict;
+      default:
+        return CancellationPolicy.flexible;
+    }
+  }
+}
+
 enum ListingType {
   space,
   experience,
@@ -286,7 +388,7 @@ enum GuestLevel {
       case GuestLevel.vip:
         return 'VIP';
       case GuestLevel.eliteGuest:
-        return 'Huésped Élite';
+        return 'Usuario Élite';
     }
   }
 

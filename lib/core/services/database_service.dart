@@ -316,6 +316,209 @@ class DatabaseService {
     });
   }
 
+  /// Batch set availability for date range
+  static Future<void> setDateRangeAvailability(
+    String listingId,
+    DateTime startDate,
+    DateTime endDate,
+    bool isAvailable,
+  ) async {
+    final dates = <Map<String, dynamic>>[];
+    var current = startDate;
+    while (current.isBefore(endDate)) {
+      dates.add({
+        'listing_id': listingId,
+        'date': current.toIso8601String().split('T')[0],
+        'is_available': isAvailable,
+      });
+      current = current.add(const Duration(days: 1));
+    }
+    if (dates.isNotEmpty) {
+      await _client.from(AppConstants.tableAvailability).upsert(dates);
+    }
+  }
+
+  /// Get booked dates via RPC (efficient)
+  static Future<List<Map<String, dynamic>>> getBookedDates(
+    String listingId,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    try {
+      final response = await _client.rpc('get_booked_dates', params: {
+        'p_listing_id': listingId,
+        'p_start_date': startDate.toIso8601String().split('T')[0],
+        'p_end_date': endDate.toIso8601String().split('T')[0],
+      });
+      return List<Map<String, dynamic>>.from(response ?? []);
+    } catch (_) {
+      // Fallback: query bookings directly
+      return _getBookedDatesFallback(listingId, startDate, endDate);
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> _getBookedDatesFallback(
+    String listingId,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final bookings = await _client
+        .from(AppConstants.tableBookings)
+        .select('id, check_in, check_out, status')
+        .eq('listing_id', listingId)
+        .inFilter('status', ['pending', 'confirmed', 'active'])
+        .lte('check_in', endDate.toIso8601String())
+        .gte('check_out', startDate.toIso8601String());
+
+    final blocked = await _client
+        .from(AppConstants.tableAvailability)
+        .select('date, booking_id')
+        .eq('listing_id', listingId)
+        .eq('is_available', false)
+        .gte('date', startDate.toIso8601String().split('T')[0])
+        .lte('date', endDate.toIso8601String().split('T')[0]);
+
+    final results = <Map<String, dynamic>>[];
+
+    for (final b in bookings) {
+      var d = DateTime.parse(b['check_in'].toString());
+      final end = DateTime.parse(b['check_out'].toString());
+      while (d.isBefore(end)) {
+        results.add({
+          'booked_date': d.toIso8601String().split('T')[0],
+          'is_blocked': false,
+          'booking_id': b['id'],
+          'booking_status': b['status'],
+        });
+        d = d.add(const Duration(days: 1));
+      }
+    }
+
+    for (final a in blocked) {
+      results.add({
+        'booked_date': a['date'],
+        'is_blocked': true,
+        'booking_id': a['booking_id'],
+        'booking_status': null,
+      });
+    }
+
+    return results;
+  }
+
+  /// Get booked time slots for a specific date
+  static Future<List<Map<String, dynamic>>> getBookedTimeSlots(
+    String listingId,
+    DateTime date,
+  ) async {
+    try {
+      final response = await _client.rpc('get_booked_time_slots', params: {
+        'p_listing_id': listingId,
+        'p_date': date.toIso8601String().split('T')[0],
+      });
+      return List<Map<String, dynamic>>.from(response ?? []);
+    } catch (_) {
+      // Fallback
+      final response = await _client
+          .from('time_slot_bookings')
+          .select('start_time, end_time, status, booking_id')
+          .eq('listing_id', listingId)
+          .eq('slot_date', date.toIso8601String().split('T')[0])
+          .inFilter('status', ['held', 'confirmed']);
+      return List<Map<String, dynamic>>.from(response);
+    }
+  }
+
+  /// Check date availability via RPC
+  static Future<bool> checkDatesAvailable(
+    String listingId,
+    DateTime checkIn,
+    DateTime checkOut,
+  ) async {
+    try {
+      final response = await _client.rpc('check_dates_available', params: {
+        'p_listing_id': listingId,
+        'p_check_in': checkIn.toIso8601String().split('T')[0],
+        'p_check_out': checkOut.toIso8601String().split('T')[0],
+      });
+      return response == true;
+    } catch (_) {
+      return false; // Fail-safe: block booking if availability check fails
+    }
+  }
+
+  /// Book time slots atomically via RPC
+  static Future<bool> bookTimeSlots(
+    String listingId,
+    String bookingId,
+    DateTime date,
+    List<Map<String, String>> slots,
+  ) async {
+    try {
+      final response = await _client.rpc('check_and_book_slots', params: {
+        'p_listing_id': listingId,
+        'p_booking_id': bookingId,
+        'p_slot_date': date.toIso8601String().split('T')[0],
+        'p_slots': slots,
+      });
+      return response == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Create booking with availability check (atomic)
+  static Future<Map<String, dynamic>?> createBookingWithCheck(
+    Map<String, dynamic> data,
+  ) async {
+    final rentalMode = data['rental_mode'] ?? 'nights';
+
+    if (rentalMode == 'nights' || rentalMode == 'full_day') {
+      final available = await checkDatesAvailable(
+        data['listing_id'],
+        DateTime.parse(data['check_in']),
+        DateTime.parse(data['check_out']),
+      );
+      if (!available) return null;
+    }
+
+    final response = await _client
+        .from(AppConstants.tableBookings)
+        .insert(data)
+        .select('*, listing:listings(id, title, images, type, base_price, price_unit, city, rental_mode)')
+        .single();
+
+    // For hours: book time slots
+    if (rentalMode == 'hours' && data['time_slots'] != null) {
+      final slots = (data['time_slots'] as List)
+          .map((s) => {'start_time': s['start_time'].toString(), 'end_time': s['end_time'].toString()})
+          .toList();
+      await bookTimeSlots(
+        data['listing_id'],
+        response['id'],
+        DateTime.parse(data['booking_date'] ?? data['check_in']),
+        slots,
+      );
+    }
+
+    return response;
+  }
+
+  /// Count completed/confirmed bookings for a host (for promotional pricing)
+  /// First 5 bookings per host get 1% commission, then 7%
+  static Future<int> getHostBookingsCount(String hostId) async {
+    try {
+      final response = await _client
+          .from(AppConstants.tableBookings)
+          .select('id')
+          .eq('host_id', hostId)
+          .inFilter('status', ['confirmed', 'completed']);
+      return (response as List).length;
+    } catch (_) {
+      return 999; // On error, assume past promo to avoid giving wrong discount
+    }
+  }
+
   // =============================================
   // CONVERSATIONS & MESSAGES
   // =============================================

@@ -66,7 +66,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al iniciar sesion: ${e.toString()}'),
+            content: Text('Credenciales incorrectas. Verifica tu email y contraseña.'),
             backgroundColor: AtrioColors.error,
           ),
         );

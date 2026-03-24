@@ -389,7 +389,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                   ),
                                   _InfoChip(
                                     icon: Icons.people_outline,
-                                    label: '$guestsCount ${guestsCount == 1 ? 'huésped' : 'huéspedes'}',
+                                    label: '$guestsCount persona${guestsCount == 1 ? '' : 's'}',
                                   ),
                                 ],
                               ),

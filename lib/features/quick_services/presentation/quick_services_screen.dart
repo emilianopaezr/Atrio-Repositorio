@@ -413,18 +413,85 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
             const SizedBox(height: 24),
             SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
               onPressed: () {
+                final price = priceController.text.trim();
+                final msg = messageController.text.trim();
+                if (price.isEmpty || double.tryParse(price) == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: const Text('Ingresa un precio válido', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+                    backgroundColor: Colors.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ));
+                  return;
+                }
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), const Expanded(child: Text('Oferta enviada!', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
-                  backgroundColor: _lime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ));
+                _showOfferConfirmation(request, double.parse(price), msg);
               },
               style: ElevatedButton.styleFrom(backgroundColor: _lime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-              child: Text('Enviar oferta', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800)),
+              child: Text('Revisar oferta', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800)),
             )),
             const SizedBox(height: 12),
           ]),
         ),
+      ),
+    );
+  }
+
+  void _showOfferConfirmation(_ServiceRequest request, double price, String message) {
+    showModalBottomSheet(
+      context: context, backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(color: _bg, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 24),
+          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _lime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.send_rounded, size: 40, color: _lime)),
+          const SizedBox(height: 20),
+          Text('Confirmar oferta', style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: _textPrimary)),
+          const SizedBox(height: 8),
+          Text('Para: "${request.title}"', style: GoogleFonts.roboto(fontSize: 14, color: _textSecondary), textAlign: TextAlign.center),
+          const SizedBox(height: 20),
+          // Summary
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
+            child: Column(children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Tu precio', style: GoogleFonts.roboto(fontSize: 13, color: _textSecondary)),
+                Text('\$${price.toInt()}', style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: _lime)),
+              ]),
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Divider(color: _border, height: 1),
+                const SizedBox(height: 12),
+                Align(alignment: Alignment.centerLeft, child: Text('Mensaje:', style: GoogleFonts.roboto(fontSize: 12, color: _textMuted))),
+                const SizedBox(height: 4),
+                Align(alignment: Alignment.centerLeft, child: Text(message, style: GoogleFonts.roboto(fontSize: 13, color: _textSecondary), maxLines: 3, overflow: TextOverflow.ellipsis)),
+              ],
+              const SizedBox(height: 12),
+              const Divider(color: _border, height: 1),
+              const SizedBox(height: 12),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Solicitante', style: GoogleFonts.roboto(fontSize: 13, color: _textSecondary)),
+                Text(request.requester, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w600, color: _textPrimary)),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), const Expanded(child: Text('Oferta enviada exitosamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
+                backgroundColor: _lime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ));
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: _lime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+            child: Text('Confirmar y enviar', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800)),
+          )),
+          const SizedBox(height: 10),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver a editar', style: GoogleFonts.roboto(fontSize: 14, color: _textSecondary))),
+          const SizedBox(height: 8),
+        ]),
       ),
     );
   }

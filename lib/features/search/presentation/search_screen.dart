@@ -231,9 +231,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           strokeWidth: 2.5,
                         ),
                       ),
-                      error: (error, _) => Center(
+                      error: (_, _) => Center(
                         child: Text(
-                          'Error: $error',
+                          'Error al buscar. Intenta de nuevo.',
                           style: AtrioTypography.bodyMedium.copyWith(
                             color: AtrioColors.error,
                           ),

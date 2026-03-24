@@ -5,7 +5,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/listings_provider.dart';
+import '../../../core/providers/availability_provider.dart';
 import '../../../core/models/listing_model.dart';
+import '../../../core/models/enums.dart';
 import '../../../core/services/database_service.dart';
 
 const _bg = Color(0xFFFAFAFA);
@@ -198,42 +200,56 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 24),
 
                           // ─── Category + Rating ───
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: _lime.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  listing.type == 'space' ? 'Espacio' : listing.type == 'experience' ? 'Experiencia' : 'Servicio',
-                                  style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w700, color: _limeDark, letterSpacing: 0.5),
-                                ),
-                              ),
-                              const Spacer(),
-                              if (listing.rating > 0) ...[
-                                const Icon(Icons.star_rounded, size: 16, color: _gold),
-                                const SizedBox(width: 4),
-                                Text(
-                                  listing.rating.toStringAsFixed(1),
-                                  style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700, color: _text),
-                                ),
-                                if (listing.reviewCount > 0) ...[
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    ' (${listing.reviewCount})',
-                                    style: GoogleFonts.roboto(fontSize: 13, color: _textSec),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: _lime.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                ],
+                                  child: Text(
+                                    listing.type == 'space' ? 'Espacio' : listing.type == 'experience' ? 'Experiencia' : 'Servicio',
+                                    style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w700, color: _limeDark, letterSpacing: 0.3),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (listing.rating > 0)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: _gold.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.star_rounded, size: 16, color: _gold),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          listing.rating.toStringAsFixed(1),
+                                          style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: _text),
+                                        ),
+                                        if (listing.reviewCount > 0) ...[
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '(${listing.reviewCount})',
+                                            style: GoogleFonts.roboto(fontSize: 12, color: _textSec),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
                               ],
-                            ],
+                            ),
                           ),
 
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
 
                           // ─── Title ───
                           Text(
@@ -260,14 +276,24 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                           _divider(),
                           const SizedBox(height: 18),
 
+                          // ─── Rental mode badge ───
+                          _rentalModeBadge(listing),
+                          const SizedBox(height: 14),
+
                           // ─── Quick highlights ───
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               _highlight(Icons.people_outline_rounded, '${listing.capacity ?? 4} pers.'),
-                              _highlight(Icons.access_time_rounded, 'Flexible'),
+                              _highlight(
+                                _rentalModeIcon(listing.rentalMode),
+                                RentalMode.fromDb(listing.rentalMode).label,
+                              ),
                               _highlight(Icons.verified_user_outlined, 'Asegurado'),
-                              _highlight(Icons.flash_on_rounded, 'Inst.'),
+                              if (listing.instantBooking == true)
+                                _highlight(Icons.flash_on_rounded, 'Inmediato')
+                              else
+                                _highlight(Icons.schedule_rounded, 'Confirm.'),
                             ],
                           ),
 
@@ -297,15 +323,21 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                             const SizedBox(height: 18),
                           ],
 
+                          // ─── Availability preview ───
+                          _availabilitySection(listing),
+                          const SizedBox(height: 18),
+                          _divider(),
+                          const SizedBox(height: 18),
+
                           // ─── House rules ───
-                          _rulesSection(),
+                          _rulesSection(listing),
 
                           const SizedBox(height: 18),
                           _divider(),
                           const SizedBox(height: 18),
 
                           // ─── Cancellation ───
-                          _cancellationSection(),
+                          _cancellationSection(listing),
 
                           const SizedBox(height: 18),
                           _divider(),
@@ -596,15 +628,244 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   }
 
   // ══════════════════════════════════════════
+  // RENTAL MODE BADGE
+  // ══════════════════════════════════════════
+  Widget _rentalModeBadge(Listing listing) {
+    final mode = RentalMode.fromDb(listing.rentalMode);
+    String subtitle;
+    switch (mode) {
+      case RentalMode.hours:
+        final from = listing.availableFrom ?? '09:00';
+        final until = listing.availableUntil ?? '22:00';
+        final minH = listing.minHours;
+        subtitle = 'Disponible $from - $until · Mín. $minH hora${minH > 1 ? 's' : ''}';
+        break;
+      case RentalMode.fullDay:
+        subtitle = 'Reserva por día completo';
+        break;
+      case RentalMode.nights:
+        final checkIn = listing.checkInTime ?? '15:00';
+        final checkOut = listing.checkOutTime ?? '11:00';
+        final minN = listing.minNights;
+        subtitle = 'Check-in $checkIn · Check-out $checkOut · Mín. $minN noche${minN > 1 ? 's' : ''}';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _lime.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _lime.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: _lime,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(_rentalModeIcon(listing.rentalMode), size: 18, color: Colors.black),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Modalidad: ${mode.label}',
+                  style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: _text),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.roboto(fontSize: 12, color: _textSec),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════
+  // AVAILABILITY SECTION
+  // ══════════════════════════════════════════
+  Widget _availabilitySection(Listing listing) {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, 1);
+    final endDate = DateTime(now.year, now.month + 3, 0);
+
+    final bookedAsync = ref.watch(bookedDatesProvider(BookedDatesParams(
+      listingId: listing.id,
+      startDate: startDate,
+      endDate: endDate,
+    )));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Disponibilidad', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+        const SizedBox(height: 14),
+        bookedAsync.when(
+          data: (data) {
+            final bookedDates = <String>{};
+            final blockedDates = <String>{};
+            for (final d in data) {
+              final dateStr = d['booked_date']?.toString() ?? '';
+              if (d['is_blocked'] == true) {
+                blockedDates.add(dateStr);
+              } else {
+                bookedDates.add(dateStr);
+              }
+            }
+            return _buildMiniCalendar(now, bookedDates, blockedDates);
+          },
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(color: _limeDark, strokeWidth: 2),
+            ),
+          ),
+          error: (_, _) => Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _border),
+            ),
+            child: Center(
+              child: Text('No se pudo cargar la disponibilidad', style: GoogleFonts.roboto(fontSize: 13, color: _textMuted)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Legend
+        Row(
+          children: [
+            _availLegend(const Color(0xFF66BB6A), 'Disponible'),
+            const SizedBox(width: 14),
+            _availLegend(Colors.red[400]!, 'Reservado'),
+            const SizedBox(width: 14),
+            _availLegend(Colors.grey[400]!, 'Bloqueado'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMiniCalendar(DateTime now, Set<String> bookedDates, Set<String> blockedDates) {
+    final firstDay = DateTime(now.year, now.month, 1);
+    final lastDay = DateTime(now.year, now.month + 1, 0);
+    final startWeekday = (firstDay.weekday - 1) % 7;
+    final totalDays = lastDay.day;
+    const dayHeaders = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _border),
+      ),
+      child: Column(
+        children: [
+          // Month header
+          Text(
+            '${_monthName(now.month)} ${now.year}',
+            style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700, color: _text),
+          ),
+          const SizedBox(height: 10),
+          // Day headers
+          Row(
+            children: dayHeaders.map((d) => Expanded(
+              child: Center(child: Text(d, style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w600, color: _textMuted))),
+            )).toList(),
+          ),
+          const SizedBox(height: 6),
+          // Grid
+          GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, childAspectRatio: 1.2),
+            itemCount: 42,
+            itemBuilder: (_, index) {
+              final dayNum = index - startWeekday + 1;
+              if (dayNum < 1 || dayNum > totalDays) return const SizedBox();
+
+              final date = DateTime(now.year, now.month, dayNum);
+              final key = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+              final isPast = date.isBefore(DateTime.now().subtract(const Duration(days: 1)));
+              final booked = bookedDates.contains(key);
+              final blocked = blockedDates.contains(key);
+              final isToday = date.day == DateTime.now().day && date.month == DateTime.now().month && date.year == DateTime.now().year;
+
+              Color dotColor = const Color(0xFF66BB6A); // available green
+              if (booked) dotColor = Colors.red[400]!;
+              if (blocked) dotColor = Colors.grey[400]!;
+              if (isPast) dotColor = Colors.grey[300]!;
+
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '$dayNum',
+                    style: GoogleFonts.roboto(
+                      fontSize: 12,
+                      fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                      color: isPast ? _textMuted : _text,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    width: 6, height: 6,
+                    decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _monthName(int m) {
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return months[m - 1];
+  }
+
+  Widget _availLegend(Color color, String label) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      const SizedBox(width: 4),
+      Text(label, style: GoogleFonts.roboto(fontSize: 11, color: _textSec)),
+    ],
+  );
+
+  // ══════════════════════════════════════════
   // HOUSE RULES
   // ══════════════════════════════════════════
-  Widget _rulesSection() {
+  Widget _rulesSection(Listing listing) {
+    final mode = RentalMode.fromDb(listing.rentalMode);
+    final checkIn = listing.checkInTime ?? '15:00';
+    final checkOut = listing.checkOutTime ?? '11:00';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Reglas', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
         const SizedBox(height: 12),
-        _ruleRow(Icons.schedule_rounded, 'Check-in: 10:00 AM — Check-out: 8:00 PM'),
+        if (mode == RentalMode.nights)
+          _ruleRow(Icons.schedule_rounded, 'Check-in: $checkIn — Check-out: $checkOut')
+        else if (mode == RentalMode.hours)
+          _ruleRow(Icons.schedule_rounded, 'Horario: ${listing.availableFrom ?? "09:00"} — ${listing.availableUntil ?? "22:00"}')
+        else
+          _ruleRow(Icons.schedule_rounded, 'Día completo disponible'),
         _ruleRow(Icons.smoke_free_rounded, 'No fumar dentro del espacio'),
         _ruleRow(Icons.pets_rounded, 'Mascotas con previo aviso'),
         _ruleRow(Icons.volume_down_rounded, 'Respetar horario de silencio'),
@@ -626,11 +887,29 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   // ══════════════════════════════════════════
   // CANCELLATION
   // ══════════════════════════════════════════
-  Widget _cancellationSection() {
+  Widget _cancellationSection(Listing listing) {
+    final policy = CancellationPolicy.fromDb(listing.cancellationPolicy);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Cancelación', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+        Row(
+          children: [
+            Text('Cancelación', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: _lime.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                policy.label,
+                style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w700, color: _limeDark),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(14),
@@ -639,12 +918,32 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             border: Border.all(color: _border),
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 48h antes', 'Reembolso completo'),
+              Text(
+                policy.description,
+                style: GoogleFonts.roboto(fontSize: 13, color: _textSec, height: 1.5),
+              ),
               const SizedBox(height: 12),
-              _cancelRow(Icons.warning_amber_rounded, _gold, '24-48h: 50% reembolso', 'Se retiene la mitad'),
-              const SizedBox(height: 12),
-              _cancelRow(Icons.cancel_outlined, const Color(0xFFE53935), 'Menos de 24h', 'Sin reembolso'),
+              if (policy == CancellationPolicy.flexible) ...[
+                _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 48h antes', 'Reembolso completo'),
+                const SizedBox(height: 12),
+                _cancelRow(Icons.warning_amber_rounded, _gold, '24-48h: 50% reembolso', 'Se retiene la mitad'),
+                const SizedBox(height: 12),
+                _cancelRow(Icons.cancel_outlined, const Color(0xFFE53935), 'Menos de 24h', 'Sin reembolso'),
+              ] else if (policy == CancellationPolicy.moderate) ...[
+                _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 5 días antes', 'Reembolso completo'),
+                const SizedBox(height: 12),
+                _cancelRow(Icons.warning_amber_rounded, _gold, '2-5 días: 50% reembolso', 'Se retiene la mitad'),
+                const SizedBox(height: 12),
+                _cancelRow(Icons.cancel_outlined, const Color(0xFFE53935), 'Menos de 2 días', 'Sin reembolso'),
+              ] else ...[
+                _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 7 días antes', 'Reembolso completo'),
+                const SizedBox(height: 12),
+                _cancelRow(Icons.warning_amber_rounded, _gold, '3-7 días: 50% reembolso', 'Se retiene la mitad'),
+                const SizedBox(height: 12),
+                _cancelRow(Icons.cancel_outlined, const Color(0xFFE53935), 'Menos de 3 días', 'Sin reembolso'),
+              ],
             ],
           ),
         ),
@@ -890,6 +1189,15 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       child: Icon(icon, size: 18, color: color ?? _text),
     ),
   );
+
+  IconData _rentalModeIcon(String mode) {
+    switch (mode) {
+      case 'hours': return Icons.schedule_rounded;
+      case 'full_day': return Icons.calendar_today_rounded;
+      case 'nights': return Icons.nights_stay_rounded;
+      default: return Icons.nights_stay_rounded;
+    }
+  }
 
   Widget _highlight(IconData icon, String label) => Column(
     children: [

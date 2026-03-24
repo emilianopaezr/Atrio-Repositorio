@@ -87,7 +87,7 @@ class DisputesScreen extends ConsumerWidget {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Error: $e', style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.error))),
+                error: (_, _) => Center(child: Text('Error al cargar', style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.error))),
               ),
             ),
           ],

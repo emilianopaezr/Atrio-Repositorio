@@ -45,7 +45,12 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
     'Otro',
   ];
 
-  final _urgencies = ['Hoy', 'Manana', 'Esta semana', 'Flexible'];
+  final _urgencies = [
+    {'label': 'Hoy', 'icon': Icons.bolt_rounded},
+    {'label': 'Mañana', 'icon': Icons.wb_sunny_rounded},
+    {'label': 'Esta\nsemana', 'icon': Icons.date_range_rounded},
+    {'label': 'Flexible', 'icon': Icons.all_inclusive_rounded},
+  ];
 
   final _categoryIcons = {
     'Mudanza': Icons.local_shipping_rounded,
@@ -120,7 +125,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('No se pudo publicar. Intenta de nuevo.'),
             backgroundColor: AtrioColors.error,
           ),
         );
@@ -292,30 +297,45 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                 const SizedBox(height: 10),
                 Row(
                   children: _urgencies.map((u) {
-                    final isSelected = u == _selectedUrgency;
+                    final label = u['label'] as String;
+                    final icon = u['icon'] as IconData;
+                    final compareLabel = label.replaceAll('\n', ' ');
+                    final isSelected = compareLabel == _selectedUrgency;
                     return Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _selectedUrgency = u),
+                        onTap: () => setState(() => _selectedUrgency = compareLabel),
                         child: Container(
-                          margin: const EdgeInsets.only(right: 8),
+                          margin: const EdgeInsets.only(right: 6),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: isSelected ? _lime : _surface,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: isSelected ? _limeDark : _border,
                             ),
                           ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            u,
-                            style: GoogleFonts.roboto(
-                              fontSize: 12,
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: isSelected ? Colors.black : _textSecondary,
-                            ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                icon,
+                                size: 20,
+                                color: isSelected ? Colors.black : _textSecondary,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                label,
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.roboto(
+                                  fontSize: 11,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected ? Colors.black : _textSecondary,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

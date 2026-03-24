@@ -91,7 +91,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('No se pudo enviar la reseña. Intenta de nuevo.'),
             backgroundColor: AtrioColors.error,
             behavior: SnackBarBehavior.floating,
           ),

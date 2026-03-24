@@ -27,7 +27,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
       backgroundColor: AtrioColors.hostBackground,
       body: disputeAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (_, _) => const Center(child: Text('Error al cargar. Intenta de nuevo.')),
         data: (dispute) {
           if (dispute == null) {
             return Center(child: Text('Disputa no encontrada', style: AtrioTypography.bodyLarge.copyWith(color: Colors.white)));

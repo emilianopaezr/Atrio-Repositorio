@@ -11,6 +11,8 @@ import '../../../core/providers/listings_provider.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/pricing_engine_service.dart';
+import '../../../shared/widgets/availability_calendar.dart';
+import '../../../shared/widgets/time_slot_picker.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   final String listingId;
@@ -21,19 +23,63 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 }
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
-  static const _testMode = true;
-
   DateTime? _checkIn;
   DateTime? _checkOut;
+  DateTime? _selectedDate; // for hours/full_day
   int _guests = 1;
   bool _isBooking = false;
   PricingResult? _pricingResult;
   int _paymentIdx = 0;
+  final Set<String> _selectedTimeSlots = {};
+  final Map<String, String> _slotEndTimes = {};
+
+  /// Host's booking count (for promotional pricing)
+  int? _hostBookingsCount;
+
+  /// Effective fee rate: 1% if host has < 5 bookings, 7% otherwise
+  double get _feeRate =>
+      PricingEngineService.getEffectiveFeeRate(_hostBookingsCount ?? 999);
+
+  bool get _isPromoRate =>
+      (_hostBookingsCount ?? 999) < PricingEngineService.promoBookingThreshold;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHostPromoStatus();
+  }
+
+  /// Fetch host booking count to determine if promotional 1% applies
+  Future<void> _loadHostPromoStatus() async {
+    try {
+      final data = ref.read(listingDetailProvider(widget.listingId)).value;
+      if (data == null) {
+        // Data not loaded yet; will retry when build triggers
+        Future.delayed(const Duration(milliseconds: 500), _loadHostPromoStatus);
+        return;
+      }
+      final listing = Listing.fromJson(data);
+      final count = await DatabaseService.getHostBookingsCount(listing.hostId);
+      if (mounted) {
+        setState(() {
+          _hostBookingsCount = count;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _hostBookingsCount = 999; // Fallback: standard rate
+        });
+      }
+    }
+  }
 
   int get _nights {
     if (_checkIn == null || _checkOut == null) return 1;
     return _checkOut!.difference(_checkIn!).inDays.clamp(1, 365);
   }
+
+  int get _hours => _selectedTimeSlots.length;
 
   String _fmt(DateTime? dt) {
     if (dt == null) return 'Seleccionar';
@@ -51,94 +97,151 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
-  Future<void> _pickDates() async {
-    final range = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDateRange: _checkIn != null && _checkOut != null
-          ? DateTimeRange(start: _checkIn!, end: _checkOut!)
-          : null,
-      builder: (context, child) => Theme(
-        data: ThemeData.light().copyWith(
-          colorScheme: const ColorScheme.light(
-            primary: AtrioColors.neonLimeDark,
-            onPrimary: Colors.black,
-            surface: Colors.white,
-            onSurface: AtrioColors.guestTextPrimary,
-          ),
-        ),
-        child: child!,
-      ),
-    );
-    if (range != null) {
-      setState(() {
-        _checkIn = range.start;
-        _checkOut = range.end;
-        _pricingResult = null;
-      });
-      _calcPricing();
+  /// Whether this listing charges per person (affects quantity calculation)
+  bool _isPerPerson(Listing l) => l.priceUnit == 'person';
+
+  /// Whether this listing uses per-person pricing AND hourly mode
+  /// In this case, only 1 time slot can be selected (1 session at a time)
+  bool _isSingleSlotMode(Listing l) =>
+      _isPerPerson(l) && l.rentalMode == 'hours';
+
+  /// Calculate the correct subtotal based on mode, units, and pricing type
+  double _calcSubtotal(Listing l) {
+    final base = l.basePrice ?? 0;
+    final mode = l.rentalMode;
+    final perPerson = _isPerPerson(l);
+    final guestMultiplier = perPerson ? _guests : 1;
+
+    if (mode == 'hours') {
+      final hours = _hours > 0 ? _hours : 1;
+      return base * hours * guestMultiplier;
+    } else if (mode == 'full_day') {
+      return base * 1 * guestMultiplier;
+    } else {
+      return base * _nights * guestMultiplier;
     }
   }
 
-  Future<void> _calcPricing() async {
-    final data = ref.read(listingDetailProvider(widget.listingId)).value;
-    if (data == null || _checkIn == null || _checkOut == null) return;
-    final listing = Listing.fromJson(data);
-    final uid = AuthService.currentUser?.id;
-    if (uid == null) return;
+  /// Calculate service fee with dynamic rate and $99 cap
+  /// Uses 1% for promo hosts (< 5 bookings), 7% standard, capped at $99
+  double _calcServiceFee(double subtotal, double cleaningFee) {
+    final rate = _feeRate;
+    final raw = (subtotal + cleaningFee) * rate;
+    return raw > PricingEngineService.maxFeeCap
+        ? PricingEngineService.maxFeeCap
+        : raw;
+  }
 
-    try {
-      final r = await PricingEngineService.calculatePricing(
-        listingId: listing.id, guestId: uid, hostId: listing.hostId,
-        checkIn: _checkIn!, checkOut: _checkOut!, guestsCount: _guests,
-      );
-      if (mounted) setState(() => _pricingResult = r);
-    } catch (_) {
-      final p = PricingEngineService.previewPricing(
-        basePrice: listing.basePrice ?? 0,
-        cleaningFee: listing.cleaningFee,
-        nights: _nights,
-      );
-      if (mounted) setState(() => _pricingResult = p);
+  Future<void> _calcPricing({Listing? listing}) async {
+    final data = ref.read(listingDetailProvider(widget.listingId)).value;
+    if (data == null) return;
+    final l = listing ?? Listing.fromJson(data);
+
+    final mode = l.rentalMode;
+    final basePrice = l.basePrice ?? 0;
+    final cleaningFee = mode == 'hours' ? 0.0 : l.cleaningFee;
+
+    // Calculate units based on mode
+    int units;
+    if (mode == 'hours') {
+      units = _hours > 0 ? _hours : 1;
+    } else if (mode == 'full_day') {
+      units = 1;
+    } else {
+      if (_checkIn == null || _checkOut == null) return;
+      units = _nights;
     }
+
+    // For per-person pricing, multiply by guests
+    final perPerson = _isPerPerson(l);
+    final effectiveBase = perPerson ? basePrice * _guests : basePrice;
+
+    // Always use client-side preview for accurate calculation
+    // The RPC doesn't understand time slots or per-person multipliers correctly
+    final p = PricingEngineService.previewPricing(
+      basePrice: effectiveBase,
+      cleaningFee: cleaningFee,
+      nights: units,
+      guestFeeRate: _feeRate,
+      pricingModel: _isPromoRate ? 'PROMO_1_PERCENT' : 'STANDARD_7_CAP99',
+    );
+    if (mounted) setState(() => _pricingResult = p);
   }
 
   Future<void> _confirm(Listing listing) async {
-    if (_checkIn == null || _checkOut == null) {
+    final mode = listing.rentalMode;
+
+    if (mode == 'nights' && (_checkIn == null || _checkOut == null)) {
       _snack('Selecciona las fechas primero', isError: true);
       return;
     }
+    if (mode == 'full_day' && _selectedDate == null) {
+      _snack('Selecciona un día', isError: true);
+      return;
+    }
+    if (mode == 'hours' && (_selectedDate == null || _selectedTimeSlots.isEmpty)) {
+      _snack('Selecciona fecha y horarios', isError: true);
+      return;
+    }
+
     setState(() => _isBooking = true);
     try {
-      final pricing = _pricingResult ?? await PricingEngineService.calculatePricing(
-        listingId: listing.id, guestId: AuthService.currentUser!.id,
-        hostId: listing.hostId, checkIn: _checkIn!, checkOut: _checkOut!,
-        guestsCount: _guests,
-      );
-      if (_testMode) await Future.delayed(const Duration(milliseconds: 1500));
+      final effectiveCheckIn = mode == 'nights'
+          ? _checkIn!
+          : _selectedDate!;
+      final effectiveCheckOut = mode == 'nights'
+          ? _checkOut!
+          : _selectedDate!.add(const Duration(days: 1));
 
-      await DatabaseService.createBooking({
+      // Use helper methods for correct pricing (same as display)
+      final sub = _calcSubtotal(listing);
+      final clean = mode == 'hours' ? 0.0 : listing.cleaningFee;
+      final fee = _calcServiceFee(sub, clean);
+      final total = sub + clean + fee;
+
+      final timeSlots = _selectedTimeSlots.map((start) => {
+        'start_time': start,
+        'end_time': _slotEndTimes[start] ?? '',
+      }).toList();
+
+      final sortedSlots = List<String>.from(_selectedTimeSlots)..sort();
+
+      final bookingData = {
         'listing_id': listing.id,
         'host_id': listing.hostId,
         'guest_id': AuthService.currentUser!.id,
-        'check_in': _checkIn!.toIso8601String(),
-        'check_out': _checkOut!.toIso8601String(),
+        'check_in': effectiveCheckIn.toIso8601String(),
+        'check_out': effectiveCheckOut.toIso8601String(),
         'guests_count': _guests,
-        'base_total': pricing.baseTotal,
-        'cleaning_fee': pricing.cleaningFee,
-        'service_fee': pricing.guestServiceFeeAmount,
-        'total': pricing.total,
-        'status': 'pending',
+        'base_total': sub,
+        'cleaning_fee': clean,
+        'service_fee': fee,
+        'total': total,
+        'status': listing.instantBooking ? 'confirmed' : 'pending',
         'payment_status': 'pending',
-      });
+        'rental_mode': mode,
+        if (mode == 'hours') ...{
+          'time_slots': timeSlots,
+          'booking_date': _selectedDate!.toIso8601String().split('T')[0],
+          'start_time': sortedSlots.isNotEmpty ? sortedSlots.first : null,
+          'end_time': sortedSlots.isNotEmpty ? _slotEndTimes[sortedSlots.last] : null,
+          'duration_hours': _hours.toDouble(),
+        },
+      };
+
+      final result = await DatabaseService.createBookingWithCheck(bookingData);
+
+      if (result == null) {
+        if (mounted) _snack('Las fechas seleccionadas ya no están disponibles', isError: true);
+        return;
+      }
 
       if (mounted) {
         _snack('Reserva confirmada');
         await Future.delayed(const Duration(milliseconds: 600));
         if (mounted) context.pushReplacement('/booking-confirmed');
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) _snack('No se pudo completar la reserva. Intenta de nuevo.', isError: true);
     } finally {
       if (mounted) setState(() => _isBooking = false);
@@ -185,15 +288,35 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _page(Listing listing) {
+    final mode = listing.rentalMode;
     final base = listing.basePrice ?? 0;
-    final p = _pricingResult;
-    final sub = p?.baseTotal ?? base * _nights;
-    final clean = p?.cleaningFee ?? listing.cleaningFee;
-    final fee = p?.guestServiceFeeAmount ?? sub * 0.07;
-    final total = p?.total ?? sub + clean + fee;
-    final feeLabel = p != null ? '${(p.guestServiceFeeRate * 100).toStringAsFixed(0)}%' : '7%';
+    final units = mode == 'hours' ? (_hours > 0 ? _hours : 1) : (mode == 'full_day' ? 1 : _nights);
+
+    // Always use helper methods for correct pricing (ignores potentially stale _pricingResult)
+    final sub = _calcSubtotal(listing);
+    final clean = mode == 'hours' ? 0.0 : listing.cleaningFee;
+    final fee = _calcServiceFee(sub, clean);
+    final total = sub + clean + fee;
+    final feePercent = (_feeRate * 100).toStringAsFixed(0);
+    final feeLabel = '$feePercent%';
     final host = listing.hostData;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    String modeLabel;
+    String unitSuffix;
+    switch (mode) {
+      case 'hours':
+        modeLabel = 'Reserva por horas';
+        unitSuffix = '$units hora${units > 1 ? 's' : ''}';
+        break;
+      case 'full_day':
+        modeLabel = 'Día completo';
+        unitSuffix = '1 día';
+        break;
+      default:
+        modeLabel = 'Reserva por noches';
+        unitSuffix = '$_nights noche${_nights > 1 ? 's' : ''}';
+    }
 
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
@@ -221,274 +344,155 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ─── Listing card ───
+                  _buildListingCard(listing, base),
+                  const SizedBox(height: 16),
+
+                  // ─── Rental mode badge ───
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AtrioColors.guestSurface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AtrioColors.guestCardBorder),
+                      color: AtrioColors.neonLime.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: SizedBox(
-                            width: 80, height: 80,
-                            child: listing.images.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: listing.images.first,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Container(
-                                    color: AtrioColors.guestSurfaceVariant,
-                                    child: const Icon(Icons.image, color: AtrioColors.guestTextTertiary),
-                                  ),
-                          ),
+                        Icon(
+                          mode == 'hours' ? Icons.access_time : mode == 'full_day' ? Icons.today : Icons.nightlight_round,
+                          size: 16, color: AtrioColors.neonLimeDark,
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                listing.title,
-                                style: AtrioTypography.labelLarge.copyWith(color: AtrioColors.guestTextPrimary),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              if (listing.city != null)
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on_outlined, size: 13, color: AtrioColors.guestTextTertiary),
-                                    const SizedBox(width: 3),
-                                    Text(listing.city!, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary)),
-                                  ],
-                                ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Text(
-                                    '\$${base.toStringAsFixed(0)}',
-                                    style: AtrioTypography.priceMedium.copyWith(color: AtrioColors.guestTextPrimary),
-                                  ),
-                                  Text(
-                                    ' / ${_unitLabel(listing.priceUnit)}',
-                                    style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary),
-                                  ),
-                                  const Spacer(),
-                                  if (listing.rating > 0) ...[
-                                    const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFFB800)),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      listing.rating.toStringAsFixed(1),
-                                      style: AtrioTypography.caption.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                        const SizedBox(width: 6),
+                        Text(modeLabel, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // ─── Host info ───
                   if (host != null) ...[
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.2),
-                          backgroundImage: host['photo_url'] != null
-                              ? NetworkImage(host['photo_url'] as String)
-                              : null,
-                          child: host['photo_url'] == null
-                              ? const Icon(Icons.person, size: 22, color: AtrioColors.neonLimeDark)
-                              : null,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    host['display_name'] as String? ?? 'Anfitrión',
-                                    style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary),
-                                  ),
-                                  if (host['is_verified'] == true) ...[
-                                    const SizedBox(width: 5),
-                                    const Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark),
-                                  ],
-                                ],
-                              ),
-                              Text('Anfitrión', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                    _buildHostInfo(host),
                     const SizedBox(height: 20),
                     const Divider(height: 1, color: AtrioColors.guestCardBorder),
                     const SizedBox(height: 20),
                   ],
 
-                  // ─── Dates section ───
-                  Text('Fechas', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: _pickDates,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AtrioColors.guestSurface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _checkIn != null
-                              ? AtrioColors.neonLimeDark.withValues(alpha: 0.5)
-                              : AtrioColors.guestCardBorder,
+                  // ─── Date/Time selection (mode-specific) ───
+                  if (mode == 'nights') ...[
+                    Text('Fechas', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    const SizedBox(height: 12),
+                    AvailabilityCalendar(
+                      listingId: widget.listingId,
+                      rentalMode: mode,
+                      selectedCheckIn: _checkIn,
+                      selectedCheckOut: _checkOut,
+                      onRangeSelected: (start, end) {
+                        setState(() {
+                          _checkIn = start;
+                          _checkOut = end;
+                          _pricingResult = null;
+                        });
+                        _calcPricing(listing: listing);
+                      },
+                    ),
+                    if (_checkIn != null && _checkOut != null) ...[
+                      const SizedBox(height: 12),
+                      _buildDateSummary(listing),
+                    ],
+                  ] else if (mode == 'full_day') ...[
+                    Text('Selecciona un día', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    const SizedBox(height: 12),
+                    AvailabilityCalendar(
+                      listingId: widget.listingId,
+                      rentalMode: mode,
+                      selectedDate: _selectedDate,
+                      onDateTap: (date) {
+                        setState(() {
+                          _selectedDate = date;
+                          _pricingResult = null;
+                        });
+                        _calcPricing(listing: listing);
+                      },
+                    ),
+                    if (_selectedDate != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AtrioColors.neonLime.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.today, size: 18, color: AtrioColors.neonLimeDark),
+                            const SizedBox(width: 8),
+                            Text(_fmt(_selectedDate), style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700)),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Entrada', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _fmt(_checkIn),
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: _checkIn != null ? AtrioColors.guestTextPrimary : AtrioColors.neonLimeDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 1, height: 36,
-                            color: AtrioColors.guestCardBorder,
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Salida', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _fmt(_checkOut),
-                                    style: GoogleFonts.roboto(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: _checkOut != null ? AtrioColors.guestTextPrimary : AtrioColors.neonLimeDark,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (_checkIn != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AtrioColors.neonLime,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                '$_nights ${_unitLabel(listing.priceUnit)}${_nights > 1 ? 's' : ''}',
-                                style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black),
-                              ),
-                            )
-                          else
-                            const Icon(Icons.edit_calendar_outlined, size: 20, color: AtrioColors.neonLimeDark),
-                        ],
-                      ),
+                    ],
+                  ] else ...[
+                    // Hours mode
+                    Text('Selecciona fecha', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    const SizedBox(height: 12),
+                    AvailabilityCalendar(
+                      listingId: widget.listingId,
+                      rentalMode: mode,
+                      selectedDate: _selectedDate,
+                      onDateTap: (date) {
+                        setState(() {
+                          _selectedDate = date;
+                          _selectedTimeSlots.clear();
+                          _slotEndTimes.clear();
+                          _pricingResult = null;
+                        });
+                      },
                     ),
-                  ),
+                    if (_selectedDate != null) ...[
+                      const SizedBox(height: 20),
+                      if (_isSingleSlotMode(listing))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'Selecciona 1 horario (precio por persona)',
+                            style: GoogleFonts.roboto(fontSize: 12, color: AtrioColors.guestTextSecondary, fontStyle: FontStyle.italic),
+                          ),
+                        ),
+                      TimeSlotPicker(
+                        listingId: widget.listingId,
+                        selectedDate: _selectedDate!,
+                        availableFrom: listing.availableFrom ?? '09:00',
+                        availableUntil: listing.availableUntil ?? '22:00',
+                        slotDurationMinutes: listing.slotDurationMinutes,
+                        selectedSlots: _selectedTimeSlots,
+                        onSlotToggle: (start, end, selected) {
+                          setState(() {
+                            if (selected) {
+                              // Per-person + hours = single slot only (one session)
+                              if (_isSingleSlotMode(listing)) {
+                                _selectedTimeSlots.clear();
+                                _slotEndTimes.clear();
+                              }
+                              _selectedTimeSlots.add(start);
+                              _slotEndTimes[start] = end;
+                            } else {
+                              _selectedTimeSlots.remove(start);
+                              _slotEndTimes.remove(start);
+                            }
+                            _pricingResult = null;
+                          });
+                          if (_selectedTimeSlots.isNotEmpty) {
+                            _calcPricing(listing: listing);
+                          }
+                        },
+                      ),
+                    ],
+                  ],
 
                   const SizedBox(height: 20),
 
                   // ─── Guests section ───
-                  Text('Huéspedes', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: AtrioColors.guestSurface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AtrioColors.guestCardBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.people_outline_rounded, size: 22, color: AtrioColors.neonLimeDark),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '$_guests ${_guests == 1 ? 'huésped' : 'huéspedes'}',
-                            style: AtrioTypography.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AtrioColors.guestTextPrimary,
-                            ),
-                          ),
-                        ),
-                        if (listing.capacity != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: Text(
-                              'máx ${listing.capacity}',
-                              style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary),
-                            ),
-                          ),
-                        _counterBtn(Icons.remove, _guests > 1 ? () {
-                          setState(() => _guests--);
-                          if (_pricingResult != null) _calcPricing();
-                        } : null),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Text('$_guests', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: AtrioColors.guestTextPrimary)),
-                        ),
-                        _counterBtn(Icons.add, _guests < (listing.capacity ?? 10) ? () {
-                          setState(() => _guests++);
-                          if (_pricingResult != null) _calcPricing();
-                        } : null),
-                      ],
-                    ),
-                  ),
-
+                  _buildGuestsSection(listing),
                   const SizedBox(height: 24),
-
-                  // ─── Pricing badge ───
-                  if (p != null && p.guestDescription.isNotEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AtrioColors.neonLime.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AtrioColors.neonLimeDark.withValues(alpha: 0.25)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.auto_awesome, size: 16, color: AtrioColors.neonLimeDark),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(
-                            p.guestDescription,
-                            style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark),
-                          )),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
 
                   // ─── Price breakdown ───
                   Text('Resumen de Precio', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
@@ -502,9 +506,42 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ),
                     child: Column(
                       children: [
-                        _priceRow('\$${base.toStringAsFixed(0)} x $_nights ${_unitLabel(listing.priceUnit)}${_nights > 1 ? 's' : ''}', sub),
+                        _priceRow(
+                          _isPerPerson(listing)
+                              ? '\$${base.toStringAsFixed(0)} x $_guests persona${_guests > 1 ? 's' : ''}${mode == 'hours' ? ' x $units hora${units > 1 ? 's' : ''}' : ''}'
+                              : '\$${base.toStringAsFixed(0)} x $unitSuffix',
+                          sub,
+                        ),
                         if (clean > 0) _priceRow('Limpieza', clean),
-                        _priceRow('Tarifa de servicio ($feeLabel)', fee),
+                        _priceRow(
+                          _isPromoRate
+                              ? 'Tarifa promo ($feeLabel) 🎉'
+                              : 'Tarifa de servicio ($feeLabel${fee >= 99 ? ', máx \$99' : ''})',
+                          fee,
+                        ),
+                        if (_isPromoRate)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6, bottom: 2),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: AtrioColors.neonLime.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.local_offer, size: 14, color: AtrioColors.neonLimeDark),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Tarifa promocional 1% — ${PricingEngineService.promoBookingThreshold - (_hostBookingsCount ?? 0)} reservas restantes',
+                                      style: GoogleFonts.roboto(fontSize: 11, color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 10),
                           child: Divider(height: 1, color: AtrioColors.guestCardBorder),
@@ -532,34 +569,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   const SizedBox(height: 24),
 
                   // ─── Cancellation policy ───
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF8E1).withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFFFB800).withValues(alpha: 0.25)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.shield_outlined, size: 18, color: Color(0xFFFFB800)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Cancelación flexible', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
-                              const SizedBox(height: 3),
-                              Text(
-                                'Cancelación gratuita hasta 24 horas antes del check-in. Después se cobra el 50%.',
-                                style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary, height: 1.4),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildCancellationPolicy(listing),
 
                   const SizedBox(height: 16),
 
@@ -606,7 +616,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Confirmar y Reservar',
+                            listing.instantBooking ? 'Reservar Ahora' : 'Confirmar y Reservar',
                             style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
                           ),
                           const SizedBox(width: 8),
@@ -624,17 +634,182 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  // ─── Helpers ───
+  // ─── Sub-widgets ───
+
+  Widget _buildListingCard(Listing listing, double base) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AtrioColors.guestCardBorder),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 80, height: 80,
+              child: listing.images.isNotEmpty
+                  ? CachedNetworkImage(imageUrl: listing.images.first, fit: BoxFit.cover)
+                  : Container(color: AtrioColors.guestSurfaceVariant, child: const Icon(Icons.image, color: AtrioColors.guestTextTertiary)),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(listing.title, style: AtrioTypography.labelLarge.copyWith(color: AtrioColors.guestTextPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 4),
+                if (listing.city != null)
+                  Row(children: [
+                    const Icon(Icons.location_on_outlined, size: 13, color: AtrioColors.guestTextTertiary),
+                    const SizedBox(width: 3),
+                    Text(listing.city!, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary)),
+                  ]),
+                const SizedBox(height: 6),
+                Row(children: [
+                  Text('\$${base.toStringAsFixed(0)}', style: AtrioTypography.priceMedium.copyWith(color: AtrioColors.guestTextPrimary)),
+                  Text(' / ${_unitLabel(listing.priceUnit)}', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary)),
+                  const Spacer(),
+                  if (listing.rating > 0) ...[
+                    const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFFB800)),
+                    const SizedBox(width: 3),
+                    Text(listing.rating.toStringAsFixed(1), style: AtrioTypography.caption.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary)),
+                  ],
+                ]),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHostInfo(Map<String, dynamic> host) {
+    return Row(children: [
+      CircleAvatar(
+        radius: 22,
+        backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.2),
+        backgroundImage: host['photo_url'] != null ? NetworkImage(host['photo_url'] as String) : null,
+        child: host['photo_url'] == null ? const Icon(Icons.person, size: 22, color: AtrioColors.neonLimeDark) : null,
+      ),
+      const SizedBox(width: 12),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Text(host['display_name'] as String? ?? 'Anfitrión', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
+          if (host['is_verified'] == true) ...[const SizedBox(width: 5), const Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark)],
+        ]),
+        Text('Anfitrión', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
+      ])),
+    ]);
+  }
+
+  Widget _buildDateSummary(Listing listing) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AtrioColors.neonLimeDark.withValues(alpha: 0.3)),
+      ),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Check-in', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
+          const SizedBox(height: 4),
+          Text(_fmt(_checkIn), style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700)),
+        ])),
+        Container(width: 1, height: 36, color: AtrioColors.guestCardBorder),
+        Expanded(child: Padding(padding: const EdgeInsets.only(left: 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Check-out', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
+          const SizedBox(height: 4),
+          Text(_fmt(_checkOut), style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700)),
+        ]))),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(10)),
+          child: Text('$_nights noche${_nights > 1 ? 's' : ''}', style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black)),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildGuestsSection(Listing listing) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(
+      listing.type == 'experience' || listing.type == 'service' ? 'Personas' : 'Huéspedes',
+      style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary),
+    ),
+      const SizedBox(height: 12),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AtrioColors.guestSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AtrioColors.guestCardBorder),
+        ),
+        child: Row(children: [
+          const Icon(Icons.people_outline_rounded, size: 22, color: AtrioColors.neonLimeDark),
+          const SizedBox(width: 12),
+          Expanded(child: Text(
+            listing.type == 'experience' || listing.type == 'service'
+                ? '$_guests persona${_guests > 1 ? 's' : ''}'
+                : '$_guests ${_guests == 1 ? 'huésped' : 'huéspedes'}',
+            style: AtrioTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary),
+          )),
+          if (listing.capacity != null)
+            Padding(padding: const EdgeInsets.only(right: 10), child: Text('máx ${listing.capacity}', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary))),
+          _counterBtn(Icons.remove, _guests > 1 ? () { setState(() => _guests--); if (_pricingResult != null) _calcPricing(); } : null),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: Text('$_guests', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: AtrioColors.guestTextPrimary))),
+          _counterBtn(Icons.add, _guests < (listing.capacity ?? 10) ? () { setState(() => _guests++); if (_pricingResult != null) _calcPricing(); } : null),
+        ]),
+      ),
+    ]);
+  }
+
+  Widget _buildCancellationPolicy(Listing listing) {
+    String policyTitle;
+    String policyDesc;
+    switch (listing.cancellationPolicy) {
+      case 'strict':
+        policyTitle = 'Cancelación estricta';
+        policyDesc = 'Reembolso del 50% hasta 7 días antes. Sin reembolso después.';
+        break;
+      case 'moderate':
+        policyTitle = 'Cancelación moderada';
+        policyDesc = 'Cancelación gratuita hasta 5 días antes. Después se cobra el 50%.';
+        break;
+      default:
+        policyTitle = 'Cancelación flexible';
+        policyDesc = 'Cancelación gratuita hasta 24 horas antes del check-in. Después se cobra el 50%.';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1).withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFB800).withValues(alpha: 0.25)),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Icon(Icons.shield_outlined, size: 18, color: Color(0xFFFFB800)),
+        const SizedBox(width: 10),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(policyTitle, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
+          const SizedBox(height: 3),
+          Text(policyDesc, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary, height: 1.4)),
+        ])),
+      ]),
+    );
+  }
 
   Widget _priceRow(String label, double amount) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.guestTextSecondary)),
-        Text('\$${amount.toStringAsFixed(2)}', style: AtrioTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary)),
-      ],
-    ),
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(label, style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.guestTextSecondary)),
+      Text('\$${amount.toStringAsFixed(2)}', style: AtrioTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary)),
+    ]),
   );
 
   Widget _counterBtn(IconData icon, VoidCallback? onTap) {
@@ -665,37 +840,24 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: sel ? AtrioColors.neonLimeDark : AtrioColors.guestCardBorder, width: sel ? 1.5 : 1),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 40, height: 28,
-              decoration: BoxDecoration(
-                color: sel ? AtrioColors.neonLimeDark.withValues(alpha: 0.15) : AtrioColors.guestSurfaceVariant,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, size: 18, color: sel ? AtrioColors.neonLimeDark : AtrioColors.guestTextSecondary),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
-                  if (sub != null) Text(sub, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
-                ],
-              ),
-            ),
-            Container(
-              width: 20, height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: sel ? AtrioColors.neonLimeDark : AtrioColors.guestCardBorder, width: sel ? 2 : 1.5),
-              ),
-              child: sel ? Center(child: Container(width: 10, height: 10, decoration: const BoxDecoration(shape: BoxShape.circle, color: AtrioColors.neonLimeDark))) : null,
-            ),
-          ],
-        ),
+        child: Row(children: [
+          Container(
+            width: 40, height: 28,
+            decoration: BoxDecoration(color: sel ? AtrioColors.neonLimeDark.withValues(alpha: 0.15) : AtrioColors.guestSurfaceVariant, borderRadius: BorderRadius.circular(6)),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 18, color: sel ? AtrioColors.neonLimeDark : AtrioColors.guestTextSecondary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
+            if (sub != null) Text(sub, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
+          ])),
+          Container(
+            width: 20, height: 20,
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: sel ? AtrioColors.neonLimeDark : AtrioColors.guestCardBorder, width: sel ? 2 : 1.5)),
+            child: sel ? Center(child: Container(width: 10, height: 10, decoration: const BoxDecoration(shape: BoxShape.circle, color: AtrioColors.neonLimeDark))) : null,
+          ),
+        ]),
       ),
     );
   }

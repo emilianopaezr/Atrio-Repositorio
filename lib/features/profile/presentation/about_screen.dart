@@ -60,10 +60,11 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Atrio es el marketplace premium que conecta anfitriones con huéspedes a través de espacios únicos, experiencias memorables y servicios profesionales.\n\n'
-                    'Nuestra plataforma ofrece un ecosistema completo: desde la búsqueda inteligente y reservas en tiempo real, hasta chat directo con anfitriones, sistema de reseñas verificadas, '
-                    'verificación de identidad (KYC), gestión de pagos con comisiones transparentes, panel de control para anfitriones con analítica de ingresos, calendario de disponibilidad, '
-                    'notificaciones en tiempo real, servicios rápidos bajo demanda, sistema de niveles y logros, y resolución de disputas integrada.\n\n'
+                    'Atrio es el marketplace premium que conecta anfitriones con usuarios a través de espacios únicos, experiencias memorables y servicios profesionales.\n\n'
+                    'Nuestra plataforma ofrece un ecosistema completo: búsqueda inteligente, reservas en tiempo real con 3 modalidades (por horas, día completo y noches), '
+                    'chat directo con anfitriones, sistema de reseñas verificadas, verificación de identidad (KYC), gestión de pagos con comisiones transparentes (7%, máx \$99 USD), '
+                    'panel de control para anfitriones con analítica de ingresos, calendario de disponibilidad interactivo, notificaciones en tiempo real, '
+                    'servicios rápidos bajo demanda, experiencias con cupos y horarios, sistema de niveles y logros, y resolución de disputas integrada.\n\n'
                     'Ya sea que busques un loft industrial para un shooting, una villa para un retiro creativo, un tour gastronómico, o un servicio de fotografía profesional, '
                     'Atrio te conecta con las mejores opciones curadas por nuestra comunidad.\n\n'
                     'Desarrollada con pasión en Santiago de Chile 🇨🇱',
@@ -135,8 +136,8 @@ class AboutScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: _StatBox(
-                    value: '1%',
-                    label: 'Comisión mínima',
+                    value: '7%',
+                    label: 'Comisión estándar',
                     isDark: isDark,
                   ),
                 ),

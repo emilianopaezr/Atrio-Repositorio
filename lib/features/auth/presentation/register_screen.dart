@@ -79,7 +79,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('No se pudo completar el registro. Intenta de nuevo.'),
             backgroundColor: AtrioColors.error,
           ),
         );
