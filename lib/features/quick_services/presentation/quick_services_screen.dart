@@ -55,9 +55,9 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
 
   final List<_ServiceRequest> _requests = [
     _ServiceRequest(id: 'qr1', title: 'Necesito ayuda para mover sofa', description: 'Sofa grande de 3 cuerpos, piso 4 sin ascensor. Necesito 2 personas.', requester: 'Daniela M.', budget: 30, category: 'Mudanza', urgency: 'Hoy', offers: 3, postedAgo: 'Hace 2h'),
-    _ServiceRequest(id: 'qr2', title: 'Armar escritorio de IKEA', description: 'Modelo MALM con 2 cajones. Ya tengo las herramientas basicas.', requester: 'Tomas R.', budget: 25, category: 'Armado', urgency: 'Esta semana', offers: 5, postedAgo: 'Hace 4h'),
+    _ServiceRequest(id: 'qr2', title: 'Armar escritorio de IKEA', description: 'Modelo MALM con 2 cajones. Ya tengo las herramientas basicas.', requester: 'Tomas R.', budget: 25, category: 'Armado', urgency: 'Semana', offers: 5, postedAgo: 'Hace 4h'),
     _ServiceRequest(id: 'qr3', title: 'Limpieza profunda depto 2 hab', description: '65m2, cocina, bano, sala y 2 habitaciones. Preferible traer productos.', requester: 'Camila S.', budget: 50, category: 'Limpieza', urgency: 'Manana', offers: 2, postedAgo: 'Hace 1h'),
-    _ServiceRequest(id: 'qr4', title: 'Pintar habitacion infantil', description: 'Habitacion de 12m2, paredes lisas. Color a definir, compro la pintura.', requester: 'Lucia V.', budget: 60, category: 'Reparaciones', urgency: 'Esta semana', offers: 1, postedAgo: 'Hace 6h'),
+    _ServiceRequest(id: 'qr4', title: 'Pintar habitacion infantil', description: 'Habitacion de 12m2, paredes lisas. Color a definir, compro la pintura.', requester: 'Lucia V.', budget: 60, category: 'Reparaciones', urgency: 'Semana', offers: 1, postedAgo: 'Hace 6h'),
   ];
 
   @override

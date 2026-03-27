@@ -38,7 +38,11 @@ class DatabaseService {
       query = query.eq('category', category);
     }
     if (search != null && search.isNotEmpty) {
-      query = query.or('title.ilike.%$search%,description.ilike.%$search%');
+      // Sanitize search input: remove PostgREST special chars
+      final sanitized = search.replaceAll(RegExp(r'[%_\\()\[\]{}|^$.*+?]'), '').trim();
+      if (sanitized.isNotEmpty) {
+        query = query.or('title.ilike.%$sanitized%,description.ilike.%$sanitized%');
+      }
     }
 
     final response = await query

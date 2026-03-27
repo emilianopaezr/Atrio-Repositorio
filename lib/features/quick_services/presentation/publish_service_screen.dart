@@ -48,7 +48,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   final _urgencies = [
     {'label': 'Hoy', 'icon': Icons.bolt_rounded},
     {'label': 'Mañana', 'icon': Icons.wb_sunny_rounded},
-    {'label': 'Esta\nsemana', 'icon': Icons.date_range_rounded},
+    {'label': 'Semana', 'icon': Icons.date_range_rounded},
     {'label': 'Flexible', 'icon': Icons.all_inclusive_rounded},
   ];
 

@@ -177,7 +177,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       if (value == null || value.isEmpty) {
                         return 'Ingresa tu email';
                       }
-                      if (!value.contains('@')) {
+                      final emailRegex = RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
+                      if (!emailRegex.hasMatch(value.trim())) {
                         return 'Email no valido';
                       }
                       return null;
@@ -206,8 +207,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       if (value == null || value.isEmpty) {
                         return 'Ingresa una contrasena';
                       }
-                      if (value.length < 6) {
-                        return 'Minimo 6 caracteres';
+                      if (value.length < 8) {
+                        return 'Mínimo 8 caracteres';
+                      }
+                      if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                        return 'Incluye al menos una mayúscula';
+                      }
+                      if (!RegExp(r'[0-9]').hasMatch(value)) {
+                        return 'Incluye al menos un número';
                       }
                       return null;
                     },

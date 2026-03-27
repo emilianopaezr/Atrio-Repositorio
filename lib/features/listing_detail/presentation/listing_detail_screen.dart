@@ -200,11 +200,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 28),
 
                           // ─── Category + Rating ───
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Row(
                               children: [
                                 Container(

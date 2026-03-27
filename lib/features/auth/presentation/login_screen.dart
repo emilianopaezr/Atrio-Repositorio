@@ -136,7 +136,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       if (value == null || value.isEmpty) {
                         return 'Ingresa tu email';
                       }
-                      if (!value.contains('@')) {
+                      final emailRegex = RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
+                      if (!emailRegex.hasMatch(value.trim())) {
                         return 'Email no valido';
                       }
                       return null;
@@ -165,8 +166,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       if (value == null || value.isEmpty) {
                         return 'Ingresa tu contrasena';
                       }
-                      if (value.length < 6) {
-                        return 'Minimo 6 caracteres';
+                      if (value.length < 8) {
+                        return 'Mínimo 8 caracteres';
                       }
                       return null;
                     },

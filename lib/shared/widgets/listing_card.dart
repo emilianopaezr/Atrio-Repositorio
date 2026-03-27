@@ -81,6 +81,38 @@ class ListingCard extends StatelessWidget {
                                   : AtrioColors.guestTextTertiary,
                             ),
                           ),
+                    // Price badge
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AtrioColors.neonLime,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
+                                style: AtrioTypography.priceMedium.copyWith(
+                                  color: Colors.black,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '/${_priceUnitLabel(listing)}',
+                                style: AtrioTypography.bodySmall.copyWith(
+                                  color: Colors.black87,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                     // Favorite button
                     Positioned(
                       top: 12,
@@ -101,67 +133,126 @@ class ListingCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Type badge
+                    // Bottom gradient for readability
                     Positioned(
-                      top: 12,
-                      left: 12,
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: AtrioColors.electricViolet,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          listing.type.toUpperCase(),
-                          style: AtrioTypography.caption.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.15)],
                           ),
                         ),
                       ),
                     ),
+                    // Image count indicator
+                    if (listing.images.length > 1)
+                      Positioned(
+                        top: 12,
+                        right: 56,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '1 / ${listing.images.length}',
+                            style: AtrioTypography.caption.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
             ),
             // Info
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Type badge + rating row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AtrioColors.neonLime.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          listing.type == 'space'
+                              ? 'Espacio'
+                              : listing.type == 'experience'
+                                  ? 'Experiencia'
+                                  : 'Servicio',
+                          style: AtrioTypography.caption.copyWith(
+                            color: AtrioColors.neonLimeDark,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      if (listing.rating > 0)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded, size: 16, color: Color(0xFFFFB800)),
+                            const SizedBox(width: 3),
+                            Text(
+                              listing.rating.toStringAsFixed(1),
+                              style: AtrioTypography.labelMedium.copyWith(
+                                color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '(${listing.reviewCount})',
+                              style: AtrioTypography.bodySmall.copyWith(
+                                color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Title
                   Text(
                     listing.title,
                     style: AtrioTypography.headingSmall.copyWith(
-                      color: isDark
-                          ? AtrioColors.hostTextPrimary
-                          : AtrioColors.guestTextPrimary,
+                      color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   if (listing.city != null)
                     Row(
                       children: [
                         Icon(
                           Icons.location_on_outlined,
                           size: 14,
-                          color: isDark
-                              ? AtrioColors.hostTextSecondary
-                              : AtrioColors.guestTextSecondary,
+                          color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             '${listing.city}${listing.country != null ? ', ${listing.country}' : ''}',
                             style: AtrioTypography.bodySmall.copyWith(
-                              color: isDark
-                                  ? AtrioColors.hostTextSecondary
-                                  : AtrioColors.guestTextSecondary,
+                              color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -169,63 +260,6 @@ class ListingCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Price
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
-                              style: AtrioTypography.priceMedium.copyWith(
-                                color: isDark
-                                    ? AtrioColors.hostTextPrimary
-                                    : AtrioColors.guestTextPrimary,
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' /${listing.priceUnit}',
-                              style: AtrioTypography.bodySmall.copyWith(
-                                color: isDark
-                                    ? AtrioColors.hostTextSecondary
-                                    : AtrioColors.guestTextSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Rating
-                      if (listing.rating > 0)
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 16,
-                              color: Color(0xFFFFB800),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              listing.rating.toStringAsFixed(1),
-                              style: AtrioTypography.labelMedium.copyWith(
-                                color: isDark
-                                    ? AtrioColors.hostTextPrimary
-                                    : AtrioColors.guestTextPrimary,
-                              ),
-                            ),
-                            Text(
-                              ' (${listing.reviewCount})',
-                              style: AtrioTypography.bodySmall.copyWith(
-                                color: isDark
-                                    ? AtrioColors.hostTextSecondary
-                                    : AtrioColors.guestTextSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -233,5 +267,16 @@ class ListingCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _priceUnitLabel(Listing listing) {
+    switch (listing.priceUnit) {
+      case 'night': return 'noche';
+      case 'hour': return 'hora';
+      case 'session': return 'sesión';
+      case 'person': return 'persona';
+      case 'day': return 'día';
+      default: return listing.priceUnit;
+    }
   }
 }
