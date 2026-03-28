@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_typography.dart';
 
 class AtrioTheme {
   AtrioTheme._();
 
-  // === Guest Theme (Light — clean white) ===
+  // === Guest Theme (Light — white + warm gray, lime green as accent only) ===
   static ThemeData get guestTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     scaffoldBackgroundColor: AtrioColors.guestBackground,
-    fontFamily: 'Roboto',
+    fontFamily: GoogleFonts.inter().fontFamily,
     colorScheme: const ColorScheme.light(
       primary: AtrioColors.electricViolet,
       onPrimary: Colors.white,
@@ -19,6 +20,7 @@ class AtrioTheme {
       onSecondary: Colors.black,
       surface: AtrioColors.guestSurface,
       onSurface: AtrioColors.guestTextPrimary,
+      surfaceContainerHighest: AtrioColors.warmGray,
       error: AtrioColors.error,
       onError: Colors.white,
       outline: AtrioColors.guestCardBorder,
@@ -43,11 +45,11 @@ class AtrioTheme {
       elevation: 8,
     ),
     cardTheme: CardThemeData(
-      color: AtrioColors.guestBackground,
+      color: AtrioColors.guestSurface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: AtrioColors.guestCardBorder, width: 1),
       ),
       margin: EdgeInsets.zero,
@@ -56,19 +58,19 @@ class AtrioTheme {
       filled: true,
       fillColor: AtrioColors.guestInputFill,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AtrioColors.guestCardBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AtrioColors.electricViolet, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AtrioColors.error),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -85,7 +87,7 @@ class AtrioTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: AtrioTypography.buttonLarge,
       ),
     ),
@@ -94,7 +96,7 @@ class AtrioTheme {
         foregroundColor: AtrioColors.electricViolet,
         side: const BorderSide(color: AtrioColors.electricViolet),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: AtrioTypography.buttonLarge,
       ),
     ),
@@ -105,35 +107,35 @@ class AtrioTheme {
       ),
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: AtrioColors.guestSurface,
-      selectedColor: AtrioColors.neonLime.withValues(alpha: 0.3),
+      backgroundColor: AtrioColors.warmGray,
+      selectedColor: AtrioColors.electricViolet.withValues(alpha: 0.12),
       side: const BorderSide(color: AtrioColors.guestCardBorder),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       labelStyle: AtrioTypography.labelMedium,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) =>
-        states.contains(WidgetState.selected) ? Colors.black : Colors.grey),
+        states.contains(WidgetState.selected) ? Colors.white : Colors.grey),
       trackColor: WidgetStateProperty.resolveWith((states) =>
-        states.contains(WidgetState.selected) ? AtrioColors.neonLime : AtrioColors.guestSurface),
+        states.contains(WidgetState.selected) ? AtrioColors.electricViolet : AtrioColors.guestSurfaceVariant),
     ),
     checkboxTheme: CheckboxThemeData(
       fillColor: WidgetStateProperty.resolveWith((states) =>
-        states.contains(WidgetState.selected) ? AtrioColors.neonLime : Colors.transparent),
-      checkColor: WidgetStateProperty.all(Colors.black),
+        states.contains(WidgetState.selected) ? AtrioColors.electricViolet : Colors.transparent),
+      checkColor: WidgetStateProperty.all(Colors.white),
     ),
     radioTheme: RadioThemeData(
       fillColor: WidgetStateProperty.resolveWith((states) =>
-        states.contains(WidgetState.selected) ? AtrioColors.neonLime : AtrioColors.guestTextTertiary),
+        states.contains(WidgetState.selected) ? AtrioColors.electricViolet : AtrioColors.guestTextTertiary),
     ),
     sliderTheme: const SliderThemeData(
-      activeTrackColor: AtrioColors.neonLime,
-      thumbColor: AtrioColors.neonLime,
-      inactiveTrackColor: AtrioColors.guestSurface,
+      activeTrackColor: AtrioColors.electricViolet,
+      thumbColor: AtrioColors.electricViolet,
+      inactiveTrackColor: AtrioColors.guestSurfaceVariant,
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: AtrioColors.neonLime,
+      color: AtrioColors.electricViolet,
     ),
     dividerTheme: const DividerThemeData(
       color: AtrioColors.guestDivider,
@@ -157,12 +159,12 @@ class AtrioTheme {
     ),
   );
 
-  // === Host Theme (Dark) ===
+  // === Host Theme (Dark — lime green only as accent for CTAs/badges) ===
   static ThemeData get hostTheme => ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: AtrioColors.hostBackground,
-    fontFamily: 'Roboto',
+    fontFamily: GoogleFonts.inter().fontFamily,
     colorScheme: const ColorScheme.dark(
       primary: AtrioColors.electricViolet,
       onPrimary: Colors.white,
@@ -198,7 +200,7 @@ class AtrioTheme {
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: AtrioColors.hostCardBorder, width: 0.5),
       ),
       margin: EdgeInsets.zero,
@@ -207,19 +209,19 @@ class AtrioTheme {
       filled: true,
       fillColor: AtrioColors.hostInputFill,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AtrioColors.hostCardBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AtrioColors.electricViolet, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AtrioColors.error),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -236,7 +238,7 @@ class AtrioTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: AtrioTypography.buttonLarge,
       ),
     ),
@@ -245,7 +247,7 @@ class AtrioTheme {
         foregroundColor: AtrioColors.electricViolet,
         side: const BorderSide(color: AtrioColors.electricViolet),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: AtrioTypography.buttonLarge,
       ),
     ),
@@ -257,9 +259,9 @@ class AtrioTheme {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: AtrioColors.hostSurface,
-      selectedColor: AtrioColors.neonLime.withValues(alpha: 0.3),
+      selectedColor: AtrioColors.electricViolet.withValues(alpha: 0.25),
       side: const BorderSide(color: AtrioColors.hostCardBorder),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       labelStyle: AtrioTypography.labelMedium,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),

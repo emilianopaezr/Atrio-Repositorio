@@ -51,7 +51,7 @@ class FavoritesScreen extends ConsumerWidget {
         ),
         title: Text(
           'Favoritos',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             color: AtrioColors.guestTextPrimary,
@@ -81,7 +81,7 @@ class FavoritesScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                   Text(
                     'Sin favoritos aun',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       color: AtrioColors.guestTextPrimary,
@@ -92,7 +92,7 @@ class FavoritesScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 48),
                     child: Text(
                       'Guarda tus espacios y experiencias\nfavoritos tocando el corazon',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         color: AtrioColors.guestTextTertiary,
                       ),
@@ -115,7 +115,7 @@ class FavoritesScreen extends ConsumerWidget {
                           const SizedBox(width: 8),
                           Text(
                             'Explorar',
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: Colors.black,
@@ -176,7 +176,7 @@ class FavoritesScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               Text(
                 'Error al cargar favoritos',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.inter(
                   fontSize: 16,
                   color: AtrioColors.guestTextSecondary,
                 ),
@@ -186,7 +186,7 @@ class FavoritesScreen extends ConsumerWidget {
                 onPressed: () => ref.invalidate(favoritesProvider),
                 child: Text(
                   'Reintentar',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.inter(
                     color: AtrioColors.neonLimeDark,
                     fontWeight: FontWeight.w600,
                   ),
@@ -251,7 +251,7 @@ class _FavoriteCard extends StatelessWidget {
                   children: [
                     Text(
                       listing.title,
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AtrioColors.guestTextPrimary,
@@ -268,7 +268,7 @@ class _FavoriteCard extends StatelessWidget {
                           const SizedBox(width: 3),
                           Text(
                             listing.city!,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AtrioColors.guestTextSecondary,
                             ),
@@ -286,7 +286,7 @@ class _FavoriteCard extends StatelessWidget {
                           ),
                           child: Text(
                             '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}/${listing.priceUnit == 'hour' ? 'hr' : listing.priceUnit}',
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: Colors.black,
@@ -299,7 +299,7 @@ class _FavoriteCard extends StatelessWidget {
                           const SizedBox(width: 3),
                           Text(
                             listing.rating.toStringAsFixed(1),
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: AtrioColors.guestTextPrimary,

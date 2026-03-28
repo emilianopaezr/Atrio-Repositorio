@@ -349,7 +349,7 @@ class _LinkedAccountsSection extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               '$feature - Próximamente',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
@@ -508,7 +508,7 @@ class _AddPayoutButton extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'Agregar método de pago - Próximamente',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
@@ -727,7 +727,7 @@ class _RecentTransfersSection extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         'Historial completo - Próximamente',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),

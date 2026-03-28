@@ -78,6 +78,11 @@ class AuthService {
     await SupabaseConfig.auth.signOut();
   }
 
+  /// Sign out and clear all cached state (call ref.invalidate separately for providers)
+  static Future<void> signOutAndClear() async {
+    await SupabaseConfig.auth.signOut();
+  }
+
   static Future<void> resetPassword(String email) async {
     await SupabaseConfig.auth.resetPasswordForEmail(email);
   }

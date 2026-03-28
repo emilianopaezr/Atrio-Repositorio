@@ -104,7 +104,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                     _isOffer
                         ? 'Servicio publicado exitosamente'
                         : 'Solicitud publicada exitosamente',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
@@ -148,7 +148,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
         ),
         title: Text(
           _isOffer ? 'Ofrecer Servicio' : 'Solicitar Servicio',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w800,
             color: _textPrimary,
@@ -260,7 +260,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                           const SizedBox(width: 6),
                           Text(
                             cat,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: isSelected
                                   ? FontWeight.w700
@@ -326,7 +326,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                               Text(
                                 label,
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.roboto(
+                                style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: isSelected
                                       ? FontWeight.w700
@@ -364,7 +364,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                         children: [
                           Text(
                             'Consejo',
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
                               color: _lime,
@@ -375,7 +375,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                             _isOffer
                                 ? 'Incluye fotos de trabajos anteriores y se especifico sobre tus habilidades para recibir mas solicitudes.'
                                 : 'Se detallado sobre lo que necesitas. Incluye medidas, piso, y si tienes herramientas disponibles.',
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               color: _textSecondary,
                               height: 1.4,
@@ -415,7 +415,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                         )
                       : Text(
                           _isOffer ? 'Publicar Servicio' : 'Publicar Solicitud',
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
@@ -433,7 +433,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: GoogleFonts.roboto(
+      style: GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w700,
         color: _textPrimary,
@@ -455,13 +455,13 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
       maxLength: maxLength,
       keyboardType: keyboardType,
       validator: validator,
-      style: GoogleFonts.roboto(fontSize: 15, color: _textPrimary),
+      style: GoogleFonts.inter(fontSize: 15, color: _textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.roboto(fontSize: 14, color: _textMuted),
+        hintStyle: GoogleFonts.inter(fontSize: 14, color: _textMuted),
         filled: true,
         fillColor: _surface,
-        counterStyle: GoogleFonts.roboto(fontSize: 11, color: _textMuted),
+        counterStyle: GoogleFonts.inter(fontSize: 11, color: _textMuted),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: _border),
@@ -519,7 +519,7 @@ class _ModeTab extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: isSelected ? Colors.black : _textSecondary,

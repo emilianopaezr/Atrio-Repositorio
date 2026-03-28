@@ -59,7 +59,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _bioController.text = data['bio'] as String? ?? '';
         _avatarUrl = data['photo_url'] as String?;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('_loadProfile error: $e');
+    }
     if (mounted) setState(() => _isLoading = false);
   }
 
@@ -113,7 +115,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Foto actualizada',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
@@ -126,13 +128,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
         );
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('_pickAndUploadAvatar error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               'No se pudo subir la foto. Intenta de nuevo.',
-              style: GoogleFonts.roboto(fontWeight: FontWeight.w500),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
             ),
             backgroundColor: AtrioColors.error,
             behavior: SnackBarBehavior.floating,
@@ -179,13 +182,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         );
         Navigator.of(context).pop();
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('_saveProfile error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               'No se pudo guardar el perfil. Intenta de nuevo.',
-              style: GoogleFonts.roboto(fontWeight: FontWeight.w500),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
             ),
             backgroundColor: AtrioColors.error,
             behavior: SnackBarBehavior.floating,

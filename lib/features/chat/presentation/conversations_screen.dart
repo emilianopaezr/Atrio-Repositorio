@@ -3,17 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/conversations_provider.dart';
-
-const _bg = Color(0xFFFAFAFA);
-const _white = Color(0xFFFFFFFF);
-const _border = Color(0xFFE5E5E5);
-const _textPrimary = Color(0xFF1A1A1A);
-const _textSecondary = Color(0xFF666666);
-const _textMuted = Color(0xFF999999);
-const _lime = Color(0xFFD4FF00);
-const _limeDark = Color(0xFF9BBF00);
 
 class ConversationsScreen extends ConsumerWidget {
   const ConversationsScreen({super.key});
@@ -24,7 +16,7 @@ class ConversationsScreen extends ConsumerWidget {
     final currentUserId = SupabaseConfig.auth.currentUser?.id;
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AtrioColors.guestBackground,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,10 +28,10 @@ class ConversationsScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Mensajes',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
-                      color: _textPrimary,
+                      color: AtrioColors.guestTextPrimary,
                     ),
                   ),
                   const Spacer(),
@@ -47,14 +39,14 @@ class ConversationsScreen extends ConsumerWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: _white,
+                      color: AtrioColors.guestSurface,
                       shape: BoxShape.circle,
-                      border: Border.all(color: _border),
+                      border: Border.all(color: AtrioColors.guestCardBorder),
                     ),
                     child: const Icon(
                       Icons.edit_outlined,
                       size: 20,
-                      color: _textPrimary,
+                      color: AtrioColors.guestTextPrimary,
                     ),
                   ),
                 ],
@@ -68,19 +60,19 @@ class ConversationsScreen extends ConsumerWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: _white,
+                  color: AtrioColors.guestSurface,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _border),
+                  border: Border.all(color: AtrioColors.guestCardBorder),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.search_rounded, size: 20, color: _limeDark),
+                    Icon(Icons.search_rounded, size: 20, color: AtrioColors.neonLimeDark),
                     const SizedBox(width: 10),
                     Text(
                       'Buscar conversaciones...',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
-                        color: _textMuted,
+                        color: AtrioColors.guestTextTertiary,
                       ),
                     ),
                   ],
@@ -98,8 +90,8 @@ class ConversationsScreen extends ConsumerWidget {
                   }
 
                   return RefreshIndicator(
-                    color: _limeDark,
-                    backgroundColor: _white,
+                    color: AtrioColors.neonLimeDark,
+                    backgroundColor: AtrioColors.guestSurface,
                     onRefresh: () async {
                       ref.invalidate(conversationsProvider);
                     },
@@ -145,7 +137,7 @@ class ConversationsScreen extends ConsumerWidget {
                 },
                 loading: () => const Center(
                   child: CircularProgressIndicator(
-                    color: _limeDark,
+                    color: AtrioColors.neonLimeDark,
                     strokeWidth: 2.5,
                   ),
                 ),
@@ -153,13 +145,13 @@ class ConversationsScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 48, color: _textMuted),
+                      Icon(Icons.error_outline, size: 48, color: AtrioColors.guestTextTertiary),
                       const SizedBox(height: 12),
                       Text(
                         'Error al cargar mensajes',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontSize: 15,
-                          color: _textSecondary,
+                          color: AtrioColors.guestTextSecondary,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -167,8 +159,8 @@ class ConversationsScreen extends ConsumerWidget {
                         onTap: () => ref.invalidate(conversationsProvider),
                         child: Text(
                           'Reintentar',
-                          style: GoogleFonts.roboto(
-                            color: _limeDark,
+                          style: GoogleFonts.inter(
+                            color: AtrioColors.neonLimeDark,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -219,9 +211,9 @@ class _ConversationCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: _white,
+          color: AtrioColors.guestSurface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _border.withValues(alpha: 0.6)),
+          border: Border.all(color: AtrioColors.guestCardBorder.withValues(alpha: 0.6)),
         ),
         child: Row(
           children: [
@@ -238,14 +230,14 @@ class _ConversationCard extends StatelessWidget {
                         placeholder: (_, _) =>
                             Container(color: const Color(0xFFF0F0F0)),
                         errorWidget: (_, _, _) => Container(
-                          color: _lime.withValues(alpha: 0.2),
-                          child: Icon(Icons.image, color: _limeDark, size: 24),
+                          color: AtrioColors.neonLime.withValues(alpha: 0.2),
+                          child: Icon(Icons.image, color: AtrioColors.neonLimeDark, size: 24),
                         ),
                       )
                     : Container(
-                        color: _lime.withValues(alpha: 0.2),
+                        color: AtrioColors.neonLime.withValues(alpha: 0.2),
                         child: Icon(Icons.chat_bubble_outline,
-                            color: _limeDark, size: 24),
+                            color: AtrioColors.neonLimeDark, size: 24),
                       ),
               ),
             ),
@@ -260,10 +252,10 @@ class _ConversationCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           title,
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: _textPrimary,
+                            color: AtrioColors.guestTextPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -273,9 +265,9 @@ class _ConversationCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           _formatTime(time!),
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
-                            color: _textMuted,
+                            color: AtrioColors.guestTextTertiary,
                           ),
                         ),
                       ],
@@ -290,15 +282,15 @@ class _ConversationCard extends StatelessWidget {
                           child: Icon(
                             Icons.done_all,
                             size: 14,
-                            color: _limeDark,
+                            color: AtrioColors.neonLimeDark,
                           ),
                         ),
                       Expanded(
                         child: Text(
                           '${isMe ? "Tú: " : ""}$lastMessage',
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: _textSecondary,
+                            color: AtrioColors.guestTextSecondary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -313,7 +305,7 @@ class _ConversationCard extends StatelessWidget {
             const SizedBox(width: 8),
             Icon(
               Icons.chevron_right_rounded,
-              color: _textMuted,
+              color: AtrioColors.guestTextTertiary,
               size: 22,
             ),
           ],
@@ -335,27 +327,27 @@ class _EmptyConversations extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: _lime.withValues(alpha: 0.15),
+                color: AtrioColors.neonLime.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.chat_bubble_outline,
-                  size: 48, color: _limeDark),
+                  size: 48, color: AtrioColors.neonLimeDark),
             ),
             const SizedBox(height: 20),
             Text(
               'Sin mensajes aún',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: _textPrimary,
+                color: AtrioColors.guestTextPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Cuando reserves un espacio, podrás\ncomunicarte con el anfitrión aquí',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 14,
-                color: _textMuted,
+                color: AtrioColors.guestTextTertiary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -366,12 +358,12 @@ class _EmptyConversations extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                 decoration: BoxDecoration(
-                  color: _lime,
+                  color: AtrioColors.neonLime,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Text(
                   'Explorar Espacios',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: Colors.black,

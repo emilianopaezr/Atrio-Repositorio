@@ -5,16 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 
-const _bg = Color(0xFFFAFAFA);
-const _white = Color(0xFFFFFFFF);
-const _border = Color(0xFFE5E5E5);
-const _textPrimary = Color(0xFF1A1A1A);
-const _textSecondary = Color(0xFF666666);
-const _textMuted = Color(0xFF999999);
-const _lime = Color(0xFFD4FF00);
-const _limeDark = Color(0xFF9BBF00);
-const _gold = Color(0xFFFFB800);
-
 class WriteReviewScreen extends ConsumerStatefulWidget {
   final String bookingId;
   final String listingId;
@@ -49,7 +39,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Selecciona una calificacion',
-              style: GoogleFonts.roboto(color: Colors.white)),
+              style: GoogleFonts.inter(color: Colors.white)),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -78,8 +68,8 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Resena enviada!',
-                style: GoogleFonts.roboto(color: Colors.black)),
-            backgroundColor: _lime,
+                style: GoogleFonts.inter(color: Colors.black)),
+            backgroundColor: AtrioColors.neonLime,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
@@ -105,16 +95,16 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AtrioColors.guestBackground,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: AtrioColors.guestBackground,
         elevation: 0,
         title: Text(
           'Escribir Resena',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: _textPrimary,
+            color: AtrioColors.guestTextPrimary,
           ),
         ),
       ),
@@ -128,19 +118,19 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
             if (widget.listingTitle != null)
               Text(
                 widget.listingTitle!,
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: _textPrimary,
+                  color: AtrioColors.guestTextPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
             const SizedBox(height: 8),
             Text(
               'Como fue tu experiencia?',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 15,
-                color: _textSecondary,
+                color: AtrioColors.guestTextSecondary,
               ),
             ),
             const SizedBox(height: 32),
@@ -162,7 +152,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
                             ? Icons.star_rounded
                             : Icons.star_outline_rounded,
                         size: 48,
-                        color: _rating >= starIndex ? _gold : const Color(0xFFFFB800).withValues(alpha: 0.3),
+                        color: _rating >= starIndex ? AtrioColors.ratingGold : AtrioColors.ratingGold.withValues(alpha: 0.3),
                       ),
                     ),
                   ),
@@ -180,10 +170,10 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
                           : _rating == 4
                               ? 'Muy buena!'
                               : 'Excelente!',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: _rating == 0 ? _textMuted : _limeDark,
+                color: _rating == 0 ? AtrioColors.guestTextTertiary : AtrioColors.neonLimeDark,
               ),
             ),
             const SizedBox(height: 32),
@@ -191,29 +181,29 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
             // Comment
             Container(
               decoration: BoxDecoration(
-                color: _white,
+                color: AtrioColors.guestSurface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _border),
+                border: Border.all(color: AtrioColors.guestCardBorder),
               ),
               child: TextField(
                 controller: _commentController,
                 maxLines: 5,
                 maxLength: 500,
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.inter(
                   fontSize: 15,
-                  color: _textPrimary,
+                  color: AtrioColors.guestTextPrimary,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Cuentanos mas sobre tu experiencia (opcional)',
-                  hintStyle: GoogleFonts.roboto(
+                  hintStyle: GoogleFonts.inter(
                     fontSize: 14,
-                    color: _textMuted,
+                    color: AtrioColors.guestTextTertiary,
                   ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(16),
-                  counterStyle: GoogleFonts.roboto(
+                  counterStyle: GoogleFonts.inter(
                     fontSize: 11,
-                    color: _textMuted,
+                    color: AtrioColors.guestTextTertiary,
                   ),
                 ),
               ),
@@ -227,9 +217,9 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitReview,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _lime,
+                  backgroundColor: AtrioColors.neonLime,
                   foregroundColor: Colors.black,
-                  disabledBackgroundColor: _lime.withValues(alpha: 0.4),
+                  disabledBackgroundColor: AtrioColors.neonLime.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -246,7 +236,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
                       )
                     : Text(
                         'Enviar Resena',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),

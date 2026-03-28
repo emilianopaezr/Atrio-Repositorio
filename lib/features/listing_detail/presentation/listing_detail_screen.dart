@@ -59,7 +59,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         final favs = List<String>.from(p['favorite_listing_ids'] ?? []);
         setState(() => _isFav = favs.contains(widget.listingId));
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('_checkFav error: $e');
+    }
   }
 
   Future<void> _toggleFav() async {
@@ -77,7 +79,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         favs.remove(widget.listingId);
       }
       await SupabaseConfig.client.from('profiles').update({'favorite_listing_ids': favs}).eq('id', uid);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('_toggleFav error: $e');
       if (mounted) setState(() => _isFav = !newState);
     }
   }
@@ -86,7 +89,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     try {
       final data = await DatabaseService.getListingReviews(widget.listingId);
       if (mounted) setState(() { _reviews = data; _loadingReviews = false; });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('_loadReviews error: $e');
       if (mounted) setState(() => _loadingReviews = false);
     }
   }
@@ -154,12 +158,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         children: [
           Icon(error ? Icons.error_outline : Icons.search_off, size: 48, color: _textMuted),
           const SizedBox(height: 12),
-          Text(error ? 'Error al cargar' : 'No encontrado', style: GoogleFonts.roboto(fontSize: 16, color: _textSec)),
+          Text(error ? 'Error al cargar' : 'No encontrado', style: GoogleFonts.inter(fontSize: 16, color: _textSec)),
           if (error) ...[
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () => ref.invalidate(listingDetailProvider(widget.listingId)),
-              child: Text('Reintentar', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: _limeDark)),
+              child: Text('Reintentar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _limeDark)),
             ),
           ],
         ],
@@ -215,7 +219,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                   ),
                                   child: Text(
                                     listing.type == 'space' ? 'Espacio' : listing.type == 'experience' ? 'Experiencia' : 'Servicio',
-                                    style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w700, color: _limeDark, letterSpacing: 0.3),
+                                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: _limeDark, letterSpacing: 0.3),
                                   ),
                                 ),
                                 const Spacer(),
@@ -233,13 +237,13 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                         const SizedBox(width: 4),
                                         Text(
                                           listing.rating.toStringAsFixed(1),
-                                          style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: _text),
+                                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: _text),
                                         ),
                                         if (listing.reviewCount > 0) ...[
                                           const SizedBox(width: 3),
                                           Text(
                                             '(${listing.reviewCount})',
-                                            style: GoogleFonts.roboto(fontSize: 12, color: _textSec),
+                                            style: GoogleFonts.inter(fontSize: 12, color: _textSec),
                                           ),
                                         ],
                                       ],
@@ -254,7 +258,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                           // ─── Title ───
                           Text(
                             listing.title,
-                            style: GoogleFonts.roboto(fontSize: 24, fontWeight: FontWeight.w800, color: _text, height: 1.15),
+                            style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: _text, height: 1.15),
                           ),
 
                           const SizedBox(height: 6),
@@ -267,7 +271,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                 const SizedBox(width: 3),
                                 Text(
                                   '${listing.city}${listing.country != null ? ', ${listing.country}' : ''}',
-                                  style: GoogleFonts.roboto(fontSize: 13, color: _textSec),
+                                  style: GoogleFonts.inter(fontSize: 13, color: _textSec),
                                 ),
                               ],
                             ),
@@ -446,11 +450,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 children: [
                   Text(
                     '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
-                    style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black),
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black),
                   ),
                   Text(
                     '/${_priceUnit(listing.priceUnit)}',
-                    style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black.withValues(alpha: 0.6)),
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black.withValues(alpha: 0.6)),
                   ),
                 ],
               ),
@@ -469,7 +473,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 ),
                 child: Text(
                   '${_imgIdx + 1} / ${listing.images.length}',
-                  style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
                 ),
               ),
             ),
@@ -519,11 +523,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700, color: _text)),
+                Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: _text)),
                 const SizedBox(height: 2),
                 Text(
                   '${superhost ? 'Superhost · ' : ''}Responde en 1hr',
-                  style: GoogleFonts.roboto(fontSize: 12, color: _textMuted),
+                  style: GoogleFonts.inter(fontSize: 12, color: _textMuted),
                 ),
               ],
             ),
@@ -549,7 +553,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 children: [
                   const Icon(Icons.chat_bubble_outline, size: 14, color: _limeDark),
                   const SizedBox(width: 5),
-                  Text('Chat', style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w600, color: _limeDark)),
+                  Text('Chat', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _limeDark)),
                 ],
               ),
             ),
@@ -573,12 +577,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       children: [
         Text(
           listing.type == 'space' ? 'Acerca del espacio' : listing.type == 'experience' ? 'Acerca de la experiencia' : 'Acerca del servicio',
-          style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text),
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text),
         ),
         const SizedBox(height: 10),
         Text(
           display,
-          style: GoogleFonts.roboto(fontSize: 14, color: _textSec, height: 1.6),
+          style: GoogleFonts.inter(fontSize: 14, color: _textSec, height: 1.6),
         ),
         if (isLong) ...[
           const SizedBox(height: 8),
@@ -586,7 +590,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             onTap: () => setState(() => _descExpanded = !_descExpanded),
             child: Text(
               _descExpanded ? 'Mostrar menos' : 'Ver más',
-              style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: _limeDark),
+              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: _limeDark),
             ),
           ),
         ],
@@ -601,7 +605,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Amenidades', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+        Text('Amenidades', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
         const SizedBox(height: 14),
         Wrap(
           spacing: 10,
@@ -618,7 +622,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               children: [
                 Icon(_amenityIcon(a), size: 18, color: _limeDark),
                 const SizedBox(width: 8),
-                Text(a, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w500, color: _text)),
+                Text(a, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: _text)),
               ],
             ),
           )).toList(),
@@ -675,12 +679,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               children: [
                 Text(
                   'Modalidad: ${mode.label}',
-                  style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: _text),
+                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: _text),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: GoogleFonts.roboto(fontSize: 12, color: _textSec),
+                  style: GoogleFonts.inter(fontSize: 12, color: _textSec),
                 ),
               ],
             ),
@@ -707,7 +711,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Disponibilidad', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+        Text('Disponibilidad', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
         const SizedBox(height: 14),
         bookedAsync.when(
           data: (data) {
@@ -737,7 +741,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               border: Border.all(color: _border),
             ),
             child: Center(
-              child: Text('No se pudo cargar la disponibilidad', style: GoogleFonts.roboto(fontSize: 13, color: _textMuted)),
+              child: Text('No se pudo cargar la disponibilidad', style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
             ),
           ),
         ),
@@ -775,13 +779,13 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           // Month header
           Text(
             '${_monthName(now.month)} ${now.year}',
-            style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700, color: _text),
+            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: _text),
           ),
           const SizedBox(height: 10),
           // Day headers
           Row(
             children: dayHeaders.map((d) => Expanded(
-              child: Center(child: Text(d, style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w600, color: _textMuted))),
+              child: Center(child: Text(d, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: _textMuted))),
             )).toList(),
           ),
           const SizedBox(height: 6),
@@ -812,7 +816,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 children: [
                   Text(
                     '$dayNum',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
                       color: isPast ? _textMuted : _text,
@@ -843,7 +847,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     children: [
       Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
       const SizedBox(width: 4),
-      Text(label, style: GoogleFonts.roboto(fontSize: 11, color: _textSec)),
+      Text(label, style: GoogleFonts.inter(fontSize: 11, color: _textSec)),
     ],
   );
 
@@ -858,7 +862,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Reglas', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+        Text('Reglas', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
         const SizedBox(height: 12),
         if (mode == RentalMode.nights)
           _ruleRow(Icons.schedule_rounded, 'Check-in: $checkIn — Check-out: $checkOut')
@@ -879,7 +883,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       children: [
         Icon(icon, size: 18, color: _textMuted),
         const SizedBox(width: 10),
-        Expanded(child: Text(text, style: GoogleFonts.roboto(fontSize: 13, color: _textSec))),
+        Expanded(child: Text(text, style: GoogleFonts.inter(fontSize: 13, color: _textSec))),
       ],
     ),
   );
@@ -895,7 +899,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       children: [
         Row(
           children: [
-            Text('Cancelación', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+            Text('Cancelación', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -905,7 +909,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               ),
               child: Text(
                 policy.label,
-                style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w700, color: _limeDark),
+                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: _limeDark),
               ),
             ),
           ],
@@ -922,7 +926,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             children: [
               Text(
                 policy.description,
-                style: GoogleFonts.roboto(fontSize: 13, color: _textSec, height: 1.5),
+                style: GoogleFonts.inter(fontSize: 13, color: _textSec, height: 1.5),
               ),
               const SizedBox(height: 12),
               if (policy == CancellationPolicy.flexible) ...[
@@ -959,8 +963,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w600, color: _text)),
-            Text(sub, style: GoogleFonts.roboto(fontSize: 12, color: _textMuted)),
+            Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _text)),
+            Text(sub, style: GoogleFonts.inter(fontSize: 12, color: _textMuted)),
           ],
         ),
       ),
@@ -976,14 +980,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       children: [
         Row(
           children: [
-            Text('Reseñas', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+            Text('Reseñas', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
             const SizedBox(width: 8),
             if (listing.rating > 0) ...[
               const Icon(Icons.star_rounded, size: 16, color: _gold),
               const SizedBox(width: 3),
               Text(
                 '${listing.rating.toStringAsFixed(1)} (${listing.reviewCount})',
-                style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: _text),
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _text),
               ),
             ],
           ],
@@ -1007,8 +1011,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 children: [
                   const Icon(Icons.rate_review_outlined, size: 32, color: _textMuted),
                   const SizedBox(height: 8),
-                  Text('Aún no hay reseñas', style: GoogleFonts.roboto(fontSize: 14, color: _textMuted)),
-                  Text('Sé el primero en opinar', style: GoogleFonts.roboto(fontSize: 12, color: _textMuted)),
+                  Text('Aún no hay reseñas', style: GoogleFonts.inter(fontSize: 14, color: _textMuted)),
+                  Text('Sé el primero en opinar', style: GoogleFonts.inter(fontSize: 12, color: _textMuted)),
                 ],
               ),
             ),
@@ -1043,16 +1047,16 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                             radius: 16,
                             backgroundColor: _lime.withValues(alpha: 0.2),
                             backgroundImage: photo != null ? CachedNetworkImageProvider(photo) : null,
-                            child: photo == null ? Text(name[0].toUpperCase(), style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: _limeDark)) : null,
+                            child: photo == null ? Text(name[0].toUpperCase(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: _limeDark)) : null,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(name, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: _text)),
+                                Text(name, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: _text)),
                                 if (created != null)
-                                  Text(_timeAgo(created), style: GoogleFonts.roboto(fontSize: 11, color: _textMuted)),
+                                  Text(_timeAgo(created), style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
                               ],
                             ),
                           ),
@@ -1067,7 +1071,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       ),
                       if (comment.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        Text(comment, style: GoogleFonts.roboto(fontSize: 13, color: _textSec, height: 1.5)),
+                        Text(comment, style: GoogleFonts.inter(fontSize: 13, color: _textSec, height: 1.5)),
                       ],
                       if (hostReply != null && hostReply.isNotEmpty) ...[
                         const SizedBox(height: 10),
@@ -1085,9 +1089,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Respuesta del anfitrión', style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w700, color: _text)),
+                                    Text('Respuesta del anfitrión', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: _text)),
                                     const SizedBox(height: 3),
-                                    Text(hostReply, style: GoogleFonts.roboto(fontSize: 12, color: _textSec, height: 1.4)),
+                                    Text(hostReply, style: GoogleFonts.inter(fontSize: 12, color: _textSec, height: 1.4)),
                                   ],
                                 ),
                               ),
@@ -1117,7 +1121,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               },
               child: Text(
                 'Ver las ${_reviews.length} reseñas',
-                style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: _limeDark),
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _limeDark),
               ),
             ),
           ),
@@ -1146,11 +1150,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               children: [
                 Text(
                   '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
-                  style: GoogleFonts.roboto(fontSize: 22, fontWeight: FontWeight.w800, color: _text),
+                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: _text),
                 ),
                 Text(
                   '/ ${_priceUnit(listing.priceUnit)}',
-                  style: GoogleFonts.roboto(fontSize: 12, color: _textSec),
+                  style: GoogleFonts.inter(fontSize: 12, color: _textSec),
                 ),
               ],
             ),
@@ -1164,7 +1168,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               ),
               child: Text(
                 'Reservar',
-                style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
               ),
             ),
           ),
@@ -1211,7 +1215,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         child: Icon(icon, size: 20, color: _limeDark),
       ),
       const SizedBox(height: 5),
-      Text(label, style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w500, color: _textSec)),
+      Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: _textSec)),
     ],
   );
 }

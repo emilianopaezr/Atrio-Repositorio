@@ -16,19 +16,22 @@ class AtrioColors {
   static const success = Color(0xFF22C55E);
   static const ratingGold = Color(0xFFFFB800);
 
-  // === Guest Mode (Light Theme — clean white) ===
-  static const guestBackground = Color(0xFFFAFAFA);
+  // === Warm Gray surface (Brand DNA: reduce visual fatigue) ===
+  static const warmGray = Color(0xFFF7F7F5);
+
+  // === Guest Mode (Light Theme — clean white + warm gray) ===
+  static const guestBackground = Color(0xFFFFFFFF);
   static const guestSurface = Color(0xFFFFFFFF);
-  static const guestSurfaceVariant = Color(0xFFF5F5F5);
-  static const guestCardBorder = Color(0xFFE5E5E5);
-  static const guestTextPrimary = Color(0xFF1A1A1A);
-  static const guestTextSecondary = Color(0xFF666666);
-  static const guestTextTertiary = Color(0xFF999999);
-  static const guestDivider = Color(0xFFEEEEEE);
-  static const guestInputFill = Color(0xFFF5F5F5);
+  static const guestSurfaceVariant = warmGray;
+  static const guestCardBorder = Color(0xFFE8E8E6);
+  static const guestTextPrimary = Color(0xFF0A0A0A);
+  static const guestTextSecondary = Color(0xFF6B6B6B);
+  static const guestTextTertiary = Color(0xFF9A9A9A);
+  static const guestDivider = Color(0xFFECECEA);
+  static const guestInputFill = warmGray;
   static const guestNavBar = Color(0xFFFFFFFF);
-  static const guestShimmerBase = Color(0xFFEEEEEE);
-  static const guestShimmerHighlight = Color(0xFFF5F5F5);
+  static const guestShimmerBase = Color(0xFFECECEA);
+  static const guestShimmerHighlight = warmGray;
 
   // === Host Mode (Dark Theme) ===
   static const hostBackground = Color(0xFF0A0A0A);

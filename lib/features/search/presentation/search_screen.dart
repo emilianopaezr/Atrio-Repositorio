@@ -68,7 +68,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Text(
                 'Buscar',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.inter(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   color: AtrioColors.guestTextPrimary,
@@ -100,13 +100,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: TextField(
                         controller: _searchController,
                         onChanged: _onSearchChanged,
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontSize: 15,
                           color: AtrioColors.guestTextPrimary,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Espacios, experiencias, servicios...',
-                          hintStyle: GoogleFonts.roboto(
+                          hintStyle: GoogleFonts.inter(
                             fontSize: 15,
                             color: AtrioColors.guestTextTertiary,
                           ),
@@ -186,7 +186,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ),
                         child: Text(
                           _categories[index],
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: isSelected
                                 ? FontWeight.w700
@@ -269,7 +269,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               children: [
                 Text(
                   'Rango de Precio',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AtrioColors.guestTextPrimary,
@@ -277,7 +277,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 Text(
                   '\$${_priceRange.start.toInt()} - \$${_priceRange.end.toInt()}',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AtrioColors.neonLimeDark,
@@ -305,7 +305,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             // Quick filter tags
             Text(
               'Filtros Rapidos',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AtrioColors.guestTextPrimary,
@@ -346,7 +346,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               'Busquedas Populares',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: AtrioColors.guestTextPrimary,
@@ -404,7 +404,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
               'Explorar por Categoria',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
                 color: AtrioColors.guestTextPrimary,
@@ -478,7 +478,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               children: [
                 Text(
                   'Cerca de Ti',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
                     color: AtrioColors.guestTextPrimary,
@@ -543,7 +543,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             padding: const EdgeInsets.only(bottom: 14),
             child: Text(
               '${listings.length} resultado${listings.length != 1 ? 's' : ''}',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 color: AtrioColors.guestTextTertiary,
               ),
@@ -579,7 +579,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const SizedBox(height: 20),
           Text(
             'Sin resultados',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AtrioColors.guestTextPrimary,
@@ -588,7 +588,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const SizedBox(height: 8),
           Text(
             'Intenta con otros terminos de busqueda',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.inter(
               fontSize: 14,
               color: AtrioColors.guestTextTertiary,
             ),
@@ -631,7 +631,7 @@ class _PopularSearchChip extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: AtrioColors.guestTextPrimary,
@@ -685,7 +685,7 @@ class _QuickFilterChipState extends State<_QuickFilterChip> {
             const SizedBox(width: 6),
             Text(
               widget.label,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: _selected ? FontWeight.w600 : FontWeight.w500,
                 color: _selected
@@ -739,7 +739,7 @@ class _CategoryCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               label,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
                 color: AtrioColors.guestTextPrimary,
@@ -748,7 +748,7 @@ class _CategoryCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 12,
                 color: AtrioColors.guestTextTertiary,
               ),
@@ -806,7 +806,7 @@ class _NearbyCard extends StatelessWidget {
                       ),
                       child: Text(
                         '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           color: Colors.black,
@@ -824,7 +824,7 @@ class _NearbyCard extends StatelessWidget {
                 children: [
                   Text(
                     listing.title,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AtrioColors.guestTextPrimary,
@@ -836,7 +836,7 @@ class _NearbyCard extends StatelessWidget {
                   if (listing.city != null)
                     Text(
                       listing.city!,
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AtrioColors.guestTextTertiary,
                       ),
@@ -894,7 +894,7 @@ class _SearchResultCard extends StatelessWidget {
                   children: [
                     Text(
                       listing.title,
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AtrioColors.guestTextPrimary,
@@ -912,7 +912,7 @@ class _SearchResultCard extends StatelessWidget {
                           const SizedBox(width: 3),
                           Text(
                             listing.city!,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AtrioColors.guestTextSecondary,
                             ),
@@ -932,7 +932,7 @@ class _SearchResultCard extends StatelessWidget {
                           ),
                           child: Text(
                             '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}/${listing.priceUnit == 'hour' ? 'hr' : listing.priceUnit}',
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: Colors.black,
@@ -947,7 +947,7 @@ class _SearchResultCard extends StatelessWidget {
                               const SizedBox(width: 3),
                               Text(
                                 listing.rating.toStringAsFixed(1),
-                                style: GoogleFonts.roboto(
+                                style: GoogleFonts.inter(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: AtrioColors.guestTextPrimary,

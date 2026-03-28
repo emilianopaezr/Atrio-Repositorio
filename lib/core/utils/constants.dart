@@ -18,6 +18,7 @@ class AppConstants {
   static const tablePricingConfig = 'pricing_config';
   static const tableHostStats = 'host_stats';
   static const tableGuestStats = 'guest_stats';
+  static const tableDisputes = 'disputes';
 
   // Storage buckets
   static const bucketListings = 'listings';

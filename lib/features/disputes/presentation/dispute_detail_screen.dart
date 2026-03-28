@@ -51,7 +51,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                       const Spacer(),
                       Text(
                         'DISPUTA #${dispute.id}',
-                        style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1),
+                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1),
                       ),
                       const Spacer(),
                       const Icon(Icons.more_vert, color: Colors.white),
@@ -70,7 +70,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                     const SizedBox(width: 6),
                     Text(
                       'Estado: ${dispute.status == 'abierta' ? 'Abierta' : dispute.status == 'en_revision' ? 'En Revisión' : dispute.status == 'resuelta' ? 'Resuelta' : 'Cerrada'}',
-                      style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w100, color: AtrioColors.success),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w100, color: AtrioColors.success),
                     ),
                   ],
                 ),
@@ -110,7 +110,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                     ),
                                     child: Text(
                                       '\$${dispute.amount.toStringAsFixed(2)} en juego',
-                                      style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
                                     ),
                                   ),
                                 ],
@@ -118,7 +118,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 'Reclamado hace 2 horas • ${dispute.priority == 'alta' ? 'Alta' : dispute.priority == 'media' ? 'Media' : 'Baja'} Prioridad',
-                                style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary),
+                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary),
                               ),
                             ],
                           ),
@@ -141,11 +141,11 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                     CircleAvatar(
                                       radius: 24,
                                       backgroundColor: AtrioColors.neonLimeDark.withValues(alpha: 0.3),
-                                      child: Text(guestName[0], style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: Colors.white)),
+                                      child: Text(guestName[0], style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
                                     ),
                                     const SizedBox(height: 6),
-                                    Text(guestName, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
-                                    Text('Huésped (Demandante)', style: GoogleFonts.roboto(fontSize: 10, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary)),
+                                    Text(guestName, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+                                    Text('Huésped (Demandante)', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary)),
                                   ],
                                 ),
                               ),
@@ -163,11 +163,11 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                     CircleAvatar(
                                       radius: 24,
                                       backgroundColor: AtrioColors.warning.withValues(alpha: 0.3),
-                                      child: Text(hostName[0], style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: Colors.white)),
+                                      child: Text(hostName[0], style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
                                     ),
                                     const SizedBox(height: 6),
-                                    Text(hostName, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
-                                    Text('Anfitrión (Demandado)', style: GoogleFonts.roboto(fontSize: 10, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary)),
+                                    Text(hostName, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+                                    Text('Anfitrión (Demandado)', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary)),
                                   ],
                                 ),
                               ),
@@ -196,7 +196,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                     child: Text(
                                       'Reporte del Huésped',
                                       textAlign: TextAlign.center,
-                                      style: GoogleFonts.roboto(
+                                      style: GoogleFonts.inter(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
                                         color: _selectedTab == 0 ? Colors.white : AtrioColors.hostTextSecondary,
@@ -217,7 +217,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                     child: Text(
                                       'Defensa del Anfitrión',
                                       textAlign: TextAlign.center,
-                                      style: GoogleFonts.roboto(
+                                      style: GoogleFonts.inter(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
                                         color: _selectedTab == 1 ? Colors.white : AtrioColors.hostTextSecondary,
@@ -248,7 +248,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                   children: [
                                     const Icon(Icons.warning_amber, color: AtrioColors.warning, size: 18),
                                     const SizedBox(width: 8),
-                                    Text('EVIDENCIA PRESENTADA', style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.warning, letterSpacing: 0.5)),
+                                    Text('EVIDENCIA PRESENTADA', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.warning, letterSpacing: 0.5)),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
@@ -260,7 +260,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                   ),
                                   child: Text(
                                     dispute.guestReport,
-                                    style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary, fontStyle: FontStyle.italic, height: 1.5),
+                                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary, fontStyle: FontStyle.italic, height: 1.5),
                                   ),
                                 ),
                                 if (dispute.guestEvidence.isNotEmpty) ...[
@@ -296,7 +296,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                                 ),
                                                 child: Text(
                                                   index == 0 ? '14:02 PM' : '14:05 PM',
-                                                  style: GoogleFonts.roboto(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+                                                  style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
                                                 ),
                                               ),
                                             ),
@@ -330,11 +330,11 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                     children: [
                                       Icon(Icons.circle, color: AtrioColors.neonLimeDark, size: 14),
                                       const SizedBox(width: 8),
-                                      Text('DEFENSA DEL ANFITRIÓN', style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime, letterSpacing: 0.5)),
+                                      Text('DEFENSA DEL ANFITRIÓN', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime, letterSpacing: 0.5)),
                                       const Spacer(),
                                       Text(
                                         _defenseExpanded ? 'Colapsar' : 'Toca para expandir',
-                                        style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w100, color: AtrioColors.hostTextTertiary),
+                                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w100, color: AtrioColors.hostTextTertiary),
                                       ),
                                     ],
                                   ),
@@ -343,7 +343,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                   const SizedBox(height: 12),
                                   Text(
                                     dispute.hostDefense!,
-                                    style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary, height: 1.5),
+                                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary, height: 1.5),
                                   ),
                                 ],
                               ],
@@ -361,7 +361,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                             child: Text(
                               'El anfitrión no ha presentado defensa aún.',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w100, color: AtrioColors.hostTextTertiary),
+                              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w100, color: AtrioColors.hostTextTertiary),
                             ),
                           ),
 
@@ -404,7 +404,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                               const SizedBox(height: 14),
                               Text(
                                 'Esta acción es final y activará pagos automáticos.',
-                                style: GoogleFonts.roboto(fontSize: 11, fontWeight: FontWeight.w100, color: AtrioColors.hostTextTertiary),
+                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w100, color: AtrioColors.hostTextTertiary),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -435,12 +435,12 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
         title: Text('Confirmar ${labels[type]}', style: AtrioTypography.headingSmall.copyWith(color: Colors.white)),
         content: Text(
           '¿Estás seguro de aplicar esta resolución? Esta acción no se puede deshacer.',
-          style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary),
+          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w100, color: AtrioColors.hostTextSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancelar', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: AtrioColors.hostTextSecondary)),
+            child: Text('Cancelar', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AtrioColors.hostTextSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -449,7 +449,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                 SnackBar(content: Text('Resolución aplicada: ${labels[type]}')),
               );
             },
-            child: Text('Confirmar', style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
+            child: Text('Confirmar', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -484,7 +484,7 @@ class _ResolutionButton extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+              child: Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
             ),
             Icon(Icons.chevron_right, color: AtrioColors.hostTextTertiary, size: 20),
           ],

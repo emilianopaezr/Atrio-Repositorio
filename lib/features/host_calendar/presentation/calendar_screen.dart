@@ -199,7 +199,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   void _showSnack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.roboto(fontWeight: FontWeight.w500, color: Colors.black)),
+      content: Text(msg, style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: Colors.black)),
       backgroundColor: AtrioColors.neonLime,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -260,7 +260,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             const SizedBox(height: 20),
             Text(
               '$dayName ${date.day} de ${_months[date.month - 1]}',
-              style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
+              style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
             ),
             const SizedBox(height: 8),
             // Status
@@ -289,7 +289,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         : blocked
                             ? 'Bloqueado manualmente'
                             : 'Disponible',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: booked ? Colors.green : blocked ? Colors.red[400] : AtrioColors.neonLimeDark,
@@ -309,7 +309,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     context.push('/booking-detail/$bookingId');
                   },
                   icon: const Icon(Icons.visibility_outlined, size: 18),
-                  label: Text('Ver reserva', style: GoogleFonts.roboto(fontWeight: FontWeight.w600)),
+                  label: Text('Ver reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AtrioColors.neonLime,
                     side: BorderSide(color: AtrioColors.neonLime.withValues(alpha: 0.3)),
@@ -329,7 +329,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   icon: Icon(blocked ? Icons.lock_open : Icons.block, size: 18),
                   label: Text(
                     blocked ? 'Desbloquear día' : 'Bloquear día',
-                    style: GoogleFonts.roboto(fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: blocked ? AtrioColors.neonLime : Colors.red[400],
@@ -383,7 +383,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(12)),
-                      child: Text('Crear anuncio', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black)),
+                      child: Text('Crear anuncio', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black)),
                     ),
                   ),
                 ]),
@@ -408,7 +408,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                   child: Row(
                     children: [
-                      Text('Calendario', style: GoogleFonts.roboto(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
+                      Text('Calendario', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
                       const Spacer(),
                       GestureDetector(
                         onTap: _goToToday,
@@ -419,7 +419,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AtrioColors.hostCardBorder),
                           ),
-                          child: Text('Hoy', style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.neonLime)),
+                          child: Text('Hoy', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.neonLime)),
                         ),
                       ),
                     ],
@@ -469,7 +469,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                   constraints: const BoxConstraints(maxWidth: 120),
                                   child: Text(
                                     l['title'] as String? ?? 'Sin título',
-                                    style: GoogleFonts.roboto(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                                       color: selected ? Colors.black : AtrioColors.hostTextSecondary,
@@ -560,7 +560,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       ),
                       Text(
                         '${_months[_focusedMonth.month - 1]} ${_focusedMonth.year}',
-                        style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                       GestureDetector(
                         onTap: () {
@@ -587,7 +587,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   child: Row(
                     children: _dayHeaders.map((d) => Expanded(
                       child: Center(
-                        child: Text(d, style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextTertiary)),
+                        child: Text(d, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextTertiary)),
                       ),
                     )).toList(),
                   ),
@@ -635,7 +635,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const Icon(Icons.error_outline, size: 48, color: AtrioColors.hostTextTertiary),
             const SizedBox(height: 12),
-            Text('Error al cargar', style: GoogleFonts.roboto(color: AtrioColors.hostTextSecondary)),
+            Text('Error al cargar', style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
           ]),
         ),
       ),
@@ -661,8 +661,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
-                  Text(label, style: GoogleFonts.roboto(fontSize: 10, color: AtrioColors.hostTextTertiary)),
+                  Text(value, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+                  Text(label, style: GoogleFonts.inter(fontSize: 10, color: AtrioColors.hostTextTertiary)),
                 ],
               ),
             ),
@@ -685,7 +685,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: Center(
             child: Text(
               label,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
@@ -768,7 +768,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   children: [
                     Text(
                       '$dayNum',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: (selected || isRangeEndpoint || isToday) ? FontWeight.w700 : FontWeight.w500,
                         color: textColor,
@@ -812,7 +812,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: ElevatedButton.icon(
                 onPressed: _blockRange,
                 icon: const Icon(Icons.block, size: 16),
-                label: Text('Bloquear', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, fontSize: 13)),
+                label: Text('Bloquear', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[400],
                   foregroundColor: Colors.white,
@@ -827,7 +827,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: ElevatedButton.icon(
                 onPressed: _unblockRange,
                 icon: const Icon(Icons.lock_open, size: 16),
-                label: Text('Desbloquear', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, fontSize: 13)),
+                label: Text('Desbloquear', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AtrioColors.neonLime,
                   foregroundColor: Colors.black,
@@ -863,11 +863,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 children: [
                   Text(
                     '$dayName ${_selectedDay!.day} ${_months[_selectedDay!.month - 1]}',
-                    style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
                   ),
                   Text(
                     booked ? 'Reservado' : blocked ? 'Bloqueado' : 'Disponible',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 12,
                       color: booked ? Colors.green : blocked ? Colors.red[400] : AtrioColors.neonLimeDark,
                     ),
@@ -881,7 +881,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 icon: Icon(blocked ? Icons.lock_open : Icons.block, size: 16),
                 label: Text(
                   blocked ? 'Desbloquear' : 'Bloquear',
-                  style: GoogleFonts.roboto(fontWeight: FontWeight.w700, fontSize: 13),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: blocked ? AtrioColors.neonLime : Colors.red[400],
@@ -900,7 +900,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
-                child: Text('Ver detalles', style: GoogleFonts.roboto(fontWeight: FontWeight.w600, fontSize: 13)),
+                child: Text('Ver detalles', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
               ),
           ],
         ),
@@ -920,7 +920,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             const SizedBox(width: 8),
             Text(
               _rangeStart == null ? 'Selecciona la fecha inicial' : 'Selecciona la fecha final',
-              style: GoogleFonts.roboto(fontSize: 13, color: AtrioColors.hostTextSecondary),
+              style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary),
             ),
           ],
         ),
@@ -934,7 +934,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
       const SizedBox(width: 4),
-      Text(label, style: GoogleFonts.roboto(fontSize: 10, color: AtrioColors.hostTextSecondary)),
+      Text(label, style: GoogleFonts.inter(fontSize: 10, color: AtrioColors.hostTextSecondary)),
     ]);
   }
 }

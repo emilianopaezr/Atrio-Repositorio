@@ -76,7 +76,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     if (_selectedType == null || _titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Completa todos los campos requeridos',
-            style: GoogleFonts.roboto(fontWeight: FontWeight.w600, color: Colors.white)),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: AtrioColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -137,7 +137,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               const Icon(Icons.check_circle, color: Colors.black, size: 18),
               const SizedBox(width: 8),
               Text('Anuncio publicado exitosamente',
-                  style: GoogleFonts.roboto(fontWeight: FontWeight.w600, color: Colors.black)),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)),
             ],
           ),
           backgroundColor: AtrioColors.neonLime,
@@ -150,7 +150,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('No se pudo publicar. Intenta de nuevo.',
-              style: GoogleFonts.roboto(fontWeight: FontWeight.w500)),
+              style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
           backgroundColor: AtrioColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -546,7 +546,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             color: AtrioColors.neonLime,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text('Portada', style: GoogleFonts.roboto(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black)),
+                          child: Text('Portada', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black)),
                         ),
                       ),
                   ],
@@ -727,7 +727,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 child: Row(children: [
                   const Icon(Icons.schedule, size: 18, color: AtrioColors.neonLimeDark),
                   const SizedBox(width: 8),
-                  Text('Desde: $_availableFrom', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                  Text('Desde: $_availableFrom', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
                 ]),
               ),
             )),
@@ -743,7 +743,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 child: Row(children: [
                   const Icon(Icons.schedule, size: 18, color: AtrioColors.neonLimeDark),
                   const SizedBox(width: 8),
-                  Text('Hasta: $_availableUntil', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                  Text('Hasta: $_availableUntil', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
                 ]),
               ),
             )),
@@ -797,7 +797,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: _cancellationPolicy == p['id'] ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder),
                 ),
-                child: Text(p['label']!, style: GoogleFonts.roboto(
+                child: Text(p['label']!, style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: _cancellationPolicy == p['id'] ? FontWeight.w700 : FontWeight.w500,
                   color: _cancellationPolicy == p['id'] ? Colors.black : AtrioColors.hostTextSecondary,
@@ -863,7 +863,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   ),
                   child: Text(
                     u['label']!,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: _priceUnit == u['id'] ? FontWeight.w700 : FontWeight.w500,
                       color: _priceUnit == u['id'] ? Colors.black : AtrioColors.hostTextSecondary,

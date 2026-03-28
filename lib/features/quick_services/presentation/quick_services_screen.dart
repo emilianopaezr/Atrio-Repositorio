@@ -3,15 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
-const _bg = Color(0xFF0A0A0A);
-const _surface = Color(0xFF141414);
-const _surfaceLight = Color(0xFF1E1E1E);
-const _border = Color(0xFF2A2A2A);
-const _textPrimary = Color(0xFFFFFFFF);
-const _textSecondary = Color(0xFFAAAAAA);
-const _textMuted = Color(0xFF666666);
-const _lime = Color(0xFFD4FF00);
-const _limeDark = Color(0xFF9BBF00);
+import '../../../config/theme/app_colors.dart';
 
 /// Quick Services - casual gig marketplace
 /// Flow:
@@ -85,26 +77,26 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AtrioColors.hostBackground,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: AtrioColors.hostBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: _textPrimary),
+          icon: const Icon(Icons.arrow_back, color: AtrioColors.hostTextPrimary),
           onPressed: () => context.pop(),
         ),
-        title: Text('Servicios Rapidos', style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: _textPrimary)),
+        title: Text('Servicios Rapidos', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
         actions: [
           GestureDetector(
             onTap: () => context.push('/publish-service', extra: 'offer'),
             child: Container(
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: _lime.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.add, size: 16, color: _lime),
+                Icon(Icons.add, size: 16, color: AtrioColors.neonLime),
                 const SizedBox(width: 4),
-                Text('Publicar', style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: _lime)),
+                Text('Publicar', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime)),
               ]),
             ),
           ),
@@ -116,16 +108,16 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14)),
             child: TabBar(
               controller: _tabController,
-              indicator: BoxDecoration(color: _lime, borderRadius: BorderRadius.circular(10)),
+              indicator: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(10)),
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               labelColor: Colors.black,
-              unselectedLabelColor: _textSecondary,
-              labelStyle: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700),
-              unselectedLabelStyle: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w500),
+              unselectedLabelColor: AtrioColors.hostTextSecondary,
+              labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
+              unselectedLabelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
               tabs: const [Tab(text: 'Disponibles'), Tab(text: 'Solicitudes')],
             ),
           ),
@@ -145,11 +137,11 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? _lime : _surface,
+                      color: isSelected ? AtrioColors.neonLime : AtrioColors.hostSurface,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isSelected ? _limeDark : _border),
+                      border: Border.all(color: isSelected ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder),
                     ),
-                    child: Text(cat, style: GoogleFonts.roboto(fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, color: isSelected ? Colors.black : _textSecondary)),
+                    child: Text(cat, style: GoogleFonts.inter(fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, color: isSelected ? Colors.black : AtrioColors.hostTextSecondary)),
                   ),
                 );
               },
@@ -185,55 +177,55 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.5,
         builder: (_, scrollCtrl) => Container(
-          decoration: const BoxDecoration(color: _bg, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
           child: ListView(
             controller: scrollCtrl, padding: const EdgeInsets.all(24),
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2)))),
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 24),
               Row(children: [
-                Container(width: 56, height: 56, decoration: BoxDecoration(color: _lime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)), child: Icon(service.icon, color: _lime, size: 28)),
+                Container(width: 56, height: 56, decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)), child: Icon(service.icon, color: AtrioColors.neonLime, size: 28)),
                 const SizedBox(width: 16),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(service.title, style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: _textPrimary)),
+                  Text(service.title, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
                   const SizedBox(height: 4),
-                  Text(service.category, style: GoogleFonts.roboto(fontSize: 13, color: _textMuted)),
+                  Text(service.category, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
                 ])),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('\$${service.price.toInt()}', style: GoogleFonts.roboto(fontSize: 28, fontWeight: FontWeight.w800, color: _lime)),
-                  Text('/hora', style: GoogleFonts.roboto(fontSize: 12, color: _textMuted)),
+                  Text('\$${service.price.toInt()}', style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+                  Text('/hora', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
                 ]),
               ]),
               const SizedBox(height: 20),
-              Text(service.description, style: GoogleFonts.roboto(fontSize: 14, color: _textSecondary, height: 1.5)),
+              Text(service.description, style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.5)),
               const SizedBox(height: 24),
               // Provider card
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+                decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
                 child: Row(children: [
-                  CircleAvatar(radius: 22, backgroundColor: _lime.withValues(alpha: 0.15), child: Text(service.provider[0], style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: _lime, fontSize: 18))),
+                  CircleAvatar(radius: 22, backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.15), child: Text(service.provider[0], style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AtrioColors.neonLime, fontSize: 18))),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Text(service.provider, style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700, color: _textPrimary)),
-                      if (service.isVerified) ...[const SizedBox(width: 6), Icon(Icons.verified, size: 16, color: _limeDark)],
+                      Text(service.provider, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+                      if (service.isVerified) ...[const SizedBox(width: 6), Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark)],
                     ]),
                     const SizedBox(height: 2),
                     Row(children: [
-                      const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFFB800)), const SizedBox(width: 3),
-                      Text('${service.providerRating}', style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w600, color: _textPrimary)),
-                      Text(' · ${service.providerJobs} trabajos', style: GoogleFonts.roboto(fontSize: 13, color: _textMuted)),
+                      const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3),
+                      Text('${service.providerRating}', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                      Text(' · ${service.providerJobs} trabajos', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
                     ]),
                   ])),
                   GestureDetector(
                     onTap: () { Navigator.pop(ctx); _showChatSnack(service.provider); },
-                    child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: _lime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.chat_outlined, size: 20, color: _lime)),
+                    child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.chat_outlined, size: 20, color: AtrioColors.neonLime)),
                   ),
                 ]),
               ),
               const SizedBox(height: 20),
-              Text('Como funciona', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w700, color: _textPrimary)),
+              Text('Como funciona', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
               const SizedBox(height: 14),
               _StepItem(step: '1', title: 'Contratas el servicio', subtitle: 'Acuerdan fecha, hora y detalles por chat'),
               _StepItem(step: '2', title: 'Se realiza el trabajo', subtitle: 'El proveedor marca avances en tiempo real'),
@@ -241,11 +233,11 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
               const SizedBox(height: 24),
               SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
                 onPressed: () { Navigator.pop(ctx); _showHireConfirmation(service); },
-                style: ElevatedButton.styleFrom(backgroundColor: _lime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-                child: Text('Contratar por \$${service.price.toInt()}/hr', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800)),
+                style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+                child: Text('Contratar por \$${service.price.toInt()}/hr', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
               )),
               const SizedBox(height: 12),
-              Center(child: Text('Pago seguro · Garantía Atrio', style: GoogleFonts.roboto(fontSize: 12, color: _textMuted))),
+              Center(child: Text('Pago seguro · Garantía Atrio', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary))),
               const SizedBox(height: 20),
             ],
           ),
@@ -260,58 +252,58 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.7, maxChildSize: 0.9, minChildSize: 0.4,
         builder: (_, scrollCtrl) => Container(
-          decoration: const BoxDecoration(color: _bg, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
           child: ListView(controller: scrollCtrl, padding: const EdgeInsets.all(24), children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2)))),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 24),
             Row(children: [
               Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.schedule, size: 14, color: Colors.orange), const SizedBox(width: 4), Text(request.urgency, style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange))])),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.schedule, size: 14, color: Colors.orange), const SizedBox(width: 4), Text(request.urgency, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange))])),
               const Spacer(),
-              Text(request.postedAgo, style: GoogleFonts.roboto(fontSize: 12, color: _textMuted)),
+              Text(request.postedAgo, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
             ]),
             const SizedBox(height: 16),
-            Text(request.title, style: GoogleFonts.roboto(fontSize: 22, fontWeight: FontWeight.w800, color: _textPrimary)),
+            Text(request.title, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
             const SizedBox(height: 10),
-            Text(request.description, style: GoogleFonts.roboto(fontSize: 14, color: _textSecondary, height: 1.5)),
+            Text(request.description, style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.5)),
             const SizedBox(height: 20),
-            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
               child: Row(children: [
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Presupuesto', style: GoogleFonts.roboto(fontSize: 12, color: _textMuted)),
+                  Text('Presupuesto', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
                   const SizedBox(height: 2),
-                  Text('\$${request.budget.toInt()}', style: GoogleFonts.roboto(fontSize: 24, fontWeight: FontWeight.w800, color: _lime)),
+                  Text('\$${request.budget.toInt()}', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
                 ]),
                 const Spacer(),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('Solicitado por', style: GoogleFonts.roboto(fontSize: 12, color: _textMuted)),
+                  Text('Solicitado por', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
                   const SizedBox(height: 2),
-                  Text(request.requester, style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary)),
+                  Text(request.requester, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
                 ]),
               ]),
             ),
             const SizedBox(height: 14),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), decoration: BoxDecoration(color: _surfaceLight, borderRadius: BorderRadius.circular(12)),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), decoration: BoxDecoration(color: AtrioColors.hostSurfaceVariant, borderRadius: BorderRadius.circular(12)),
               child: Row(children: [
-                Icon(Icons.how_to_reg, size: 18, color: _limeDark), const SizedBox(width: 8),
-                Text('${request.offers} personas ya ofertaron', style: GoogleFonts.roboto(fontSize: 13, color: _textSecondary)),
+                Icon(Icons.how_to_reg, size: 18, color: AtrioColors.neonLimeDark), const SizedBox(width: 8),
+                Text('${request.offers} personas ya ofertaron', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
                 const Spacer(),
-                Text(request.category, style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w600, color: _limeDark)),
+                Text(request.category, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
               ]),
             ),
             const SizedBox(height: 24),
             SizedBox(width: double.infinity, height: 54, child: ElevatedButton.icon(
               onPressed: () { Navigator.pop(ctx); _showMakeOffer(request); },
-              style: ElevatedButton.styleFrom(backgroundColor: _lime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+              style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
               icon: const Icon(Icons.send_rounded, size: 20),
-              label: Text('Hacer oferta', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800)),
+              label: Text('Hacer oferta', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
             )),
             const SizedBox(height: 12),
             SizedBox(width: double.infinity, height: 48, child: OutlinedButton.icon(
               onPressed: () { Navigator.pop(ctx); _showChatSnack(request.requester); },
-              style: OutlinedButton.styleFrom(foregroundColor: _lime, side: BorderSide(color: _lime.withValues(alpha: 0.3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+              style: OutlinedButton.styleFrom(foregroundColor: AtrioColors.neonLime, side: BorderSide(color: AtrioColors.neonLime.withValues(alpha: 0.3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
               icon: const Icon(Icons.chat_outlined, size: 18),
-              label: Text('Preguntar antes', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600)),
+              label: Text('Preguntar antes', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
             )),
             const SizedBox(height: 20),
           ]),
@@ -325,20 +317,20 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
       context: context, backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(color: _bg, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2))),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 24),
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _lime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.check_circle_outline, size: 48, color: _lime)),
+          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.check_circle_outline, size: 48, color: AtrioColors.neonLime)),
           const SizedBox(height: 20),
-          Text('Confirmar contratacion', style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: _textPrimary)),
+          Text('Confirmar contratacion', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
           const SizedBox(height: 8),
-          Text('${service.provider} realizara "${service.title}" por \$${service.price.toInt()}/hora', style: GoogleFonts.roboto(fontSize: 14, color: _textSecondary, height: 1.4), textAlign: TextAlign.center),
+          Text('${service.provider} realizara "${service.title}" por \$${service.price.toInt()}/hora', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
           const SizedBox(height: 20),
           // Milestones
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
+          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Avances del servicio', style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: _textPrimary)),
+              Text('Avances del servicio', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
               const SizedBox(height: 12),
               _MilestonePreview(label: 'Acordar detalles', status: 'pending'),
               _MilestonePreview(label: 'En camino / Inicio', status: 'pending'),
@@ -351,15 +343,15 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), Expanded(child: Text('Servicio contratado! Chatea con ${service.provider}', style: GoogleFonts.roboto(fontWeight: FontWeight.w600, color: Colors.black)))]),
-                backgroundColor: _lime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), duration: const Duration(seconds: 3),
+                content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), Expanded(child: Text('Servicio contratado! Chatea con ${service.provider}', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)))]),
+                backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), duration: const Duration(seconds: 3),
               ));
             },
-            style: ElevatedButton.styleFrom(backgroundColor: _lime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-            child: Text('Confirmar y chatear', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800)),
+            style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+            child: Text('Confirmar y chatear', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
           )),
           const SizedBox(height: 10),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver', style: GoogleFonts.roboto(fontSize: 14, color: _textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
           const SizedBox(height: 8),
         ]),
       ),
@@ -375,39 +367,39 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Container(
           padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(color: _bg, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2)))),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
-            Text('Hacer oferta', style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: _textPrimary)),
+            Text('Hacer oferta', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
             const SizedBox(height: 4),
-            Text('Para: "${request.title}"', style: GoogleFonts.roboto(fontSize: 13, color: _textMuted)),
+            Text('Para: "${request.title}"', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
             const SizedBox(height: 20),
-            Text('Tu precio (\$)', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: _textPrimary)),
+            Text('Tu precio (\$)', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
             const SizedBox(height: 8),
             TextField(
               controller: priceController, keyboardType: TextInputType.number,
-              style: GoogleFonts.roboto(fontSize: 24, fontWeight: FontWeight.w800, color: _lime),
+              style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AtrioColors.neonLime),
               decoration: InputDecoration(
-                prefixText: '\$ ', prefixStyle: GoogleFonts.roboto(fontSize: 24, fontWeight: FontWeight.w800, color: _lime),
-                filled: true, fillColor: _surface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _border)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _limeDark, width: 1.5)),
+                prefixText: '\$ ', prefixStyle: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AtrioColors.neonLime),
+                filled: true, fillColor: AtrioColors.hostSurface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.hostCardBorder)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.hostCardBorder)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.neonLimeDark, width: 1.5)),
               ),
             ),
             const SizedBox(height: 16),
-            Text('Mensaje (opcional)', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w700, color: _textPrimary)),
+            Text('Mensaje (opcional)', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
             const SizedBox(height: 8),
             TextField(
               controller: messageController, maxLines: 3,
-              style: GoogleFonts.roboto(fontSize: 14, color: _textPrimary),
+              style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextPrimary),
               decoration: InputDecoration(
-                hintText: 'Cuentale por que eres la mejor opcion...', hintStyle: GoogleFonts.roboto(fontSize: 13, color: _textMuted),
-                filled: true, fillColor: _surface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _border)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _border)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: _limeDark, width: 1.5)),
+                hintText: 'Cuentale por que eres la mejor opcion...', hintStyle: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary),
+                filled: true, fillColor: AtrioColors.hostSurface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.hostCardBorder)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.hostCardBorder)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.neonLimeDark, width: 1.5)),
               ),
             ),
             const SizedBox(height: 24),
@@ -425,8 +417,8 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                 Navigator.pop(ctx);
                 _showOfferConfirmation(request, double.parse(price), msg);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: _lime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-              child: Text('Revisar oferta', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800)),
+              style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+              child: Text('Revisar oferta', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
             )),
             const SizedBox(height: 12),
           ]),
@@ -440,39 +432,39 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
       context: context, backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(color: _bg, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2))),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 24),
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _lime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.send_rounded, size: 40, color: _lime)),
+          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.send_rounded, size: 40, color: AtrioColors.neonLime)),
           const SizedBox(height: 20),
-          Text('Confirmar oferta', style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: _textPrimary)),
+          Text('Confirmar oferta', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
           const SizedBox(height: 8),
-          Text('Para: "${request.title}"', style: GoogleFonts.roboto(fontSize: 14, color: _textSecondary), textAlign: TextAlign.center),
+          Text('Para: "${request.title}"', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary), textAlign: TextAlign.center),
           const SizedBox(height: 20),
           // Summary
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
+            decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
             child: Column(children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Tu precio', style: GoogleFonts.roboto(fontSize: 13, color: _textSecondary)),
-                Text('\$${price.toInt()}', style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800, color: _lime)),
+                Text('Tu precio', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
+                Text('\$${price.toInt()}', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
               ]),
               if (message.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                const Divider(color: _border, height: 1),
+                const Divider(color: AtrioColors.hostCardBorder, height: 1),
                 const SizedBox(height: 12),
-                Align(alignment: Alignment.centerLeft, child: Text('Mensaje:', style: GoogleFonts.roboto(fontSize: 12, color: _textMuted))),
+                Align(alignment: Alignment.centerLeft, child: Text('Mensaje:', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary))),
                 const SizedBox(height: 4),
-                Align(alignment: Alignment.centerLeft, child: Text(message, style: GoogleFonts.roboto(fontSize: 13, color: _textSecondary), maxLines: 3, overflow: TextOverflow.ellipsis)),
+                Align(alignment: Alignment.centerLeft, child: Text(message, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary), maxLines: 3, overflow: TextOverflow.ellipsis)),
               ],
               const SizedBox(height: 12),
-              const Divider(color: _border, height: 1),
+              const Divider(color: AtrioColors.hostCardBorder, height: 1),
               const SizedBox(height: 12),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Solicitante', style: GoogleFonts.roboto(fontSize: 13, color: _textSecondary)),
-                Text(request.requester, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w600, color: _textPrimary)),
+                Text('Solicitante', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
+                Text(request.requester, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
               ]),
             ]),
           ),
@@ -482,14 +474,14 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), const Expanded(child: Text('Oferta enviada exitosamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
-                backgroundColor: _lime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ));
             },
-            style: ElevatedButton.styleFrom(backgroundColor: _lime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-            child: Text('Confirmar y enviar', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800)),
+            style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+            child: Text('Confirmar y enviar', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
           )),
           const SizedBox(height: 10),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver a editar', style: GoogleFonts.roboto(fontSize: 14, color: _textSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver a editar', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
           const SizedBox(height: 8),
         ]),
       ),
@@ -499,7 +491,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   void _showChatSnack(String name) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Row(children: [const Icon(Icons.chat_bubble_outline, color: Colors.black, size: 18), const SizedBox(width: 10), Text('Abriendo chat con $name...', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black))]),
-      backgroundColor: _lime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), duration: const Duration(seconds: 2),
+      backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), duration: const Duration(seconds: 2),
     ));
   }
 }
@@ -530,21 +522,21 @@ class _ServiceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+      child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
         child: Row(children: [
-          Container(width: 50, height: 50, decoration: BoxDecoration(color: _lime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)), child: Icon(service.icon, color: _lime, size: 26)),
+          Container(width: 50, height: 50, decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)), child: Icon(service.icon, color: AtrioColors.neonLime, size: 26)),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [Expanded(child: Text(service.title, style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700, color: _textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)), if (service.isVerified) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.verified, size: 16, color: _limeDark))]),
+            Row(children: [Expanded(child: Text(service.title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)), if (service.isVerified) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark))]),
             const SizedBox(height: 2),
-            Text('${service.provider} · ${service.providerJobs} trabajos', style: GoogleFonts.roboto(fontSize: 12, color: _textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text('${service.provider} · ${service.providerJobs} trabajos', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 6),
-            Row(children: [const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFFB800)), const SizedBox(width: 3), Text('${service.providerRating}', style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w600, color: _textPrimary))]),
+            Row(children: [const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3), Text('${service.providerRating}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary))]),
           ])),
           const SizedBox(width: 10),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('\$${service.price.toInt()}', style: GoogleFonts.roboto(fontSize: 22, fontWeight: FontWeight.w800, color: _lime)),
-            Text('/hora', style: GoogleFonts.roboto(fontSize: 11, color: _textMuted)),
+            Text('\$${service.price.toInt()}', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+            Text('/hora', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextTertiary)),
           ]),
         ]),
       ),
@@ -561,24 +553,24 @@ class _RequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+      child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(child: Text(request.title, style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700, color: _textPrimary))),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: _lime, borderRadius: BorderRadius.circular(8)), child: Text('\$${request.budget.toInt()}', style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black))),
+            Expanded(child: Text(request.title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary))),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(8)), child: Text('\$${request.budget.toInt()}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black))),
           ]),
           const SizedBox(height: 6),
-          Text(request.description, style: GoogleFonts.roboto(fontSize: 13, color: _textSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
+          Text(request.description, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 10),
           Row(children: [
-            Icon(Icons.person_outline, size: 14, color: _textMuted), const SizedBox(width: 4),
-            Text(request.requester, style: GoogleFonts.roboto(fontSize: 12, color: _textMuted)),
+            Icon(Icons.person_outline, size: 14, color: AtrioColors.hostTextTertiary), const SizedBox(width: 4),
+            Text(request.requester, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
             const SizedBox(width: 12),
             Icon(Icons.schedule, size: 14, color: Colors.orange), const SizedBox(width: 4),
-            Text(request.urgency, style: GoogleFonts.roboto(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.w600)),
+            Text(request.urgency, style: GoogleFonts.inter(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.w600)),
             const Spacer(),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: _surfaceLight, borderRadius: BorderRadius.circular(8)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.how_to_reg, size: 12, color: _limeDark), const SizedBox(width: 4), Text('${request.offers} ofertas', style: GoogleFonts.roboto(fontSize: 11, color: _textSecondary, fontWeight: FontWeight.w600))])),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AtrioColors.hostSurfaceVariant, borderRadius: BorderRadius.circular(8)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.how_to_reg, size: 12, color: AtrioColors.neonLimeDark), const SizedBox(width: 4), Text('${request.offers} ofertas', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextSecondary, fontWeight: FontWeight.w600))])),
           ]),
         ]),
       ),
@@ -593,12 +585,12 @@ class _StepItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(padding: const EdgeInsets.only(bottom: 14), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Container(width: 28, height: 28, decoration: BoxDecoration(color: _lime, borderRadius: BorderRadius.circular(8)), alignment: Alignment.center, child: Text(step, style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black))),
+      Container(width: 28, height: 28, decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(8)), alignment: Alignment.center, child: Text(step, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black))),
       const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: GoogleFonts.roboto(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary)),
+        Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
         const SizedBox(height: 2),
-        Text(subtitle, style: GoogleFonts.roboto(fontSize: 12, color: _textMuted)),
+        Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
       ])),
     ]));
   }
@@ -611,9 +603,9 @@ class _MilestonePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
-      Container(width: 20, height: 20, decoration: BoxDecoration(shape: BoxShape.circle, color: status == 'done' ? _lime : status == 'active' ? _lime.withValues(alpha: 0.3) : _border), child: status == 'done' ? const Icon(Icons.check, size: 12, color: Colors.black) : null),
+      Container(width: 20, height: 20, decoration: BoxDecoration(shape: BoxShape.circle, color: status == 'done' ? AtrioColors.neonLime : status == 'active' ? AtrioColors.neonLime.withValues(alpha: 0.3) : AtrioColors.hostCardBorder), child: status == 'done' ? const Icon(Icons.check, size: 12, color: Colors.black) : null),
       const SizedBox(width: 10),
-      Text(label, style: GoogleFonts.roboto(fontSize: 13, color: status == 'pending' ? _textMuted : _textPrimary)),
+      Text(label, style: GoogleFonts.inter(fontSize: 13, color: status == 'pending' ? AtrioColors.hostTextTertiary : AtrioColors.hostTextPrimary)),
     ]));
   }
 }

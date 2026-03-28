@@ -32,7 +32,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Text(
                 'Mis Reservas',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.inter(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   color: AtrioColors.guestTextPrimary,
@@ -162,7 +162,7 @@ class _TabPill extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           label,
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             color: isSelected ? Colors.black : AtrioColors.guestTextSecondary,
@@ -291,7 +291,7 @@ class _BookingCard extends StatelessWidget {
                       ),
                       child: Text(
                         _statusLabel(status),
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: _statusColor(status),
@@ -302,7 +302,7 @@ class _BookingCard extends StatelessWidget {
                     // Title
                     Text(
                       listing['title'] ?? 'Reserva',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AtrioColors.guestTextPrimary,
@@ -323,7 +323,7 @@ class _BookingCard extends StatelessWidget {
                             checkOut != null
                                 ? '${_formatDate(checkIn)} - ${_formatDate(checkOut)}'
                                 : _formatDate(checkIn),
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AtrioColors.guestTextSecondary,
                             ),
@@ -334,7 +334,7 @@ class _BookingCard extends StatelessWidget {
                     // Price
                     Text(
                       '\$$total',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: AtrioColors.guestTextPrimary,
@@ -382,7 +382,7 @@ class _EmptyBookings extends StatelessWidget {
           const SizedBox(height: 20),
           Text(
             message,
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w500,
               color: AtrioColors.guestTextSecondary,
@@ -401,7 +401,7 @@ class _EmptyBookings extends StatelessWidget {
               ),
               child: Text(
                 'Explorar',
-                style: GoogleFonts.roboto(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: Colors.black,

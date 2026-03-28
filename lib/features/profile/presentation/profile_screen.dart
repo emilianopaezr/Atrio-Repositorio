@@ -9,6 +9,11 @@ import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/host_stats_provider.dart';
 import '../../../core/providers/guest_stats_provider.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/realtime_service.dart';
+import '../../../core/providers/bookings_provider.dart';
+import '../../../core/providers/conversations_provider.dart';
+import '../../../core/providers/host_wallet_provider.dart';
+import '../../../core/providers/notifications_provider.dart';
 import '../../../shared/widgets/level_badge.dart';
 import '../../../shared/widgets/level_progress.dart';
 
@@ -742,7 +747,16 @@ class ProfileScreen extends ConsumerWidget {
                       height: 54,
                       child: OutlinedButton.icon(
                         onPressed: () async {
-                          await AuthService.signOut();
+                          await RealtimeService.removeAllChannels();
+                          await AuthService.signOutAndClear();
+                          ref.invalidate(userProfileStreamProvider);
+                          ref.invalidate(hostStatsProvider);
+                          ref.invalidate(guestStatsProvider);
+                          ref.invalidate(guestBookingsProvider);
+                          ref.invalidate(hostBookingsProvider);
+                          ref.invalidate(conversationsProvider);
+                          ref.invalidate(hostProfileProvider);
+                          ref.invalidate(notificationsProvider);
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AtrioColors.error,

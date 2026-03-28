@@ -11,6 +11,7 @@ import '../../../core/providers/listings_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/host_stats_provider.dart';
 import '../../../core/providers/notifications_provider.dart';
+import '../../../config/theme/app_colors.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -23,14 +24,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedPeriodIndex = 1; // default "1M"
 
   final List<String> _periodLabels = ['1S', '1M', '3M', '6M', '1A', 'Todo'];
-
-  static const _bgColor = Color(0xFF0A0A0A);
-  static const _cardColor = Color(0xFF1A1A1A);
-  static const _cardBorder = Color(0xFF333333);
-  static const _lime = Color(0xFFD4FF00);
-  static const _textPrimary = Color(0xFFFFFFFF);
-  static const _textSecondary = Color(0xFF999999);
-  static const _textTertiary = Color(0xFF666666);
 
   // Mock revenue data (12 months)
   List<FlSpot> get _revenueData => const [
@@ -64,11 +57,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final hostStatsAsync = ref.watch(hostStatsProvider);
 
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: AtrioColors.hostBackground,
       body: SafeArea(
         child: RefreshIndicator(
-          color: _lime,
-          backgroundColor: _cardColor,
+          color: AtrioColors.neonLime,
+          backgroundColor: AtrioColors.hostSurface,
           onRefresh: () async {
             ref.invalidate(hostProfileProvider);
             ref.invalidate(hostBookingsProvider);
@@ -134,19 +127,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 children: [
                   Text(
                     '${_getGreeting()},',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
-                      color: _textSecondary,
+                      color: AtrioColors.hostTextSecondary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Hola, $name',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
-                      color: _textPrimary,
+                      color: AtrioColors.hostTextPrimary,
                     ),
                   ),
                 ],
@@ -154,10 +147,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             },
             loading: () => Text(
               'Hola, Anfitrión',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
-                color: _textPrimary,
+                color: AtrioColors.hostTextPrimary,
               ),
             ),
             error: (_, _) => const SizedBox.shrink(),
@@ -171,7 +164,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               height: 42,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: _cardBorder, width: 0.5),
+                border: Border.all(color: AtrioColors.hostCardBorder, width: 0.5),
               ),
               child: ClipOval(
                 child: avatarUrl != null && avatarUrl.isNotEmpty
@@ -179,17 +172,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         imageUrl: avatarUrl,
                         fit: BoxFit.cover,
                         placeholder: (_, _) => Container(
-                          color: _cardColor,
-                          child: const Icon(Icons.person, color: _textTertiary, size: 20),
+                          color: AtrioColors.hostSurface,
+                          child: const Icon(Icons.person, color: AtrioColors.hostTextTertiary, size: 20),
                         ),
                         errorWidget: (_, _, _) => Container(
-                          color: _cardColor,
-                          child: const Icon(Icons.person, color: _textTertiary, size: 20),
+                          color: AtrioColors.hostSurface,
+                          child: const Icon(Icons.person, color: AtrioColors.hostTextTertiary, size: 20),
                         ),
                       )
                     : Container(
-                        color: _cardColor,
-                        child: const Icon(Icons.person, color: _textTertiary, size: 20),
+                        color: AtrioColors.hostSurface,
+                        child: const Icon(Icons.person, color: AtrioColors.hostTextTertiary, size: 20),
                       ),
               ),
             );
@@ -199,7 +192,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             height: 42,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _cardColor,
+              color: AtrioColors.hostSurface,
             ),
           ),
           error: (_, _) => const SizedBox.shrink(),
@@ -222,19 +215,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             Text(
               '\$${totalEarnings.toStringAsFixed(2)}',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 32,
                 fontWeight: FontWeight.w800,
-                color: _textPrimary,
+                color: AtrioColors.hostTextPrimary,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Ganancias totales',
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
-                color: _textTertiary,
+                color: AtrioColors.hostTextTertiary,
               ),
             ),
             const SizedBox(height: 12),
@@ -243,13 +236,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 _MiniBalance(
                   label: 'Disponible',
                   amount: '\$${currentBalance.toStringAsFixed(2)}',
-                  color: const Color(0xFF22C55E),
+                  color: AtrioColors.success,
                 ),
                 const SizedBox(width: 16),
                 _MiniBalance(
                   label: 'Pendiente',
                   amount: '\$${pendingBalance.toStringAsFixed(2)}',
-                  color: const Color(0xFFFFB800),
+                  color: AtrioColors.ratingGold,
                 ),
               ],
             ),
@@ -263,7 +256,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             width: 180,
             height: 36,
             decoration: BoxDecoration(
-              color: _cardColor,
+              color: AtrioColors.hostSurface,
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -272,7 +265,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             width: 100,
             height: 14,
             decoration: BoxDecoration(
-              color: _cardColor,
+              color: AtrioColors.hostSurface,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -308,9 +301,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       months[index],
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 10,
-                        color: _textTertiary,
+                        color: AtrioColors.hostTextTertiary,
                       ),
                     ),
                   );
@@ -327,16 +320,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             enabled: true,
             handleBuiltInTouches: true,
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => const Color(0xFF1E1E1E),
+              getTooltipColor: (_) => AtrioColors.hostSurfaceVariant,
               tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   return LineTooltipItem(
                     '\$${spot.y.toStringAsFixed(0)}',
-                    GoogleFonts.roboto(
+                    GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: _lime,
+                      color: AtrioColors.neonLime,
                     ),
                   );
                 }).toList();
@@ -346,7 +339,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               return spotIndexes.map((index) {
                 return TouchedSpotIndicatorData(
                   const FlLine(
-                    color: _textTertiary,
+                    color: AtrioColors.hostTextTertiary,
                     strokeWidth: 0.5,
                     dashArray: [4, 4],
                   ),
@@ -355,9 +348,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     getDotPainter: (spot, percent, barData, index) {
                       return FlDotCirclePainter(
                         radius: 5,
-                        color: _lime,
+                        color: AtrioColors.neonLime,
                         strokeWidth: 2,
-                        strokeColor: _bgColor,
+                        strokeColor: AtrioColors.hostBackground,
                       );
                     },
                   ),
@@ -370,7 +363,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               spots: _revenueData,
               isCurved: true,
               curveSmoothness: 0.3,
-              color: _lime,
+              color: AtrioColors.neonLime,
               barWidth: 2.5,
               isStrokeCapRound: true,
               dotData: const FlDotData(show: false),
@@ -380,9 +373,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    _lime.withValues(alpha: 0.25),
-                    _lime.withValues(alpha: 0.05),
-                    _lime.withValues(alpha: 0.0),
+                    AtrioColors.neonLime.withValues(alpha: 0.25),
+                    AtrioColors.neonLime.withValues(alpha: 0.05),
+                    AtrioColors.neonLime.withValues(alpha: 0.0),
                   ],
                   stops: const [0.0, 0.6, 1.0],
                 ),
@@ -409,15 +402,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 4),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: isSelected ? _lime : Colors.transparent,
+              color: isSelected ? AtrioColors.neonLime : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               _periodLabels[index],
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.black : _textTertiary,
+                color: isSelected ? Colors.black : AtrioColors.hostTextTertiary,
               ),
             ),
           ),
@@ -478,7 +471,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 value: rating > 0 ? rating.toStringAsFixed(1) : '--',
                 label: 'Calificación',
                 icon: Icons.star_rounded,
-                iconColor: const Color(0xFFFFB800),
+                iconColor: AtrioColors.ratingGold,
               );
             },
             loading: () => _StatCard(value: '--', label: 'Calificación'),
@@ -498,10 +491,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       children: [
         Text(
           'Próximas Reservas',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: _textPrimary,
+            color: AtrioColors.hostTextPrimary,
           ),
         ),
         const SizedBox(height: 14),
@@ -515,7 +508,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
                   'No hay reservas próximas',
-                  style: GoogleFonts.roboto(fontSize: 13, color: _textTertiary),
+                  style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary),
                 ),
               );
             }
@@ -541,17 +534,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             height: 38,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: _cardColor,
-                              border: Border.all(color: _cardBorder, width: 0.5),
+                              color: AtrioColors.hostSurface,
+                              border: Border.all(color: AtrioColors.hostCardBorder, width: 0.5),
                             ),
                             child: ClipOval(
                               child: avatarUrl != null && avatarUrl.isNotEmpty
                                   ? CachedNetworkImage(
                                       imageUrl: avatarUrl,
                                       fit: BoxFit.cover,
-                                      errorWidget: (_, _, _) => const Icon(Icons.person, size: 18, color: _textTertiary),
+                                      errorWidget: (_, _, _) => const Icon(Icons.person, size: 18, color: AtrioColors.hostTextTertiary),
                                     )
-                                  : const Icon(Icons.person, size: 18, color: _textTertiary),
+                                  : const Icon(Icons.person, size: 18, color: AtrioColors.hostTextTertiary),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -561,17 +554,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               children: [
                                 Text(
                                   guestName,
-                                  style: GoogleFonts.roboto(
+                                  style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
-                                    color: _textPrimary,
+                                    color: AtrioColors.hostTextPrimary,
                                   ),
                                 ),
                                 Text(
                                   '$listingTitle  ·  $checkIn',
-                                  style: GoogleFonts.roboto(
+                                  style: GoogleFonts.inter(
                                     fontSize: 12,
-                                    color: _textTertiary,
+                                    color: AtrioColors.hostTextTertiary,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -591,10 +584,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     onTap: () => context.go('/host/calendar'),
                     child: Text(
                       'Ver todo',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: _lime,
+                        color: AtrioColors.neonLime,
                       ),
                     ),
                   ),
@@ -625,12 +618,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Color _notifColor(String type) {
     switch (type) {
-      case 'booking': return const Color(0xFF6366F1);
-      case 'review': return const Color(0xFFFFB800);
-      case 'payment': return const Color(0xFF22C55E);
+      case 'booking': return AtrioColors.electricViolet;
+      case 'review': return AtrioColors.ratingGold;
+      case 'payment': return AtrioColors.success;
       case 'message': return const Color(0xFF3B82F6);
-      case 'system': return _lime;
-      default: return _textSecondary;
+      case 'system': return AtrioColors.neonLime;
+      default: return AtrioColors.hostTextSecondary;
     }
   }
 
@@ -650,10 +643,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       children: [
         Text(
           'Actividad Reciente',
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: _textPrimary,
+            color: AtrioColors.hostTextPrimary,
           ),
         ),
         const SizedBox(height: 14),
@@ -664,7 +657,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
                   'No hay actividad reciente',
-                  style: GoogleFonts.roboto(fontSize: 13, color: _textTertiary),
+                  style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary),
                 ),
               );
             }
@@ -697,18 +690,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           children: [
                             Text(
                               title,
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
-                                color: _textPrimary,
+                                color: AtrioColors.hostTextPrimary,
                               ),
                             ),
                             if (body.isNotEmpty)
                               Text(
                                 body,
-                                style: GoogleFonts.roboto(
+                                style: GoogleFonts.inter(
                                   fontSize: 11,
-                                  color: _textTertiary,
+                                  color: AtrioColors.hostTextTertiary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -719,9 +712,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       if (createdAt != null)
                         Text(
                           _timeAgo(createdAt),
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: _textTertiary,
+                            color: AtrioColors.hostTextTertiary,
                           ),
                         ),
                     ],
@@ -735,7 +728,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
               'Error al cargar actividad',
-              style: GoogleFonts.roboto(fontSize: 13, color: _textTertiary),
+              style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary),
             ),
           ),
         ),
@@ -744,10 +737,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           onTap: () => context.push('/notifications'),
           child: Text(
             'Ver todo',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: _lime,
+              color: AtrioColors.neonLime,
             ),
           ),
         ),
@@ -777,9 +770,9 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: AtrioColors.hostSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF333333), width: 0.5),
+        border: Border.all(color: AtrioColors.hostCardBorder, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -789,16 +782,16 @@ class _StatCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 16, color: iconColor ?? const Color(0xFFFFB800)),
+                Icon(icon, size: 16, color: iconColor ?? AtrioColors.ratingGold),
                 const SizedBox(width: 4),
               ],
               Flexible(
                 child: Text(
                   value,
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.inter(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFFFFFFFF),
+                    color: AtrioColors.hostTextPrimary,
                   ),
                 ),
               ),
@@ -808,10 +801,10 @@ class _StatCard extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w400,
-              color: const Color(0xFF999999),
+              color: AtrioColors.hostTextSecondary,
               height: 1.3,
             ),
           ),
@@ -854,17 +847,17 @@ class _MiniBalance extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 11,
-                color: const Color(0xFF666666),
+                color: AtrioColors.hostTextTertiary,
               ),
             ),
             Text(
               amount,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFFFFFFFF),
+                color: AtrioColors.hostTextPrimary,
               ),
             ),
           ],

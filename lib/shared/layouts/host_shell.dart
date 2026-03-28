@@ -105,7 +105,7 @@ class _NavItem extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               label,
-              style: GoogleFonts.roboto(
+              style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                 color: isSelected ? _lime : Colors.white54,

@@ -34,7 +34,9 @@ class NotificationsScreen extends ConsumerWidget {
                     .eq('user_id', userId)
                     .eq('is_read', false);
                 ref.invalidate(notificationsProvider);
-              } catch (_) {}
+              } catch (e) {
+                debugPrint('markAllRead error: $e');
+              }
             },
             child: Text(
               'Marcar todo como leído',
@@ -118,7 +120,9 @@ class NotificationsScreen extends ConsumerWidget {
                             .update({'is_read': true})
                             .eq('id', notif['id']);
                         ref.invalidate(notificationsProvider);
-                      } catch (_) {}
+                      } catch (e) {
+                        debugPrint('markNotificationRead error: $e');
+                      }
                     }
                   },
                 );

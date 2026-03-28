@@ -684,7 +684,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                             const SizedBox(height: 20),
                                             Text(
                                               'Cancelar Reserva',
-                                              style: GoogleFonts.roboto(
+                                              style: GoogleFonts.inter(
                                                 fontSize: 20,
                                                 fontWeight: FontWeight.w800,
                                                 color: AtrioColors.guestTextPrimary,
@@ -693,7 +693,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                             const SizedBox(height: 10),
                                             Text(
                                               'Esta accion no se puede deshacer. Si cancelas, perderas tu reserva en "$listingTitle".',
-                                              style: GoogleFonts.roboto(
+                                              style: GoogleFonts.inter(
                                                 fontSize: 14,
                                                 color: AtrioColors.guestTextSecondary,
                                                 height: 1.4,
@@ -714,7 +714,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                                   Expanded(
                                                     child: Text(
                                                       'Cancelacion gratuita hasta 24h antes de la entrada',
-                                                      style: GoogleFonts.roboto(fontSize: 12, color: AtrioColors.guestTextSecondary),
+                                                      style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.guestTextSecondary),
                                                     ),
                                                   ),
                                                 ],
@@ -732,7 +732,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                                   elevation: 0,
                                                 ),
-                                                child: Text('Si, cancelar reserva', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, fontSize: 15)),
+                                                child: Text('Si, cancelar reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
                                               ),
                                             ),
                                             const SizedBox(height: 10),
@@ -743,7 +743,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                                 style: TextButton.styleFrom(
                                                   padding: const EdgeInsets.symmetric(vertical: 14),
                                                 ),
-                                                child: Text('No, mantener reserva', style: GoogleFonts.roboto(fontWeight: FontWeight.w600, fontSize: 15, color: AtrioColors.guestTextPrimary)),
+                                                child: Text('No, mantener reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15, color: AtrioColors.guestTextPrimary)),
                                               ),
                                             ),
                                             const SizedBox(height: 8),
@@ -781,7 +781,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                   ),
-                                  child: Text('Cancelar reserva', style: GoogleFonts.roboto(fontWeight: FontWeight.w600)),
+                                  child: Text('Cancelar reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                                 ),
                               ),
                             ],

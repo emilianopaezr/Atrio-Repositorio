@@ -250,7 +250,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   void _snack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.roboto(
+      content: Text(msg, style: GoogleFonts.inter(
         fontWeight: FontWeight.w600,
         color: isError ? Colors.white : Colors.black,
       )),
@@ -362,7 +362,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           size: 16, color: AtrioColors.neonLimeDark,
                         ),
                         const SizedBox(width: 6),
-                        Text(modeLabel, style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
+                        Text(modeLabel, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
                       ],
                     ),
                   ),
@@ -425,7 +425,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           children: [
                             const Icon(Icons.today, size: 18, color: AtrioColors.neonLimeDark),
                             const SizedBox(width: 8),
-                            Text(_fmt(_selectedDate), style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700)),
+                            Text(_fmt(_selectedDate), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
                           ],
                         ),
                       ),
@@ -454,7 +454,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Text(
                             'Selecciona 1 horario (precio por persona)',
-                            style: GoogleFonts.roboto(fontSize: 12, color: AtrioColors.guestTextSecondary, fontStyle: FontStyle.italic),
+                            style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.guestTextSecondary, fontStyle: FontStyle.italic),
                           ),
                         ),
                       TimeSlotPicker(
@@ -535,7 +535,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                   Expanded(
                                     child: Text(
                                       'Tarifa promocional 1% — ${PricingEngineService.promoBookingThreshold - (_hostBookingsCount ?? 0)} reservas restantes',
-                                      style: GoogleFonts.roboto(fontSize: 11, color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600),
+                                      style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 ],
@@ -581,7 +581,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       const SizedBox(width: 6),
                       Text(
                         'PAGO SEGURO CIFRADO CON SSL',
-                        style: GoogleFonts.roboto(fontSize: 10, color: AtrioColors.guestTextTertiary, letterSpacing: 1, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(fontSize: 10, color: AtrioColors.guestTextTertiary, letterSpacing: 1, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -617,12 +617,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         children: [
                           Text(
                             listing.instantBooking ? 'Reservar Ahora' : 'Confirmar y Reservar',
-                            style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
+                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             '\$${total.toStringAsFixed(2)}',
-                            style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black.withValues(alpha: 0.7)),
+                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black.withValues(alpha: 0.7)),
                           ),
                         ],
                       ),
@@ -718,18 +718,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Check-in', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
           const SizedBox(height: 4),
-          Text(_fmt(_checkIn), style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700)),
+          Text(_fmt(_checkIn), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
         ])),
         Container(width: 1, height: 36, color: AtrioColors.guestCardBorder),
         Expanded(child: Padding(padding: const EdgeInsets.only(left: 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Check-out', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
           const SizedBox(height: 4),
-          Text(_fmt(_checkOut), style: GoogleFonts.roboto(fontSize: 15, fontWeight: FontWeight.w700)),
+          Text(_fmt(_checkOut), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
         ]))),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(10)),
-          child: Text('$_nights noche${_nights > 1 ? 's' : ''}', style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black)),
+          child: Text('$_nights noche${_nights > 1 ? 's' : ''}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black)),
         ),
       ]),
     );
@@ -761,7 +761,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           if (listing.capacity != null)
             Padding(padding: const EdgeInsets.only(right: 10), child: Text('máx ${listing.capacity}', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary))),
           _counterBtn(Icons.remove, _guests > 1 ? () { setState(() => _guests--); if (_pricingResult != null) _calcPricing(); } : null),
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: Text('$_guests', style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.w800, color: AtrioColors.guestTextPrimary))),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: Text('$_guests', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AtrioColors.guestTextPrimary))),
           _counterBtn(Icons.add, _guests < (listing.capacity ?? 10) ? () { setState(() => _guests++); if (_pricingResult != null) _calcPricing(); } : null),
         ]),
       ),

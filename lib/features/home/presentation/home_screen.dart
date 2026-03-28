@@ -8,16 +8,6 @@ import '../../../config/theme/app_typography.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/providers/listings_provider.dart';
 
-// === Minimal Light Theme Constants ===
-const _bg = Color(0xFFFAFAFA);
-const _white = Color(0xFFFFFFFF);
-const _border = Color(0xFFE5E5E5);
-const _textPrimary = Color(0xFF1A1A1A);
-const _textSecondary = Color(0xFF666666);
-const _textMuted = Color(0xFF999999);
-const _lime = Color(0xFFD4FF00);
-const _limeDark = Color(0xFF9BBF00);
-const _gold = Color(0xFFFFB800);
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -40,10 +30,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final listingsAsync = ref.watch(listingsProvider(_currentFilter));
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AtrioColors.guestBackground,
       body: RefreshIndicator(
-        color: _limeDark,
-        backgroundColor: _white,
+        color: AtrioColors.neonLimeDark,
+        backgroundColor: AtrioColors.guestSurface,
         onRefresh: () async {
           ref.invalidate(listingsProvider(_currentFilter));
           ref.invalidate(featuredListingsProvider);
@@ -72,14 +62,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: _white,
+                                color: AtrioColors.guestSurface,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: _border),
+                                border: Border.all(color: AtrioColors.guestCardBorder),
                               ),
                               child: const Icon(
                                 Icons.notifications_none_rounded,
                                 size: 20,
-                                color: _textPrimary,
+                                color: AtrioColors.guestTextPrimary,
                               ),
                             ),
                             Positioned(
@@ -89,7 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 width: 8,
                                 height: 8,
                                 decoration: const BoxDecoration(
-                                  color: _lime,
+                                  color: AtrioColors.neonLime,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -115,22 +105,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: _white,
+                      color: AtrioColors.guestSurface,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: _border),
+                      border: Border.all(color: AtrioColors.guestCardBorder),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.search_rounded,
                           size: 20,
-                          color: _limeDark,
+                          color: AtrioColors.neonLimeDark,
                         ),
                         const SizedBox(width: 12),
                         Text(
                           'Buscar espacios, experiencias...',
                           style: AtrioTypography.bodyMedium.copyWith(
-                            color: _textMuted,
+                            color: AtrioColors.guestTextTertiary,
                           ),
                         ),
                       ],
@@ -164,19 +154,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: isSelected ? _lime : Colors.transparent,
+                              color: isSelected ? AtrioColors.neonLime : Colors.transparent,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: isSelected ? _limeDark : _border,
+                                color: isSelected ? AtrioColors.neonLimeDark : AtrioColors.guestCardBorder,
                               ),
                             ),
                             child: Text(
                               _categories[index],
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight:
                                     isSelected ? FontWeight.w700 : FontWeight.w500,
-                                color: isSelected ? _textPrimary : _textMuted,
+                                color: isSelected ? AtrioColors.guestTextPrimary : AtrioColors.guestTextTertiary,
                               ),
                             ),
                           ),
@@ -204,11 +194,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: _lime.withValues(alpha: 0.15),
+                          color: AtrioColors.neonLime.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.handyman_rounded,
-                            color: _lime, size: 24),
+                            color: AtrioColors.neonLime, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -217,7 +207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           children: [
                             Text(
                               'Servicios Rapidos',
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -226,7 +216,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             const SizedBox(height: 2),
                             Text(
                               'Mudanza, limpieza, armado y mas',
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: Colors.white60,
                               ),
@@ -237,7 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: const BoxDecoration(
-                          color: _lime,
+                          color: AtrioColors.neonLime,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.arrow_forward,
@@ -264,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: _lime.withValues(alpha: 0.3),
+                      color: AtrioColors.neonLime.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -272,11 +262,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: _lime.withValues(alpha: 0.2),
+                          color: AtrioColors.neonLime.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.home_work_rounded,
-                            color: _lime, size: 24),
+                            color: AtrioColors.neonLime, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -285,7 +275,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           children: [
                             Text(
                               'Se anfitrion en Atrio',
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -294,7 +284,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             const SizedBox(height: 2),
                             Text(
                               'Publica tu espacio y genera ingresos',
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: Colors.white60,
                               ),
@@ -303,7 +293,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
                       const Icon(Icons.chevron_right_rounded,
-                          color: _lime, size: 24),
+                          color: AtrioColors.neonLime, size: 24),
                     ],
                   ),
                 ),
@@ -351,7 +341,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: EdgeInsets.all(48),
                   child: Center(
                     child: CircularProgressIndicator(
-                      color: _limeDark,
+                      color: AtrioColors.neonLimeDark,
                       strokeWidth: 2.5,
                     ),
                   ),
@@ -369,7 +359,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Text(
                           'Error al cargar anuncios',
                           style: AtrioTypography.headingSmall.copyWith(
-                            color: _textSecondary,
+                            color: AtrioColors.guestTextSecondary,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -378,8 +368,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               .invalidate(listingsProvider(_currentFilter)),
                           child: Text(
                             'Reintentar',
-                            style: GoogleFonts.roboto(
-                              color: _limeDark,
+                            style: GoogleFonts.inter(
+                              color: AtrioColors.neonLimeDark,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -413,8 +403,8 @@ class _ListingCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          color: _white,
-          border: Border.all(color: _border.withValues(alpha: 0.6)),
+          color: AtrioColors.guestSurface,
+          border: Border.all(color: AtrioColors.guestCardBorder.withValues(alpha: 0.6)),
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -436,13 +426,13 @@ class _ListingCard extends StatelessWidget {
                           errorWidget: (_, _, _) => Container(
                             color: const Color(0xFFF0F0F0),
                             child: const Icon(Icons.image,
-                                size: 40, color: _textMuted),
+                                size: 40, color: AtrioColors.guestTextTertiary),
                           ),
                         )
                       : Container(
                           color: const Color(0xFFF0F0F0),
                           child: const Icon(Icons.image,
-                              size: 40, color: _textMuted),
+                              size: 40, color: AtrioColors.guestTextTertiary),
                         ),
                   // Price pill (lime)
                   Positioned(
@@ -452,15 +442,15 @@ class _ListingCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: _lime,
+                        color: AtrioColors.neonLime,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}/${_unitShort(listing.priceUnit)}',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: _textPrimary,
+                          color: AtrioColors.guestTextPrimary,
                         ),
                       ),
                     ),
@@ -477,7 +467,7 @@ class _ListingCard extends StatelessWidget {
                       ),
                       child: const Icon(
                         Icons.favorite_border_rounded,
-                        color: _textSecondary,
+                        color: AtrioColors.guestTextSecondary,
                         size: 18,
                       ),
                     ),
@@ -496,10 +486,10 @@ class _ListingCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           listing.title,
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: _textPrimary,
+                            color: AtrioColors.guestTextPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -508,14 +498,14 @@ class _ListingCard extends StatelessWidget {
                       if (listing.rating > 0) ...[
                         const SizedBox(width: 8),
                         const Icon(Icons.star_rounded,
-                            size: 14, color: _gold),
+                            size: 14, color: AtrioColors.ratingGold),
                         const SizedBox(width: 3),
                         Text(
                           listing.rating.toStringAsFixed(1),
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: _textPrimary,
+                            color: AtrioColors.guestTextPrimary,
                           ),
                         ),
                       ],
@@ -528,15 +518,15 @@ class _ListingCard extends StatelessWidget {
                         Icon(
                           Icons.location_on_outlined,
                           size: 14,
-                          color: _textMuted,
+                          color: AtrioColors.guestTextTertiary,
                         ),
                         const SizedBox(width: 3),
                         Expanded(
                           child: Text(
                             listing.city!,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 13,
-                              color: _textSecondary,
+                              color: AtrioColors.guestTextSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -546,21 +536,21 @@ class _ListingCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           CircleAvatar(
                             radius: 10,
-                            backgroundColor: _lime.withValues(alpha: 0.3),
+                            backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.3),
                             backgroundImage: listing.hostData!['photo_url'] != null
                                 ? NetworkImage(listing.hostData!['photo_url'] as String)
                                 : null,
                             child: listing.hostData!['photo_url'] == null
-                                ? const Icon(Icons.person, size: 12, color: _textMuted)
+                                ? const Icon(Icons.person, size: 12, color: AtrioColors.guestTextTertiary)
                                 : null,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             (listing.hostData!['display_name'] as String? ?? '').split(' ').first,
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: _textMuted,
+                              color: AtrioColors.guestTextTertiary,
                             ),
                           ),
                         ],
@@ -604,19 +594,19 @@ class _EmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(48),
         child: Column(
           children: [
-            Icon(icon, size: 64, color: _textMuted),
+            Icon(icon, size: 64, color: AtrioColors.guestTextTertiary),
             const SizedBox(height: 16),
             Text(
               title,
               style: AtrioTypography.headingSmall.copyWith(
-                color: _textSecondary,
+                color: AtrioColors.guestTextSecondary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               subtitle,
               style: AtrioTypography.bodyMedium.copyWith(
-                color: _textMuted,
+                color: AtrioColors.guestTextTertiary,
               ),
               textAlign: TextAlign.center,
             ),

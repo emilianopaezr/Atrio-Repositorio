@@ -5,15 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
 
-const _bg = Color(0xFFFAFAFA);
-const _white = Color(0xFFFFFFFF);
-const _border = Color(0xFFE5E5E5);
-const _textPrimary = Color(0xFF1A1A1A);
-const _textSecondary = Color(0xFF666666);
-const _textMuted = Color(0xFF999999);
-const _lime = Color(0xFFD4FF00);
-const _limeDark = Color(0xFF9BBF00);
-
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -79,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AtrioColors.guestBackground,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -104,10 +95,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   Center(
                     child: Text(
                       'Bienvenido',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
-                        color: _textPrimary,
+                        color: AtrioColors.guestTextPrimary,
                         height: 1.1,
                       ),
                       textAlign: TextAlign.center,
@@ -117,9 +108,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   Center(
                     child: Text(
                       'Inicia sesion para continuar en Atrio',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         fontSize: 15,
-                        color: _textSecondary,
+                        color: AtrioColors.guestTextSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -156,7 +147,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: _textMuted,
+                        color: AtrioColors.guestTextTertiary,
                         size: 20,
                       ),
                       onPressed: () =>
@@ -180,7 +171,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                          backgroundColor: Color(0xFFD4FF00),
+                          backgroundColor: AtrioColors.neonLime,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           duration: Duration(seconds: 1),
@@ -188,9 +179,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       },
                       child: Text(
                         'Olvidaste tu contrasena?',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontSize: 13,
-                          color: _limeDark,
+                          color: AtrioColors.neonLimeDark,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -204,9 +195,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _signIn,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _lime,
+                        backgroundColor: AtrioColors.neonLime,
                         foregroundColor: Colors.black,
-                        disabledBackgroundColor: _lime.withValues(alpha: 0.4),
+                        disabledBackgroundColor: AtrioColors.neonLime.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -226,7 +217,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               children: [
                                 Text(
                                   'Iniciar Sesion',
-                                  style: GoogleFonts.roboto(
+                                  style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.black,
@@ -242,18 +233,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   // Divider
                   Row(
                     children: [
-                      const Expanded(child: Divider(color: _border)),
+                      Expanded(child: Divider(color: AtrioColors.guestCardBorder)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'o continua con',
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: _textMuted,
+                            color: AtrioColors.guestTextTertiary,
                           ),
                         ),
                       ),
-                      const Expanded(child: Divider(color: _border)),
+                      Expanded(child: Divider(color: AtrioColors.guestCardBorder)),
                     ],
                   ),
                   const SizedBox(height: 28),
@@ -266,20 +257,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         await AuthService.signInWithGoogle();
                       },
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: _textPrimary,
-                        side: const BorderSide(color: _border),
+                        foregroundColor: AtrioColors.guestTextPrimary,
+                        side: const BorderSide(color: AtrioColors.guestCardBorder),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        backgroundColor: _white,
+                        backgroundColor: AtrioColors.guestSurface,
                       ),
                       icon: const Icon(Icons.g_mobiledata, size: 24),
                       label: Text(
                         'Continuar con Google',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          color: _textPrimary,
+                          color: AtrioColors.guestTextPrimary,
                         ),
                       ),
                     ),
@@ -292,19 +283,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       children: [
                         Text(
                           'No tienes cuenta? ',
-                          style: GoogleFonts.roboto(
+                          style: GoogleFonts.inter(
                             fontSize: 14,
-                            color: _textSecondary,
+                            color: AtrioColors.guestTextSecondary,
                           ),
                         ),
                         GestureDetector(
                           onTap: () => context.go('/auth/register'),
                           child: Text(
                             'Registrate',
-                            style: GoogleFonts.roboto(
+                            style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: _limeDark,
+                              color: AtrioColors.neonLimeDark,
                             ),
                           ),
                         ),
@@ -351,34 +342,34 @@ class _LightTextField extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       validator: validator,
-      style: GoogleFonts.roboto(
+      style: GoogleFonts.inter(
         fontSize: 15,
-        color: _textPrimary,
+        color: AtrioColors.guestTextPrimary,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.roboto(
+        hintStyle: GoogleFonts.inter(
           fontSize: 15,
-          color: _textMuted,
+          color: AtrioColors.guestTextTertiary,
         ),
         prefixIcon: icon != null
-            ? Icon(icon, color: _textMuted, size: 20)
+            ? Icon(icon, color: AtrioColors.guestTextTertiary, size: 20)
             : null,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: _white,
+        fillColor: AtrioColors.guestSurface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _border),
+          borderSide: const BorderSide(color: AtrioColors.guestCardBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _border),
+          borderSide: const BorderSide(color: AtrioColors.guestCardBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
-            color: _limeDark,
+            color: AtrioColors.neonLimeDark,
             width: 1.5,
           ),
         ),

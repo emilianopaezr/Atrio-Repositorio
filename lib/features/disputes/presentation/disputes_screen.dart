@@ -127,7 +127,7 @@ class _FilterChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.roboto(
+          style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w100,
             color: isActive ? Colors.white : AtrioColors.hostTextSecondary,
@@ -215,7 +215,7 @@ class _DisputeCard extends StatelessWidget {
                   ),
                   child: Text(
                     '\$${dispute.amount.toStringAsFixed(2)}',
-                    style: GoogleFonts.roboto(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime),
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime),
                   ),
                 ),
               ],
@@ -228,7 +228,7 @@ class _DisputeCard extends StatelessWidget {
                   decoration: BoxDecoration(color: _statusColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 6),
-                Text(_statusLabel, style: GoogleFonts.roboto(fontSize: 12, fontWeight: FontWeight.w100, color: _statusColor)),
+                Text(_statusLabel, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w100, color: _statusColor)),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -242,7 +242,7 @@ class _DisputeCard extends StatelessWidget {
                   ),
                   child: Text(
                     dispute.priority == 'alta' ? 'Alta' : dispute.priority == 'media' ? 'Media' : 'Baja',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: dispute.priority == 'alta' ? AtrioColors.error : dispute.priority == 'media' ? AtrioColors.warning : AtrioColors.hostTextSecondary,

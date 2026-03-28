@@ -723,6 +723,39 @@ class DatabaseService {
   }
 
   // =============================================
+  // DISPUTES
+  // =============================================
+
+  /// Get disputes for a user (as guest or host)
+  static Future<List<Map<String, dynamic>>> getUserDisputes(
+    String userId, {
+    String? status,
+  }) async {
+    final response = await _client
+        .from(AppConstants.tableDisputes)
+        .select('*, guest:profiles!guest_id(id, display_name, photo_url), host:profiles!host_id(id, display_name, photo_url)')
+        .or('guest_id.eq.$userId,host_id.eq.$userId')
+        .order('created_at', ascending: false);
+
+    final list = List<Map<String, dynamic>>.from(response);
+    if (status != null) {
+      return list.where((d) => d['status'] == status).toList();
+    }
+    return list;
+  }
+
+  /// Get a single dispute by ID
+  static Future<Map<String, dynamic>?> getDisputeById(String disputeId) async {
+    final response = await _client
+        .from(AppConstants.tableDisputes)
+        .select('*, guest:profiles!guest_id(id, display_name, photo_url), host:profiles!host_id(id, display_name, photo_url)')
+        .eq('id', disputeId)
+        .maybeSingle();
+
+    return response;
+  }
+
+  // =============================================
   // STORAGE
   // =============================================
 
