@@ -26,10 +26,12 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1200),
     );
     _fadeIn = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _anim, curve: const Interval(0, 0.6, curve: Curves.easeOut)),
+      CurvedAnimation(
+          parent: _anim, curve: const Interval(0, 0.6, curve: Curves.easeOut)),
     );
     _scaleIn = Tween<double>(begin: 0.8, end: 1).animate(
-      CurvedAnimation(parent: _anim, curve: const Interval(0, 0.6, curve: Curves.easeOut)),
+      CurvedAnimation(
+          parent: _anim, curve: const Interval(0, 0.6, curve: Curves.easeOut)),
     );
     _anim.forward();
     _navigate();
@@ -41,6 +43,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     final prefs = await SharedPreferences.getInstance();
     final onboardingDone = prefs.getBool('onboarding_complete') ?? false;
+
+    if (!mounted) return;
 
     if (!onboardingDone) {
       context.go('/onboarding');

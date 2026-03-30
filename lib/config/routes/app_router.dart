@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../config/supabase/supabase_config.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
@@ -47,13 +48,16 @@ final _guestShellKey = GlobalKey<NavigatorState>();
 final _hostShellKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final isAuthenticated = ref.watch(isAuthenticatedProvider);
+  final authNotifier = ref.watch(authChangeNotifierProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
+    refreshListenable: authNotifier,
     redirect: (context, state) {
+      final session = SupabaseConfig.client.auth.currentSession;
+      final isAuthenticated = session != null;
       final loc = state.matchedLocation;
       final isAuthRoute = loc.startsWith('/auth');
       final isSplash = loc == '/';
@@ -62,8 +66,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Allow splash and onboarding without auth
       if (isSplash || isOnboarding) return null;
 
+      // Not authenticated → force login
       if (!isAuthenticated && !isAuthRoute) return '/auth/login';
+
+      // Authenticated but on auth route → go home
       if (isAuthenticated && isAuthRoute) return '/guest/home';
+
       return null;
     },
     routes: [
@@ -97,7 +105,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, navigationShell) =>
             GuestShell(navigationShell: navigationShell),
         branches: [
-          // Tab 0: Home
           StatefulShellBranch(
             navigatorKey: _guestShellKey,
             routes: [
@@ -107,7 +114,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Tab 1: Search
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -116,7 +122,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Tab 2: Bookings
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -125,7 +130,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Tab 3: Chat
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -134,7 +138,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Tab 4: Profile
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -152,7 +155,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, navigationShell) =>
             HostShell(navigationShell: navigationShell),
         branches: [
-          // Tab 0: Dashboard
           StatefulShellBranch(
             navigatorKey: _hostShellKey,
             routes: [
@@ -162,7 +164,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Tab 1: Calendar
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -171,7 +172,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Tab 2: Listings
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -180,7 +180,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Tab 3: Wallet
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -189,7 +188,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Tab 4: Profile
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -201,7 +199,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // === FULL-SCREEN ROUTES (no bottom nav) ===
+      // === FULL-SCREEN ROUTES ===
       GoRoute(
         path: '/listing/:id',
         parentNavigatorKey: _rootNavigatorKey,

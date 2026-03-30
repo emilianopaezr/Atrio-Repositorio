@@ -51,44 +51,194 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isLoading) return;
 
     setState(() => _isLoading = true);
     try {
-      await AuthService.signUpWithEmail(
+      final response = await AuthService.signUpWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         displayName: _nameController.text.trim(),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cuenta creada exitosamente. Bienvenido a Atrio!'),
-          ),
+
+      if (!mounted) return;
+
+      // If we got a session back (auto-confirm), navigate to home
+      if (response.session != null) {
+        _showSuccess('¡Cuenta creada exitosamente! Bienvenido a Atrio.');
+        // Small delay so user sees the success message
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) context.go('/guest/home');
+        return;
+      }
+
+      // If no session but user exists, email confirmation may be needed
+      if (response.user != null && response.session == null) {
+        _showSuccess(
+          'Cuenta creada. Revisa tu email para confirmar tu cuenta.',
         );
+      }
+    } on AuthException catch (e) {
+      if (!mounted) return;
+
+      // If email already exists, offer to go to login
+      if (e.code == 'email_exists') {
+        _showErrorWithAction(
+          e.message,
+          actionLabel: 'Ir a Login',
+          onAction: () => context.go('/auth/login'),
+        );
+      } else {
+        _showError(e.message);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No se pudo completar el registro. Intenta de nuevo.'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
-      }
+      if (!mounted) return;
+      _showError('Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(message, style: GoogleFonts.inter(fontSize: 13)),
+            ),
+          ],
+        ),
+        backgroundColor: AtrioColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _showErrorWithAction(
+    String message, {
+    required String actionLabel,
+    required VoidCallback onAction,
+  }) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.info_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(message, style: GoogleFonts.inter(fontSize: 13)),
+            ),
+          ],
+        ),
+        backgroundColor: AtrioColors.electricViolet,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 6),
+        action: SnackBarAction(
+          label: actionLabel,
+          textColor: Colors.white,
+          onPressed: onAction,
+        ),
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(message, style: GoogleFonts.inter(fontSize: 13)),
+            ),
+          ],
+        ),
+        backgroundColor: AtrioColors.neonLimeDark,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Password strength indicator
+  Widget _buildPasswordStrength() {
+    final password = _passwordController.text;
+    if (password.isEmpty) return const SizedBox.shrink();
+
+    int strength = 0;
+    if (password.length >= 8) strength++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) strength++;
+    if (RegExp(r'[0-9]').hasMatch(password)) strength++;
+    if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) strength++;
+
+    final labels = ['Débil', 'Regular', 'Buena', 'Fuerte'];
+    final colors = [
+      AtrioColors.error,
+      Colors.orange,
+      AtrioColors.neonLimeDark,
+      const Color(0xFF00C853),
+    ];
+
+    final idx = (strength - 1).clamp(0, 3);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, left: 4),
+      child: Row(
+        children: [
+          // Progress bars
+          ...List.generate(4, (i) {
+            return Expanded(
+              child: Container(
+                height: 3,
+                margin: const EdgeInsets.only(right: 4),
+                decoration: BoxDecoration(
+                  color: i < strength
+                      ? colors[idx]
+                      : AtrioColors.guestCardBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            );
+          }),
+          const SizedBox(width: 8),
+          Text(
+            strength > 0 ? labels[idx] : '',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: strength > 0 ? colors[idx] : AtrioColors.guestTextTertiary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
+            padding: EdgeInsets.fromLTRB(28, 0, 28, bottomInset > 0 ? 16 : 0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -101,6 +251,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       'assets/images/logo_negro.png',
                       height: 64,
                       fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => Text(
+                        'ATRIO',
+                        style: GoogleFonts.inter(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: AtrioColors.guestTextPrimary,
+                          letterSpacing: 6,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 36),
@@ -128,7 +287,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           height: 1.5,
                         ),
                         children: [
-                          const TextSpan(text: 'Unete a '),
+                          const TextSpan(text: 'Únete a '),
                           TextSpan(
                             text: 'Atrio',
                             style: GoogleFonts.inter(
@@ -149,9 +308,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     hint: 'Nombre completo',
                     icon: Icons.person_outline,
                     textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.name],
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Ingresa tu nombre';
+                      }
+                      if (value.trim().length < 2) {
+                        return 'El nombre debe tener al menos 2 caracteres';
                       }
                       return null;
                     },
@@ -164,13 +327,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Ingresa tu email';
                       }
-                      final emailRegex = RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
+                      final emailRegex =
+                          RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
                       if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Email no valido';
+                        return 'Email no válido';
                       }
                       return null;
                     },
@@ -179,10 +344,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                   // Password
                   _LightTextField(
                     controller: _passwordController,
-                    hint: 'Contrasena',
+                    hint: 'Contraseña',
                     icon: Icons.lock_outline,
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.newPassword],
+                    onChanged: (_) => setState(() {}),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -196,7 +363,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Ingresa una contrasena';
+                        return 'Ingresa una contraseña';
                       }
                       if (value.length < 8) {
                         return 'Mínimo 8 caracteres';
@@ -210,14 +377,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       return null;
                     },
                   ),
+                  _buildPasswordStrength(),
                   const SizedBox(height: 14),
                   // Confirm
                   _LightTextField(
                     controller: _confirmPasswordController,
-                    hint: 'Confirmar contrasena',
+                    hint: 'Confirmar contraseña',
                     icon: Icons.lock_outline,
                     obscureText: _obscureConfirm,
                     textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _signUp(),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirm
@@ -230,8 +399,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
                     validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Confirma tu contraseña';
+                      }
                       if (value != _passwordController.text) {
-                        return 'Las contrasenas no coinciden';
+                        return 'Las contraseñas no coinciden';
                       }
                       return null;
                     },
@@ -246,7 +418,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AtrioColors.neonLime,
                         foregroundColor: Colors.black,
-                        disabledBackgroundColor: AtrioColors.neonLime.withValues(alpha: 0.4),
+                        disabledBackgroundColor:
+                            AtrioColors.neonLime.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -295,7 +468,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                             const TextSpan(
                                 text: 'Al registrarte aceptas nuestros '),
                             TextSpan(
-                              text: 'Terminos de Servicio',
+                              text: 'Términos de Servicio',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: AtrioColors.neonLimeDark,
@@ -304,7 +477,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                             ),
                             const TextSpan(text: ' y '),
                             TextSpan(
-                              text: 'Politica de Privacidad',
+                              text: 'Política de Privacidad',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: AtrioColors.neonLimeDark,
@@ -324,7 +497,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Ya tienes cuenta? ',
+                          '¿Ya tienes cuenta? ',
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color: AtrioColors.guestTextSecondary,
@@ -333,7 +506,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         GestureDetector(
                           onTap: () => context.go('/auth/login'),
                           child: Text(
-                            'Inicia Sesion',
+                            'Inicia Sesión',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -364,6 +537,9 @@ class _LightTextField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
+  final List<String>? autofillHints;
+  final void Function(String)? onFieldSubmitted;
+  final void Function(String)? onChanged;
 
   const _LightTextField({
     required this.controller,
@@ -374,6 +550,9 @@ class _LightTextField extends StatelessWidget {
     this.textInputAction,
     this.suffixIcon,
     this.validator,
+    this.autofillHints,
+    this.onFieldSubmitted,
+    this.onChanged,
   });
 
   @override
@@ -384,6 +563,9 @@ class _LightTextField extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       validator: validator,
+      autofillHints: autofillHints,
+      onFieldSubmitted: onFieldSubmitted,
+      onChanged: onChanged,
       style: GoogleFonts.inter(
         fontSize: 15,
         color: AtrioColors.guestTextPrimary,

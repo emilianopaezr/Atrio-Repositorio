@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../config/supabase/supabase_config.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _obscurePassword = true;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -47,36 +47,198 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isLoading) return;
 
     setState(() => _isLoading = true);
     try {
-      await AuthService.signInWithEmail(
+      final response = await AuthService.signInWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Credenciales incorrectas. Verifica tu email y contraseña.'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
+
+      if (!mounted) return;
+
+      // Explicit navigation on success (belt & suspenders with GoRouter redirect)
+      if (response.session != null) {
+        context.go('/guest/home');
       }
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _showError(e.message);
+    } catch (e) {
+      if (!mounted) return;
+      _showError('Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    if (_isGoogleLoading) return;
+
+    setState(() => _isGoogleLoading = true);
+    try {
+      await AuthService.signInWithGoogle();
+      // OAuth flow opens browser, no explicit navigation needed here
+      // The deep link callback will trigger auth state change → redirect
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _showError(e.message);
+    } catch (e) {
+      if (!mounted) return;
+      _showError('No se pudo iniciar sesión con Google. Intenta de nuevo.');
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    final resetEmailController = TextEditingController(
+      text: _emailController.text.trim(),
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AtrioColors.guestSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Recuperar contraseña',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
+            color: AtrioColors.guestTextPrimary,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AtrioColors.guestTextSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: resetEmailController,
+              keyboardType: TextInputType.emailAddress,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Tu email',
+                hintStyle: GoogleFonts.inter(color: AtrioColors.guestTextTertiary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AtrioColors.guestCardBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AtrioColors.neonLimeDark),
+                ),
+              ),
+              style: GoogleFonts.inter(color: AtrioColors.guestTextPrimary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Cancelar',
+                style: GoogleFonts.inter(color: AtrioColors.guestTextSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AtrioColors.neonLime,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('Enviar',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final email = resetEmailController.text.trim();
+    if (email.isEmpty) {
+      _showError('Ingresa tu email para recuperar tu contraseña.');
+      return;
+    }
+
+    try {
+      await AuthService.resetPassword(email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Enlace de recuperación enviado a $email',
+                  style: GoogleFonts.inter(fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AtrioColors.neonLimeDark,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _showError(e.message);
+    } catch (e) {
+      if (!mounted) return;
+      _showError('No se pudo enviar el enlace. Intenta de nuevo.');
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.inter(fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AtrioColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
       body: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
+            padding: EdgeInsets.fromLTRB(28, 0, 28, bottomInset > 0 ? 16 : 0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -89,6 +251,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       'assets/images/logo_negro.png',
                       height: 72,
                       fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => Text(
+                        'ATRIO',
+                        style: GoogleFonts.inter(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                          color: AtrioColors.guestTextPrimary,
+                          letterSpacing: 6,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 48),
@@ -108,7 +279,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   const SizedBox(height: 6),
                   Center(
                     child: Text(
-                      'Inicia sesion para continuar en Atrio',
+                      'Inicia sesión para continuar en Atrio',
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         color: AtrioColors.guestTextSecondary,
@@ -124,13 +295,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Ingresa tu email';
                       }
-                      final emailRegex = RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
+                      final emailRegex =
+                          RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
                       if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Email no valido';
+                        return 'Email no válido';
                       }
                       return null;
                     },
@@ -139,10 +312,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   // Password
                   _LightTextField(
                     controller: _passwordController,
-                    hint: 'Contrasena',
+                    hint: 'Contraseña',
                     icon: Icons.lock_outline,
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.password],
+                    onFieldSubmitted: (_) => _signIn(),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -156,10 +331,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Ingresa tu contrasena';
-                      }
-                      if (value.length < 8) {
-                        return 'Mínimo 8 caracteres';
+                        return 'Ingresa tu contraseña';
                       }
                       return null;
                     },
@@ -169,77 +341,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        final resetEmailController = TextEditingController();
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            backgroundColor: AtrioColors.guestSurface,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            title: Text(
-                              'Recuperar contraseña',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w700,
-                                color: AtrioColors.guestTextPrimary,
-                              ),
-                            ),
-                            content: TextField(
-                              controller: resetEmailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: InputDecoration(
-                                hintText: 'Tu email',
-                                hintStyle: GoogleFonts.inter(color: AtrioColors.guestTextTertiary),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AtrioColors.guestCardBorder),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: AtrioColors.neonLimeDark),
-                                ),
-                              ),
-                              style: GoogleFonts.inter(color: AtrioColors.guestTextPrimary),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(ctx).pop(),
-                                child: Text('Cancelar', style: GoogleFonts.inter(color: AtrioColors.guestTextSecondary)),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AtrioColors.neonLime,
-                                  foregroundColor: Colors.black,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                onPressed: () async {
-                                  final email = resetEmailController.text.trim();
-                                  if (email.isEmpty) return;
-                                  Navigator.of(ctx).pop();
-                                  try {
-                                    await SupabaseConfig.auth.resetPasswordForEmail(email);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                        content: Text('Se ha enviado un enlace de recuperación a tu correo'),
-                                        backgroundColor: AtrioColors.neonLimeDark,
-                                      ));
-                                    }
-                                  } catch (e) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                        content: Text('Error al enviar enlace: $e'),
-                                        backgroundColor: AtrioColors.error,
-                                      ));
-                                    }
-                                  }
-                                },
-                                child: Text('Enviar', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                      onPressed: _resetPassword,
                       child: Text(
-                        'Olvidaste tu contrasena?',
+                        '¿Olvidaste tu contraseña?',
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: AtrioColors.neonLimeDark,
@@ -254,11 +358,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _signIn,
+                      onPressed: (_isLoading || _isGoogleLoading) ? null : _signIn,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AtrioColors.neonLime,
                         foregroundColor: Colors.black,
-                        disabledBackgroundColor: AtrioColors.neonLime.withValues(alpha: 0.4),
+                        disabledBackgroundColor:
+                            AtrioColors.neonLime.withValues(alpha: 0.4),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -277,7 +382,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Iniciar Sesion',
+                                  'Iniciar Sesión',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -294,18 +399,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   // Divider
                   Row(
                     children: [
-                      Expanded(child: Divider(color: AtrioColors.guestCardBorder)),
+                      Expanded(
+                          child:
+                              Divider(color: AtrioColors.guestCardBorder)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          'o continua con',
+                          'o continúa con',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             color: AtrioColors.guestTextTertiary,
                           ),
                         ),
                       ),
-                      Expanded(child: Divider(color: AtrioColors.guestCardBorder)),
+                      Expanded(
+                          child:
+                              Divider(color: AtrioColors.guestCardBorder)),
                     ],
                   ),
                   const SizedBox(height: 28),
@@ -313,27 +422,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   SizedBox(
                     width: double.infinity,
                     height: 54,
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        await AuthService.signInWithGoogle();
-                      },
+                    child: OutlinedButton(
+                      onPressed:
+                          (_isLoading || _isGoogleLoading) ? null : _signInWithGoogle,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AtrioColors.guestTextPrimary,
-                        side: const BorderSide(color: AtrioColors.guestCardBorder),
+                        side: const BorderSide(
+                            color: AtrioColors.guestCardBorder),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                         backgroundColor: AtrioColors.guestSurface,
+                        disabledForegroundColor:
+                            AtrioColors.guestTextTertiary,
                       ),
-                      icon: const Icon(Icons.g_mobiledata, size: 24),
-                      label: Text(
-                        'Continuar con Google',
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: AtrioColors.guestTextPrimary,
-                        ),
-                      ),
+                      child: _isGoogleLoading
+                          ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: AtrioColors.guestTextSecondary,
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.g_mobiledata, size: 24),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Continuar con Google',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: AtrioColors.guestTextPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -343,7 +469,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'No tienes cuenta? ',
+                          '¿No tienes cuenta? ',
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color: AtrioColors.guestTextSecondary,
@@ -352,7 +478,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         GestureDetector(
                           onTap: () => context.go('/auth/register'),
                           child: Text(
-                            'Registrate',
+                            'Regístrate',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -383,6 +509,8 @@ class _LightTextField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
+  final List<String>? autofillHints;
+  final void Function(String)? onFieldSubmitted;
 
   const _LightTextField({
     required this.controller,
@@ -393,6 +521,8 @@ class _LightTextField extends StatelessWidget {
     this.textInputAction,
     this.suffixIcon,
     this.validator,
+    this.autofillHints,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -403,6 +533,8 @@ class _LightTextField extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       validator: validator,
+      autofillHints: autofillHints,
+      onFieldSubmitted: onFieldSubmitted,
       style: GoogleFonts.inter(
         fontSize: 15,
         color: AtrioColors.guestTextPrimary,
