@@ -1,12 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/notifications_provider.dart';
 
+enum _DateGroup { hoy, ayer, estaSemana, anteriores }
+
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
+
+  /// Determine which date group a notification belongs to.
+  static _DateGroup _dateGroupFor(DateTime? createdAt) {
+    if (createdAt == null) return _DateGroup.anteriores;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final notifDay = DateTime(createdAt.year, createdAt.month, createdAt.day);
+    final diff = today.difference(notifDay).inDays;
+    if (diff == 0) return _DateGroup.hoy;
+    if (diff == 1) return _DateGroup.ayer;
+    if (diff < 7) return _DateGroup.estaSemana;
+    return _DateGroup.anteriores;
+  }
+
+  static String _groupLabel(_DateGroup group) {
+    switch (group) {
+      case _DateGroup.hoy:
+        return 'HOY';
+      case _DateGroup.ayer:
+        return 'AYER';
+      case _DateGroup.estaSemana:
+        return 'ESTA SEMANA';
+      case _DateGroup.anteriores:
+        return 'ANTERIORES';
+    }
+  }
+
+  /// Build a flat list of items: section headers + notification entries.
+  static List<_ListItem> _buildGroupedItems(
+      List<Map<String, dynamic>> notifications) {
+    // Preserve existing order (assumed newest-first from provider).
+    final Map<_DateGroup, List<Map<String, dynamic>>> groups = {};
+    for (final notif in notifications) {
+      final createdAt = DateTime.tryParse(notif['created_at'] ?? '');
+      final group = _dateGroupFor(createdAt);
+      groups.putIfAbsent(group, () => []);
+      groups[group]!.add(notif);
+    }
+
+    final items = <_ListItem>[];
+    bool isFirst = true;
+    for (final group in _DateGroup.values) {
+      final list = groups[group];
+      if (list == null || list.isEmpty) continue;
+      items.add(_ListItem.header(group, isFirst: isFirst));
+      for (final notif in list) {
+        items.add(_ListItem.notification(notif));
+      }
+      isFirst = false;
+    }
+    return items;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,8 +116,8 @@ class NotificationsScreen extends ConsumerWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.notifications_none_outlined,
-                      size: 56,
+                      Icons.notifications_off_outlined,
+                      size: 64,
                       color: isDark
                           ? AtrioColors.hostTextTertiary
                           : AtrioColors.guestTextTertiary,
@@ -91,40 +146,101 @@ class NotificationsScreen extends ConsumerWidget {
             );
           }
 
+          final items = _buildGroupedItems(notifications);
+
           return RefreshIndicator(
             color: AtrioColors.neonLimeDark,
             onRefresh: () async => ref.invalidate(notificationsProvider),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(24),
-              itemCount: notifications.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 24).copyWith(bottom: 24),
+              itemCount: items.length,
               itemBuilder: (context, index) {
-                final notif = notifications[index];
+                final item = items[index];
+
+                // Section header
+                if (item.isHeader) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      top: item.isFirstHeader ? 24 : 20,
+                      bottom: 12,
+                    ),
+                    child: Text(
+                      _groupLabel(item.group!),
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ).copyWith(
+                        color: isDark
+                            ? AtrioColors.hostTextTertiary
+                            : AtrioColors.guestTextTertiary,
+                      ),
+                    ),
+                  );
+                }
+
+                // Notification tile with swipe-to-dismiss
+                final notif = item.data!;
+                final notifId = notif['id'];
                 final isRead = notif['is_read'] == true;
                 final title = notif['title'] as String? ?? 'Notificación';
                 final body = notif['body'] as String? ?? '';
                 final type = notif['type'] as String? ?? 'general';
                 final createdAt = DateTime.tryParse(notif['created_at'] ?? '');
 
-                return _NotificationTile(
-                  title: title,
-                  body: body,
-                  type: type,
-                  isRead: isRead,
-                  createdAt: createdAt,
-                  onTap: () async {
-                    if (!isRead) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Dismissible(
+                    key: ValueKey(notifId ?? index),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 24),
+                      decoration: BoxDecoration(
+                        color: AtrioColors.error,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    onDismissed: (_) async {
                       try {
-                        await SupabaseConfig.client
-                            .from('notifications')
-                            .update({'is_read': true})
-                            .eq('id', notif['id']);
+                        if (notifId != null) {
+                          await SupabaseConfig.client
+                              .from('notifications')
+                              .delete()
+                              .eq('id', notifId);
+                        }
                         ref.invalidate(notificationsProvider);
                       } catch (e) {
-                        debugPrint('markNotificationRead error: $e');
+                        debugPrint('deleteNotification error: $e');
+                        ref.invalidate(notificationsProvider);
                       }
-                    }
-                  },
+                    },
+                    child: _NotificationTile(
+                      title: title,
+                      body: body,
+                      type: type,
+                      isRead: isRead,
+                      createdAt: createdAt,
+                      onTap: () async {
+                        if (!isRead) {
+                          try {
+                            await SupabaseConfig.client
+                                .from('notifications')
+                                .update({'is_read': true})
+                                .eq('id', notifId);
+                            ref.invalidate(notificationsProvider);
+                          } catch (e) {
+                            debugPrint('markNotificationRead error: $e');
+                          }
+                        }
+                      },
+                    ),
+                  ),
                 );
               },
             ),
@@ -152,6 +268,27 @@ class NotificationsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Represents either a section header or a notification entry in the flat list.
+class _ListItem {
+  final bool isHeader;
+  final bool isFirstHeader;
+  final _DateGroup? group;
+  final Map<String, dynamic>? data;
+
+  const _ListItem._({
+    required this.isHeader,
+    this.isFirstHeader = false,
+    this.group,
+    this.data,
+  });
+
+  factory _ListItem.header(_DateGroup group, {bool isFirst = false}) =>
+      _ListItem._(isHeader: true, isFirstHeader: isFirst, group: group);
+
+  factory _ListItem.notification(Map<String, dynamic> data) =>
+      _ListItem._(isHeader: false, data: data);
 }
 
 class _NotificationTile extends StatelessWidget {

@@ -49,7 +49,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           .eq('id', widget.conversationId)
           .maybeSingle();
       if (mounted) setState(() => _conversation = data);
-    } catch (_) {}
+    } catch (e) { debugPrint('chat error: $e'); }
   }
 
   Future<void> _loadMessages() async {

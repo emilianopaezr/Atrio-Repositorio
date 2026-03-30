@@ -34,6 +34,11 @@ import '../../features/disputes/presentation/dispute_detail_screen.dart';
 import '../../features/quick_services/presentation/quick_services_screen.dart';
 import '../../features/quick_services/presentation/publish_service_screen.dart';
 import '../../features/reviews/presentation/write_review_screen.dart';
+import '../../features/reviews/presentation/reviews_list_screen.dart';
+import '../../features/onboarding/presentation/splash_screen.dart';
+import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/host_analytics/presentation/analytics_screen.dart';
 import '../../shared/layouts/guest_shell.dart';
 import '../../shared/layouts/host_shell.dart';
 
@@ -46,16 +51,34 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/guest/home',
+    initialLocation: '/',
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      final isAuthRoute = state.matchedLocation.startsWith('/auth');
+      final loc = state.matchedLocation;
+      final isAuthRoute = loc.startsWith('/auth');
+      final isSplash = loc == '/';
+      final isOnboarding = loc == '/onboarding';
+
+      // Allow splash and onboarding without auth
+      if (isSplash || isOnboarding) return null;
 
       if (!isAuthenticated && !isAuthRoute) return '/auth/login';
       if (isAuthenticated && isAuthRoute) return '/guest/home';
       return null;
     },
     routes: [
+      // === SPLASH & ONBOARDING ===
+      GoRoute(
+        path: '/',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
       // === AUTH ROUTES ===
       GoRoute(
         path: '/auth/login',
@@ -301,6 +324,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => DisputeDetailScreen(
           disputeId: state.pathParameters['disputeId']!,
         ),
+      ),
+      GoRoute(
+        path: '/settings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/reviews/:listingId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ReviewsListScreen(
+          listingId: state.pathParameters['listingId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/host/analytics',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AnalyticsScreen(),
       ),
     ],
   );

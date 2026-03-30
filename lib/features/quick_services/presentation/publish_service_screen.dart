@@ -5,14 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 
-const _bg = Color(0xFF0A0A0A);
-const _surface = Color(0xFF141414);
-const _border = Color(0xFF2A2A2A);
-const _textPrimary = Color(0xFFFFFFFF);
-const _textSecondary = Color(0xFFAAAAAA);
-const _textMuted = Color(0xFF666666);
-const _lime = Color(0xFFD4FF00);
-const _limeDark = Color(0xFF9BBF00);
 
 class PublishServiceScreen extends ConsumerStatefulWidget {
   /// 'offer' = ofrecer servicio, 'request' = solicitar servicio
@@ -112,7 +104,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                 ),
               ],
             ),
-            backgroundColor: _lime,
+            backgroundColor: AtrioColors.neonLime,
             behavior: SnackBarBehavior.floating,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -138,12 +130,12 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AtrioColors.hostBackground,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: AtrioColors.hostBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: _textPrimary),
+          icon: const Icon(Icons.close, color: AtrioColors.hostTextPrimary),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -151,7 +143,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: _textPrimary,
+            color: AtrioColors.hostTextPrimary,
           ),
         ),
         centerTitle: true,
@@ -167,7 +159,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: _surface,
+                  color: AtrioColors.hostSurface,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
@@ -243,10 +235,10 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: isSelected ? _lime : _surface,
+                        color: isSelected ? AtrioColors.neonLime : AtrioColors.hostSurface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? _limeDark : _border,
+                          color: isSelected ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder,
                         ),
                       ),
                       child: Row(
@@ -255,7 +247,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                           Icon(
                             _categoryIcons[cat] ?? Icons.category,
                             size: 16,
-                            color: isSelected ? Colors.black : _textSecondary,
+                            color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -265,7 +257,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
-                              color: isSelected ? Colors.black : _textSecondary,
+                              color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
                             ),
                           ),
                         ],
@@ -308,10 +300,10 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                           margin: const EdgeInsets.only(right: 6),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: isSelected ? _lime : _surface,
+                            color: isSelected ? AtrioColors.neonLime : AtrioColors.hostSurface,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: isSelected ? _limeDark : _border,
+                              color: isSelected ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder,
                             ),
                           ),
                           child: Column(
@@ -320,7 +312,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                               Icon(
                                 icon,
                                 size: 20,
-                                color: isSelected ? Colors.black : _textSecondary,
+                                color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -331,7 +323,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                                   fontWeight: isSelected
                                       ? FontWeight.w700
                                       : FontWeight.w500,
-                                  color: isSelected ? Colors.black : _textSecondary,
+                                  color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
                                   height: 1.2,
                                 ),
                               ),
@@ -349,14 +341,14 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _lime.withValues(alpha: 0.08),
+                  color: AtrioColors.neonLime.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _lime.withValues(alpha: 0.2)),
+                  border: Border.all(color: AtrioColors.neonLime.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lightbulb_outline, size: 20, color: _lime),
+                    Icon(Icons.lightbulb_outline, size: 20, color: AtrioColors.neonLime),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -367,7 +359,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: _lime,
+                              color: AtrioColors.neonLime,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -377,7 +369,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                                 : 'Se detallado sobre lo que necesitas. Incluye medidas, piso, y si tienes herramientas disponibles.',
                             style: GoogleFonts.inter(
                               fontSize: 12,
-                              color: _textSecondary,
+                              color: AtrioColors.hostTextSecondary,
                               height: 1.4,
                             ),
                           ),
@@ -396,9 +388,9 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _publish,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _lime,
+                    backgroundColor: AtrioColors.neonLime,
                     foregroundColor: Colors.black,
-                    disabledBackgroundColor: _lime.withValues(alpha: 0.3),
+                    disabledBackgroundColor: AtrioColors.neonLime.withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -436,7 +428,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
       style: GoogleFonts.inter(
         fontSize: 14,
         fontWeight: FontWeight.w700,
-        color: _textPrimary,
+        color: AtrioColors.hostTextPrimary,
       ),
     );
   }
@@ -455,24 +447,24 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
       maxLength: maxLength,
       keyboardType: keyboardType,
       validator: validator,
-      style: GoogleFonts.inter(fontSize: 15, color: _textPrimary),
+      style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.inter(fontSize: 14, color: _textMuted),
+        hintStyle: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextTertiary),
         filled: true,
-        fillColor: _surface,
-        counterStyle: GoogleFonts.inter(fontSize: 11, color: _textMuted),
+        fillColor: AtrioColors.hostSurface,
+        counterStyle: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextTertiary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: _border),
+          borderSide: BorderSide(color: AtrioColors.hostCardBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: _border),
+          borderSide: BorderSide(color: AtrioColors.hostCardBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: _limeDark, width: 1.5),
+          borderSide: BorderSide(color: AtrioColors.neonLimeDark, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -507,7 +499,7 @@ class _ModeTab extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? _lime : Colors.transparent,
+            color: isSelected ? AtrioColors.neonLime : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -515,14 +507,14 @@ class _ModeTab extends StatelessWidget {
             children: [
               Icon(icon,
                   size: 16,
-                  color: isSelected ? Colors.black : _textSecondary),
+                  color: isSelected ? Colors.black : AtrioColors.hostTextSecondary),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? Colors.black : _textSecondary,
+                  color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
                 ),
               ),
             ],

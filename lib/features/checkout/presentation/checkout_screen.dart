@@ -79,7 +79,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return _checkOut!.difference(_checkIn!).inDays.clamp(1, 365);
   }
 
-  int get _hours => _selectedTimeSlots.length;
+  /// Number of hour-blocks selected (each slot = 1 block of N hours)
+  int _blockCount(Listing l) => _selectedTimeSlots.length;
+
+  /// Total hours = blocks × blockHours
+  int _totalHours(Listing l) {
+    final bh = l.blockHours > 0 ? l.blockHours : 1;
+    return _selectedTimeSlots.length * bh;
+  }
 
   String _fmt(DateTime? dt) {
     if (dt == null) return 'Seleccionar';
@@ -106,6 +113,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       _isPerPerson(l) && l.rentalMode == 'hours';
 
   /// Calculate the correct subtotal based on mode, units, and pricing type
+  /// For hours mode: price is per BLOCK (e.g. $35/block of 2h), not per individual hour
   double _calcSubtotal(Listing l) {
     final base = l.basePrice ?? 0;
     final mode = l.rentalMode;
@@ -113,8 +121,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final guestMultiplier = perPerson ? _guests : 1;
 
     if (mode == 'hours') {
-      final hours = _hours > 0 ? _hours : 1;
-      return base * hours * guestMultiplier;
+      // Each selected time slot = 1 block at base price
+      final blocks = _blockCount(l);
+      final qty = blocks > 0 ? blocks : 1;
+      return base * qty * guestMultiplier;
     } else if (mode == 'full_day') {
       return base * 1 * guestMultiplier;
     } else {
@@ -141,10 +151,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final basePrice = l.basePrice ?? 0;
     final cleaningFee = mode == 'hours' ? 0.0 : l.cleaningFee;
 
-    // Calculate units based on mode
+    // Calculate units based on mode (for hours: 1 unit = 1 block)
     int units;
     if (mode == 'hours') {
-      units = _hours > 0 ? _hours : 1;
+      units = _blockCount(l) > 0 ? _blockCount(l) : 1;
     } else if (mode == 'full_day') {
       units = 1;
     } else {
@@ -199,6 +209,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final fee = _calcServiceFee(sub, clean);
       final total = sub + clean + fee;
 
+      // Validate pricing integrity before submitting
+      final units = mode == 'hours'
+          ? _blockCount(listing)
+          : (mode == 'full_day' ? 1 : _nights);
+      final isValid = PricingEngineService.validatePricing(
+        basePrice: listing.basePrice ?? 0,
+        submittedSubtotal: sub,
+        submittedFee: fee,
+        units: units,
+        guests: _guests,
+        isPerPerson: _isPerPerson(listing),
+        feeRate: _feeRate,
+      );
+      if (!isValid) {
+        if (mounted) _snack('Error en el cálculo. Recarga e intenta de nuevo.', isError: true);
+        setState(() => _isBooking = false);
+        return;
+      }
+
       final timeSlots = _selectedTimeSlots.map((start) => {
         'start_time': start,
         'end_time': _slotEndTimes[start] ?? '',
@@ -225,7 +254,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           'booking_date': _selectedDate!.toIso8601String().split('T')[0],
           'start_time': sortedSlots.isNotEmpty ? sortedSlots.first : null,
           'end_time': sortedSlots.isNotEmpty ? _slotEndTimes[sortedSlots.last] : null,
-          'duration_hours': _hours.toDouble(),
+          'duration_hours': _totalHours(listing).toDouble(),
+          'block_hours': listing.blockHours,
+          'block_count': _blockCount(listing),
         },
       };
 
@@ -290,7 +321,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Widget _page(Listing listing) {
     final mode = listing.rentalMode;
     final base = listing.basePrice ?? 0;
-    final units = mode == 'hours' ? (_hours > 0 ? _hours : 1) : (mode == 'full_day' ? 1 : _nights);
+    final blockH = listing.blockHours > 0 ? listing.blockHours : 1;
+    final blocks = mode == 'hours' ? (_blockCount(listing) > 0 ? _blockCount(listing) : 1) : 1;
+    final totalH = mode == 'hours' ? blocks * blockH : 0;
 
     // Always use helper methods for correct pricing (ignores potentially stale _pricingResult)
     final sub = _calcSubtotal(listing);
@@ -306,8 +339,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     String unitSuffix;
     switch (mode) {
       case 'hours':
-        modeLabel = 'Reserva por horas';
-        unitSuffix = '$units hora${units > 1 ? 's' : ''}';
+        modeLabel = blockH > 1 ? 'Bloques de $blockH horas' : 'Reserva por horas';
+        unitSuffix = '$totalH hora${totalH > 1 ? 's' : ''} ($blocks bloque${blocks > 1 ? 's' : ''})';
         break;
       case 'full_day':
         modeLabel = 'Día completo';
@@ -462,7 +495,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         selectedDate: _selectedDate!,
                         availableFrom: listing.availableFrom ?? '09:00',
                         availableUntil: listing.availableUntil ?? '22:00',
-                        slotDurationMinutes: listing.slotDurationMinutes,
+                        slotDurationMinutes: (listing.blockHours > 0 ? listing.blockHours : 1) * 60,
                         selectedSlots: _selectedTimeSlots,
                         onSlotToggle: (start, end, selected) {
                           setState(() {
@@ -508,8 +541,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       children: [
                         _priceRow(
                           _isPerPerson(listing)
-                              ? '\$${base.toStringAsFixed(0)} x $_guests persona${_guests > 1 ? 's' : ''}${mode == 'hours' ? ' x $units hora${units > 1 ? 's' : ''}' : ''}'
-                              : '\$${base.toStringAsFixed(0)} x $unitSuffix',
+                              ? '\$${base.toStringAsFixed(0)} x $_guests persona${_guests > 1 ? 's' : ''}${mode == 'hours' ? ' x $blocks bloque${blocks > 1 ? 's' : ''}' : ''}'
+                              : mode == 'hours'
+                                  ? '\$${base.toStringAsFixed(0)} x $blocks bloque${blocks > 1 ? 's' : ''} (${blockH}h c/u)'
+                                  : '\$${base.toStringAsFixed(0)} x $unitSuffix',
                           sub,
                         ),
                         if (clean > 0) _priceRow('Limpieza', clean),
@@ -674,7 +709,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   Text(' / ${_unitLabel(listing.priceUnit)}', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary)),
                   const Spacer(),
                   if (listing.rating > 0) ...[
-                    const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFFB800)),
+                    const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold),
                     const SizedBox(width: 3),
                     Text(listing.rating.toStringAsFixed(1), style: AtrioTypography.caption.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary)),
                   ],
@@ -788,12 +823,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8E1).withValues(alpha: 0.6),
+        color: AtrioColors.ratingGold.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFB800).withValues(alpha: 0.25)),
+        border: Border.all(color: AtrioColors.ratingGold.withValues(alpha: 0.25)),
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.shield_outlined, size: 18, color: Color(0xFFFFB800)),
+        const Icon(Icons.shield_outlined, size: 18, color: AtrioColors.ratingGold),
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(policyTitle, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),

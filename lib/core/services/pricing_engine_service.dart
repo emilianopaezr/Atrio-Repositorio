@@ -111,4 +111,27 @@ class PricingEngineService {
       basePrice: basePrice,
     );
   }
+
+  /// Validates that client-side pricing matches expected calculations
+  /// Prevents tampered pricing from being submitted
+  static bool validatePricing({
+    required double basePrice,
+    required double submittedSubtotal,
+    required double submittedFee,
+    required int units,
+    required int guests,
+    required bool isPerPerson,
+    required double feeRate,
+  }) {
+    final expectedSub = isPerPerson
+        ? basePrice * units * guests
+        : basePrice * units;
+    final rawFee = expectedSub * feeRate;
+    final expectedFee = rawFee > maxFeeCap ? maxFeeCap : rawFee;
+
+    // Allow 1 cent tolerance for floating point
+    final subOk = (submittedSubtotal - expectedSub).abs() < 0.02;
+    final feeOk = (submittedFee - expectedFee).abs() < 0.02;
+    return subOk && feeOk;
+  }
 }

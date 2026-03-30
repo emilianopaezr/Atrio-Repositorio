@@ -687,10 +687,17 @@ class ProfileScreen extends ConsumerWidget {
                       child: Column(
                         children: [
                           _SettingsTile(
+                            icon: Icons.settings_rounded,
+                            title: 'Configuración',
+                            isDark: isDark,
+                            isFirst: true,
+                            onTap: () => context.push('/settings'),
+                          ),
+                          _buildSettingsDivider(dividerColor),
+                          _SettingsTile(
                             icon: Icons.person_outline,
                             title: 'Información Personal',
                             isDark: isDark,
-                            isFirst: true,
                             onTap: () => context.push('/edit-profile'),
                           ),
                           _buildSettingsDivider(dividerColor),

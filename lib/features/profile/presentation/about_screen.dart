@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../shared/widgets/atrio_card.dart';
@@ -185,17 +186,15 @@ class AboutScreen extends StatelessWidget {
               ),
             ),
             _LinkTile(
-              icon: Icons.language_outlined,
-              title: 'Sitio Web',
+              icon: Icons.share_outlined,
+              title: 'Compartir Atrio',
               isDark: isDark,
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                  backgroundColor: Color(0xFFD4FF00),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  duration: Duration(seconds: 1),
-                ));
+                SharePlus.instance.share(
+                  ShareParams(
+                    text: '¡Descubre Atrio! El marketplace de espacios, experiencias y servicios premium. Descárgala ahora.',
+                  ),
+                );
               },
             ),
 

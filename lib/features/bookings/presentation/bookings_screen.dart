@@ -16,6 +16,7 @@ class BookingsScreen extends ConsumerStatefulWidget {
 
 class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   int _selectedTab = 0; // 0=Proximas, 1=Pasadas
+  int _selectedFilter = 0; // 0=Todas, 1/2 vary by tab
 
   @override
   Widget build(BuildContext context) {
@@ -41,36 +42,44 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Tab pills
+            // Tab pills with count badges
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: AtrioColors.guestSurfaceVariant,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _TabPill(
-                        label: 'Proximas',
-                        isSelected: _selectedTab == 0,
-                        onTap: () => setState(() => _selectedTab = 0),
-                      ),
-                    ),
-                    Expanded(
-                      child: _TabPill(
-                        label: 'Pasadas',
-                        isSelected: _selectedTab == 1,
-                        onTap: () => setState(() => _selectedTab = 1),
-                      ),
-                    ),
-                  ],
-                ),
+              child: bookingsAsync.when(
+                data: (bookings) {
+                  final upcomingCount = bookings.where((b) {
+                    final status = b['status'] as String? ?? '';
+                    return status == 'pending' ||
+                        status == 'confirmed' ||
+                        status == 'active';
+                  }).length;
+                  final pastCount = bookings.where((b) {
+                    final status = b['status'] as String? ?? '';
+                    return status == 'completed' ||
+                        status == 'cancelled' ||
+                        status == 'rejected';
+                  }).length;
+
+                  return _buildTabPills(upcomingCount, pastCount);
+                },
+                loading: () => _buildTabPills(null, null),
+                error: (_, _) => _buildTabPills(null, null),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+
+            // Filter chips row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _FilterChipsRow(
+                selectedTab: _selectedTab,
+                selectedFilter: _selectedFilter,
+                onFilterChanged: (index) {
+                  setState(() => _selectedFilter = index);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // Content
             Expanded(
@@ -90,7 +99,10 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                         status == 'rejected';
                   }).toList();
 
-                  final list = _selectedTab == 0 ? upcoming : past;
+                  var list = _selectedTab == 0 ? upcoming : past;
+
+                  // Apply sub-filter
+                  list = _applyFilter(list);
 
                   if (list.isEmpty) {
                     return _EmptyBookings(
@@ -133,6 +145,120 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTabPills(int? upcomingCount, int? pastCount) {
+    final upcomingLabel =
+        upcomingCount != null ? 'Proximas ($upcomingCount)' : 'Proximas';
+    final pastLabel =
+        pastCount != null ? 'Pasadas ($pastCount)' : 'Pasadas';
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurfaceVariant,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _TabPill(
+              label: upcomingLabel,
+              isSelected: _selectedTab == 0,
+              onTap: () => setState(() {
+                _selectedTab = 0;
+                _selectedFilter = 0;
+              }),
+            ),
+          ),
+          Expanded(
+            child: _TabPill(
+              label: pastLabel,
+              isSelected: _selectedTab == 1,
+              onTap: () => setState(() {
+                _selectedTab = 1;
+                _selectedFilter = 0;
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _applyFilter(List<Map<String, dynamic>> list) {
+    if (_selectedFilter == 0) return list; // "Todas"
+
+    if (_selectedTab == 0) {
+      // Upcoming: 1=Pendientes, 2=Confirmadas
+      final targetStatus = _selectedFilter == 1 ? 'pending' : 'confirmed';
+      return list
+          .where((b) => (b['status'] as String? ?? '') == targetStatus)
+          .toList();
+    } else {
+      // Past: 1=Completadas, 2=Canceladas
+      final targetStatus = _selectedFilter == 1 ? 'completed' : 'cancelled';
+      return list
+          .where((b) => (b['status'] as String? ?? '') == targetStatus)
+          .toList();
+    }
+  }
+}
+
+class _FilterChipsRow extends StatelessWidget {
+  final int selectedTab;
+  final int selectedFilter;
+  final ValueChanged<int> onFilterChanged;
+
+  const _FilterChipsRow({
+    required this.selectedTab,
+    required this.selectedFilter,
+    required this.onFilterChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = selectedTab == 0
+        ? ['Todas', 'Pendientes', 'Confirmadas']
+        : ['Todas', 'Completadas', 'Canceladas'];
+
+    return Row(
+      children: List.generate(labels.length, (index) {
+        final isSelected = selectedFilter == index;
+        return Padding(
+          padding: EdgeInsets.only(right: index < labels.length - 1 ? 8 : 0),
+          child: GestureDetector(
+            onTap: () => onFilterChanged(index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AtrioColors.guestTextPrimary
+                    : AtrioColors.guestSurfaceVariant,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? AtrioColors.guestTextPrimary
+                      : AtrioColors.guestCardBorder,
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                labels[index],
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? AtrioColors.guestBackground
+                      : AtrioColors.guestTextSecondary,
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }
@@ -213,6 +339,19 @@ class _BookingCard extends StatelessWidget {
     }
   }
 
+  IconData _listingTypeIcon(String? type) {
+    switch (type) {
+      case 'space':
+        return Icons.apartment_rounded;
+      case 'experience':
+        return Icons.explore_rounded;
+      case 'service':
+        return Icons.room_service_rounded;
+      default:
+        return Icons.calendar_today_outlined;
+    }
+  }
+
   String _formatDate(DateTime? dt) {
     if (dt == null) return '';
     const months = [
@@ -231,6 +370,7 @@ class _BookingCard extends StatelessWidget {
     final checkIn = DateTime.tryParse(booking['check_in'] ?? '');
     final checkOut = DateTime.tryParse(booking['check_out'] ?? '');
     final total = booking['total']?.toString() ?? '0';
+    final listingType = listing['type'] as String?;
 
     return GestureDetector(
       onTap: () {
@@ -248,31 +388,52 @@ class _BookingCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Image thumbnail
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(17),
-              ),
-              child: SizedBox(
-                width: 110,
-                height: 110,
-                child: images.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: images.first,
-                        fit: BoxFit.cover,
-                        placeholder: (_, _) => Container(
-                            color: AtrioColors.guestSurfaceVariant),
-                        errorWidget: (_, _, _) => Container(
+            // Image thumbnail with listing type icon overlay
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(17),
+                  ),
+                  child: SizedBox(
+                    width: 110,
+                    height: 110,
+                    child: images.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: images.first,
+                            fit: BoxFit.cover,
+                            placeholder: (_, _) => Container(
+                                color: AtrioColors.guestSurfaceVariant),
+                            errorWidget: (_, _, _) => Container(
+                                color: AtrioColors.guestSurfaceVariant,
+                                child: const Icon(Icons.image, size: 28,
+                                    color: AtrioColors.guestTextTertiary)),
+                          )
+                        : Container(
                             color: AtrioColors.guestSurfaceVariant,
                             child: const Icon(Icons.image, size: 28,
-                                color: AtrioColors.guestTextTertiary)),
-                      )
-                    : Container(
-                        color: AtrioColors.guestSurfaceVariant,
-                        child: const Icon(Icons.image, size: 28,
-                            color: AtrioColors.guestTextTertiary),
-                      ),
-              ),
+                                color: AtrioColors.guestTextTertiary),
+                          ),
+                  ),
+                ),
+                // Listing type icon badge
+                Positioned(
+                  left: 6,
+                  bottom: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _listingTypeIcon(listingType),
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
             // Info
             Expanded(
@@ -281,22 +442,35 @@ class _BookingCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _statusColor(status).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _statusLabel(status),
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: _statusColor(status),
+                    // Status badge with colored dot
+                    Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: _statusColor(status),
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 5),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: _statusColor(status).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _statusLabel(status),
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: _statusColor(status),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     // Title

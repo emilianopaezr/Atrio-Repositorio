@@ -40,6 +40,7 @@ abstract class Listing with _$Listing {
     @JsonKey(name: 'min_nights') @Default(1) int minNights,
     @JsonKey(name: 'max_nights') @Default(30) int maxNights,
     @JsonKey(name: 'slot_duration_minutes') @Default(60) int slotDurationMinutes,
+    @JsonKey(name: 'block_hours') @Default(1) int blockHours,
     @JsonKey(name: 'max_capacity') int? maxCapacity,
     @JsonKey(name: 'instant_booking') @Default(false) bool instantBooking,
     @JsonKey(name: 'check_in_time') String? checkInTime,

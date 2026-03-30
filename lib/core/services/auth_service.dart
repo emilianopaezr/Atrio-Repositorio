@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase/supabase_config.dart';
 import '../utils/constants.dart';
+import 'realtime_service.dart';
 
 class AuthService {
   AuthService._();
@@ -80,6 +81,7 @@ class AuthService {
 
   /// Sign out and clear all cached state (call ref.invalidate separately for providers)
   static Future<void> signOutAndClear() async {
+    await RealtimeService.removeAllChannels();
     await SupabaseConfig.auth.signOut();
   }
 

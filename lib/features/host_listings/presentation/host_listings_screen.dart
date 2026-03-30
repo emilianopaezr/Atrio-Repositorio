@@ -248,7 +248,7 @@ class HostListingsScreen extends ConsumerWidget {
                                           const Icon(Icons.star_rounded,
                                               size: 14,
                                               color:
-                                                  Color(0xFFFFB800)),
+                                                  AtrioColors.ratingGold),
                                           const SizedBox(width: 4),
                                           Text(
                                             rating.toStringAsFixed(1),

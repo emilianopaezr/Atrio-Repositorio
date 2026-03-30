@@ -102,6 +102,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                 // ===== ACTIVIDAD RECIENTE =====
                 _buildRecentActivity(ref),
+                const SizedBox(height: 20),
+
+                // ===== VER ANALÍTICAS =====
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/host/analytics'),
+                    icon: const Icon(Icons.analytics_outlined, size: 20),
+                    label: Text('Ver analíticas completas',
+                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AtrioColors.neonLime,
+                      side: const BorderSide(color: AtrioColors.neonLime, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
 
                 const SizedBox(height: 100),
               ],

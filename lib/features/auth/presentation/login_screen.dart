@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../config/supabase/supabase_config.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -169,13 +170,73 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                          backgroundColor: AtrioColors.neonLime,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          duration: Duration(seconds: 1),
-                        ));
+                        final resetEmailController = TextEditingController();
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: AtrioColors.guestSurface,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: Text(
+                              'Recuperar contraseña',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w700,
+                                color: AtrioColors.guestTextPrimary,
+                              ),
+                            ),
+                            content: TextField(
+                              controller: resetEmailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                hintText: 'Tu email',
+                                hintStyle: GoogleFonts.inter(color: AtrioColors.guestTextTertiary),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AtrioColors.guestCardBorder),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AtrioColors.neonLimeDark),
+                                ),
+                              ),
+                              style: GoogleFonts.inter(color: AtrioColors.guestTextPrimary),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: Text('Cancelar', style: GoogleFonts.inter(color: AtrioColors.guestTextSecondary)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AtrioColors.neonLime,
+                                  foregroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
+                                onPressed: () async {
+                                  final email = resetEmailController.text.trim();
+                                  if (email.isEmpty) return;
+                                  Navigator.of(ctx).pop();
+                                  try {
+                                    await SupabaseConfig.auth.resetPasswordForEmail(email);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        content: Text('Se ha enviado un enlace de recuperación a tu correo'),
+                                        backgroundColor: AtrioColors.neonLimeDark,
+                                      ));
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        content: Text('Error al enviar enlace: $e'),
+                                        backgroundColor: AtrioColors.error,
+                                      ));
+                                    }
+                                  }
+                                },
+                                child: Text('Enviar', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                        );
                       },
                       child: Text(
                         'Olvidaste tu contrasena?',

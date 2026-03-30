@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/listings_provider.dart';
 import '../../../core/providers/availability_provider.dart';
@@ -10,15 +12,15 @@ import '../../../core/models/listing_model.dart';
 import '../../../core/models/enums.dart';
 import '../../../core/services/database_service.dart';
 
-const _bg = Color(0xFFFAFAFA);
-const _white = Color(0xFFFFFFFF);
-const _border = Color(0xFFEEEEEE);
-const _text = Color(0xFF1A1A1A);
-const _textSec = Color(0xFF777777);
-const _textMuted = Color(0xFFAAAAAA);
-const _lime = Color(0xFFD4FF00);
-const _limeDark = Color(0xFF9BBF00);
-const _gold = Color(0xFFFFB800);
+const _bg = AtrioColors.guestSurfaceVariant;
+const _white = AtrioColors.guestSurface;
+const _border = AtrioColors.guestCardBorder;
+const _text = AtrioColors.guestTextPrimary;
+const _textSec = AtrioColors.guestTextSecondary;
+const _textMuted = AtrioColors.guestTextTertiary;
+const _lime = AtrioColors.neonLime;
+const _limeDark = AtrioColors.neonLimeDark;
+const _gold = AtrioColors.ratingGold;
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
   final String listingId;
@@ -93,6 +95,89 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       debugPrint('_loadReviews error: $e');
       if (mounted) setState(() => _loadingReviews = false);
     }
+  }
+
+  void _shareListing() {
+    final listingsAsync = ref.read(listingsProvider(const ListingsFilter()));
+    final all = listingsAsync.value ?? [];
+    final listing = all.cast<Map<String, dynamic>>().where((l) => l['id'] == widget.listingId).firstOrNull;
+    if (listing == null) return;
+    final type = listing['type'] as String? ?? 'space';
+    final typeLabel = type == 'space' ? 'espacio' : type == 'experience' ? 'experiencia' : 'servicio';
+    final price = (listing['base_price'] as num?)?.toStringAsFixed(0) ?? '0';
+    final title = listing['title'] as String? ?? '';
+    final unit = listing['price_unit'] as String? ?? 'session';
+    SharePlus.instance.share(
+      ShareParams(text: '¡Mira este $typeLabel en Atrio! $title - \$$price/${_priceUnit(unit)}'),
+    );
+  }
+
+  void _showReportSheet() {
+    String? selectedReason;
+    final reasons = [
+      'Contenido inapropiado',
+      'Información falsa o engañosa',
+      'Fotos no coinciden',
+      'Precio incorrecto',
+      'Spam o estafa',
+      'Otro',
+    ];
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2))),
+              ),
+              const SizedBox(height: 16),
+              Text('Reportar publicación', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: _text)),
+              const SizedBox(height: 16),
+              ...reasons.map((r) => RadioListTile<String>(
+                title: Text(r, style: GoogleFonts.inter(fontSize: 14, color: _text)),
+                value: r,
+                groupValue: selectedReason,
+                activeColor: _limeDark,
+                onChanged: (v) => setSheetState(() => selectedReason = v),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              )),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: selectedReason == null
+                      ? null
+                      : () {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Reporte enviado. Gracias por ayudarnos a mejorar.')),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _lime,
+                    disabledBackgroundColor: _border,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: Text('Enviar reporte', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _text)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _priceUnit(String u) {
@@ -392,15 +477,15 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               itemBuilder: (_, i) => CachedNetworkImage(
                 imageUrl: listing.images[i],
                 fit: BoxFit.cover,
-                placeholder: (_, _) => Container(color: const Color(0xFFF0F0F0)),
+                placeholder: (_, _) => Container(color: AtrioColors.guestSurfaceVariant),
                 errorWidget: (_, _, _) => Container(
-                  color: const Color(0xFFF0F0F0),
+                  color: AtrioColors.guestSurfaceVariant,
                   child: const Icon(Icons.image, size: 48, color: _textMuted),
                 ),
               ),
             )
           else
-            Container(color: const Color(0xFFF0F0F0), child: const Icon(Icons.image, size: 56, color: _textMuted)),
+            Container(color: AtrioColors.guestSurfaceVariant, child: const Icon(Icons.image, size: 56, color: _textMuted)),
 
           // Top gradient
           Positioned(
@@ -430,7 +515,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       color: _isFav ? Colors.red : null,
                     ),
                     const SizedBox(width: 10),
-                    _circleBtn(Icons.ios_share_rounded, () {}),
+                    _circleBtn(Icons.ios_share_rounded, () => _shareListing()),
+                    const SizedBox(width: 10),
+                    _circleBtn(Icons.flag_outlined, () => _showReportSheet()),
                   ],
                 ),
               ],
@@ -511,7 +598,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     decoration: const BoxDecoration(color: _white, shape: BoxShape.circle),
                     child: Container(
                       padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(color: Color(0xFFFF8C00), shape: BoxShape.circle),
+                      decoration: const BoxDecoration(color: AtrioColors.vibrantOrange, shape: BoxShape.circle),
                       child: const Icon(Icons.star_rounded, size: 10, color: Colors.white),
                     ),
                   ),
@@ -533,14 +620,19 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
             ),
           ),
           GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                backgroundColor: Color(0xFFD4FF00),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                duration: Duration(seconds: 1),
-              ));
+            onTap: () async {
+              final currentUserId = SupabaseConfig.auth.currentUser?.id;
+              if (currentUserId == null) return;
+              final hostId = listing.hostId;
+              if (currentUserId == hostId) return; // Can't chat with yourself
+              final convo = await DatabaseService.getOrCreateConversation(
+                userId1: currentUserId,
+                userId2: hostId,
+                listingId: listing.id,
+              );
+              if (context.mounted) {
+                context.push('/chat/${convo['id']}');
+              }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -749,7 +841,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         // Legend
         Row(
           children: [
-            _availLegend(const Color(0xFF66BB6A), 'Disponible'),
+            _availLegend(AtrioColors.success, 'Disponible'),
             const SizedBox(width: 14),
             _availLegend(Colors.red[400]!, 'Reservado'),
             const SizedBox(width: 14),
@@ -806,7 +898,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               final blocked = blockedDates.contains(key);
               final isToday = date.day == DateTime.now().day && date.month == DateTime.now().month && date.year == DateTime.now().year;
 
-              Color dotColor = const Color(0xFF66BB6A); // available green
+              Color dotColor = AtrioColors.success; // available green
               if (booked) dotColor = Colors.red[400]!;
               if (blocked) dotColor = Colors.grey[400]!;
               if (isPast) dotColor = Colors.grey[300]!;
@@ -934,19 +1026,19 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 const SizedBox(height: 12),
                 _cancelRow(Icons.warning_amber_rounded, _gold, '24-48h: 50% reembolso', 'Se retiene la mitad'),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.cancel_outlined, const Color(0xFFE53935), 'Menos de 24h', 'Sin reembolso'),
+                _cancelRow(Icons.cancel_outlined, AtrioColors.error, 'Menos de 24h', 'Sin reembolso'),
               ] else if (policy == CancellationPolicy.moderate) ...[
                 _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 5 días antes', 'Reembolso completo'),
                 const SizedBox(height: 12),
                 _cancelRow(Icons.warning_amber_rounded, _gold, '2-5 días: 50% reembolso', 'Se retiene la mitad'),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.cancel_outlined, const Color(0xFFE53935), 'Menos de 2 días', 'Sin reembolso'),
+                _cancelRow(Icons.cancel_outlined, AtrioColors.error, 'Menos de 2 días', 'Sin reembolso'),
               ] else ...[
                 _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 7 días antes', 'Reembolso completo'),
                 const SizedBox(height: 12),
                 _cancelRow(Icons.warning_amber_rounded, _gold, '3-7 días: 50% reembolso', 'Se retiene la mitad'),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.cancel_outlined, const Color(0xFFE53935), 'Menos de 3 días', 'Sin reembolso'),
+                _cancelRow(Icons.cancel_outlined, AtrioColors.error, 'Menos de 3 días', 'Sin reembolso'),
               ],
             ],
           ),
@@ -1110,15 +1202,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           const SizedBox(height: 4),
           Center(
             child: GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                  backgroundColor: Color(0xFFD4FF00),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  duration: Duration(seconds: 1),
-                ));
-              },
+              onTap: () => context.push('/reviews/${widget.listingId}'),
               child: Text(
                 'Ver las ${_reviews.length} reseñas',
                 style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _limeDark),

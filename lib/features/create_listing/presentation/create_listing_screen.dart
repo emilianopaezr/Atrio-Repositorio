@@ -38,6 +38,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   bool _instantBooking = false;
   String _availableFrom = '09:00';
   String _availableUntil = '22:00';
+  int _blockHours = 1;
 
   @override
   void dispose() {
@@ -126,6 +127,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         if (_rentalMode == 'hours') ...{
           'available_from': _availableFrom,
           'available_until': _availableUntil,
+          'block_hours': _blockHours,
+          'slot_duration_minutes': _blockHours * 60,
         },
         'status': 'published',
       });
@@ -748,6 +751,64 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               ),
             )),
           ]),
+          const SizedBox(height: 16),
+          Text('Duración del bloque', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
+          const SizedBox(height: 6),
+          Text('El precio base se cobra por cada bloque de horas', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary)),
+          const SizedBox(height: 8),
+          Builder(builder: (_) {
+            // Calculate max possible block hours from the time range
+            final fromParts = _availableFrom.split(':');
+            final untilParts = _availableUntil.split(':');
+            final fromH = int.tryParse(fromParts[0]) ?? 9;
+            final untilH = int.tryParse(untilParts[0]) ?? 22;
+            final totalHours = untilH - fromH;
+            if (totalHours <= 0) return const SizedBox.shrink();
+
+            // Generate valid block sizes (divisors of totalHours)
+            final validBlocks = <int>[];
+            for (int b = 1; b <= totalHours; b++) {
+              if (totalHours % b == 0) validBlocks.add(b);
+            }
+            // Also add blocks that fit at least once even if not perfect divisor
+            for (int b = 1; b <= totalHours; b++) {
+              if (!validBlocks.contains(b)) validBlocks.add(b);
+            }
+            validBlocks.sort();
+            // Ensure current selection is valid
+            if (!validBlocks.contains(_blockHours)) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) setState(() => _blockHours = validBlocks.first);
+              });
+            }
+
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: validBlocks.map((b) {
+                final sel = b == _blockHours;
+                return GestureDetector(
+                  onTap: () => setState(() => _blockHours = b),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: sel ? AtrioColors.neonLime : AtrioColors.hostSurface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: sel ? AtrioColors.neonLime : AtrioColors.hostCardBorder),
+                    ),
+                    child: Text(
+                      '$b hora${b > 1 ? 's' : ''}',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: sel ? Colors.black : AtrioColors.hostTextPrimary,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          }),
         ],
         const SizedBox(height: 20),
         // Capacity

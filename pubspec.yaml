@@ -34,6 +34,12 @@ dependencies:
   # Charts
   fl_chart: any
 
+  # Local Storage
+  shared_preferences: any
+
+  # Sharing
+  share_plus: any
+
   # Environment
   flutter_dotenv: any
 

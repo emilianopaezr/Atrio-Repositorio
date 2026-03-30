@@ -8,6 +8,20 @@ class DatabaseService {
 
   static SupabaseClient get _client => SupabaseConfig.client;
 
+  /// Get current authenticated user ID or throw
+  static String get _currentUserId {
+    final uid = SupabaseConfig.auth.currentUser?.id;
+    if (uid == null) throw Exception('No authenticated user');
+    return uid;
+  }
+
+  /// Verify the caller is the specified user
+  static void _assertIsUser(String userId) {
+    if (_currentUserId != userId) {
+      throw Exception('Unauthorized: user mismatch');
+    }
+  }
+
   // =============================================
   // LISTINGS
   // =============================================
@@ -138,6 +152,16 @@ class DatabaseService {
 
   /// Delete a listing
   static Future<void> deleteListing(String id) async {
+    // Verify the current user owns this listing
+    final listing = await _client
+        .from(AppConstants.tableListings)
+        .select('host_id')
+        .eq('id', id)
+        .maybeSingle();
+    if (listing == null) return;
+    if (listing['host_id'] != _currentUserId) {
+      throw Exception('Unauthorized: not the listing owner');
+    }
     await _client.from(AppConstants.tableListings).delete().eq('id', id);
   }
 
@@ -161,11 +185,12 @@ class DatabaseService {
     return response;
   }
 
-  /// Update user profile
+  /// Update user profile (only own profile)
   static Future<Map<String, dynamic>> updateProfile(
     String userId,
     Map<String, dynamic> data,
   ) async {
+    _assertIsUser(userId);
     final response = await _client
         .from(AppConstants.tableProfiles)
         .update(data)
@@ -176,8 +201,9 @@ class DatabaseService {
     return response;
   }
 
-  /// Toggle favorite listing
+  /// Toggle favorite listing (only own favorites)
   static Future<void> toggleFavorite(String userId, String listingId) async {
+    _assertIsUser(userId);
     final profile = await getProfile(userId);
     if (profile == null) return;
 

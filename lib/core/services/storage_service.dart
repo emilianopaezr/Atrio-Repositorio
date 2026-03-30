@@ -9,6 +9,15 @@ class StorageService {
 
   static SupabaseClient get _client => SupabaseConfig.client;
 
+  static const int maxFileSizeBytes = 5 * 1024 * 1024; // 5MB
+  static const int maxAvatarSizeBytes = 2 * 1024 * 1024; // 2MB
+
+  static void _validateFileSize(Uint8List bytes, int maxSize) {
+    if (bytes.length > maxSize) {
+      throw Exception('Archivo demasiado grande. Máximo ${(maxSize / 1024 / 1024).toStringAsFixed(0)}MB');
+    }
+  }
+
   /// Sanitize filename to prevent path traversal attacks
   static String _sanitizeFileName(String fileName) {
     // Remove path traversal characters and directory separators
@@ -23,6 +32,7 @@ class StorageService {
   }
 
   static const _allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+  static const _allowedKycExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
 
   static String _validateImageExtension(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
@@ -39,6 +49,7 @@ class StorageService {
     required Uint8List fileBytes,
     required String fileName,
   }) async {
+    _validateFileSize(fileBytes, maxFileSizeBytes);
     final safeName = _validateImageExtension(_sanitizeFileName(fileName));
     final path = '$hostId/$listingId/$safeName';
 
@@ -64,6 +75,7 @@ class StorageService {
     required Uint8List fileBytes,
     String fileName = 'avatar.jpg',
   }) async {
+    _validateFileSize(fileBytes, maxAvatarSizeBytes);
     final safeName = _validateImageExtension(_sanitizeFileName(fileName));
     final path = '$userId/$safeName';
 
@@ -89,6 +101,7 @@ class StorageService {
     required Uint8List fileBytes,
     required String fileName,
   }) async {
+    _validateFileSize(fileBytes, maxFileSizeBytes);
     final safeName = _validateImageExtension(_sanitizeFileName(fileName));
     final path = '$conversationId/$safeName';
 
@@ -108,13 +121,18 @@ class StorageService {
         .getPublicUrl(path);
   }
 
-  /// Upload KYC document
+  /// Upload KYC document (only JPG, PNG, PDF allowed)
   static Future<String> uploadKycDocument({
     required String userId,
     required Uint8List fileBytes,
     required String fileName,
   }) async {
+    _validateFileSize(fileBytes, maxFileSizeBytes);
     final safeName = _sanitizeFileName(fileName);
+    final ext = safeName.split('.').last.toLowerCase();
+    if (!_allowedKycExtensions.contains(ext)) {
+      throw Exception('Tipo de archivo no permitido. Solo JPG, PNG o PDF.');
+    }
     final path = '$userId/$safeName';
 
     await _client.storage

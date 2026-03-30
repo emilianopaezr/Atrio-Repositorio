@@ -158,7 +158,7 @@ class FavoritesScreen extends ConsumerWidget {
                           .update({'favorite_listing_ids': favs})
                           .eq('id', userId);
                       ref.invalidate(favoritesProvider);
-                    } catch (_) {}
+                    } catch (e) { debugPrint('favorites error: $e'); }
                   },
                 );
               },
@@ -295,7 +295,7 @@ class _FavoriteCard extends StatelessWidget {
                         ),
                         const Spacer(),
                         if (listing.rating > 0) ...[
-                          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFFB800)),
+                          const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold),
                           const SizedBox(width: 3),
                           Text(
                             listing.rating.toStringAsFixed(1),
