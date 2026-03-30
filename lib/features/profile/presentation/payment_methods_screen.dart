@@ -174,19 +174,19 @@ class PaymentMethodsScreen extends StatelessWidget {
             const SizedBox(height: 14),
             _TransactionItem(
               title: 'Loft Premium Centro',
-              date: '15 Mar 2024',
+              date: '15 Mar 2026',
               amount: '-\$451.00',
               status: 'Completado',
             ),
             _TransactionItem(
               title: 'Estudio Creativo',
-              date: '28 Feb 2024',
+              date: '28 Feb 2026',
               amount: '-\$180.00',
               status: 'Completado',
             ),
             _TransactionItem(
               title: 'Villa con Piscina',
-              date: '10 Feb 2024',
+              date: '10 Feb 2026',
               amount: '-\$920.00',
               status: 'Reembolsado',
               isRefund: true,
