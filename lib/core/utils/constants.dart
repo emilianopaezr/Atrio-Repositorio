@@ -37,4 +37,7 @@ class AppConstants {
 
   // Ratings
   static const superhostMinRating = 4.5;
+
+  // API Keys
+  static const String resendApiKey = 're_N79P3zqJ_6ydqnR9Pwwr7aQSMYCyw1iHr';
 }

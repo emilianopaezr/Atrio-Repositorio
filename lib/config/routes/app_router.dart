@@ -5,6 +5,7 @@ import '../../config/supabase/supabase_config.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
+import '../../features/auth/presentation/email_verification_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/search/presentation/search_screen.dart';
 import '../../features/bookings/presentation/bookings_screen.dart';
@@ -69,8 +70,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Not authenticated → force login
       if (!isAuthenticated && !isAuthRoute) return '/auth/login';
 
-      // Authenticated but on auth route → go home
-      if (isAuthenticated && isAuthRoute) return '/guest/home';
+      // Authenticated but on auth route → go home (except verify-email)
+      if (isAuthenticated && isAuthRoute && loc != '/auth/verify-email') {
+        return '/guest/home';
+      }
 
       return null;
     },
@@ -97,6 +100,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth/register',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/auth/verify-email',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const EmailVerificationScreen(),
       ),
 
       // === GUEST MODE ===

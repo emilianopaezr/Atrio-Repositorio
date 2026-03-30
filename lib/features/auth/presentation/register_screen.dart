@@ -65,10 +65,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
       // If we got a session back (auto-confirm), navigate to home
       if (response.session != null) {
-        _showSuccess('¡Cuenta creada exitosamente! Bienvenido a Atrio.');
+        _showSuccess('Cuenta creada. Te enviamos un código de verificación.');
         // Small delay so user sees the success message
         await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) context.go('/guest/home');
+        if (mounted) context.go('/auth/verify-email');
         return;
       }
 

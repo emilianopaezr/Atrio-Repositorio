@@ -157,6 +157,62 @@ class AuthService {
   static Session? get currentSession => SupabaseConfig.auth.currentSession;
   static bool get isAuthenticated => currentUser != null;
 
+  /// Request email verification OTP
+  static Future<void> requestVerificationCode() async {
+    try {
+      await SupabaseConfig.client.rpc('request_verification', params: {
+        'p_api_key': AppConstants.resendApiKey,
+      });
+    } catch (e) {
+      debugPrint('Error requesting verification: $e');
+      throw AuthException(
+        'No se pudo enviar el código. Intenta de nuevo.',
+        code: 'verification_send_error',
+      );
+    }
+  }
+
+  /// Verify OTP code
+  static Future<bool> verifyOtpCode(String code) async {
+    try {
+      final user = SupabaseConfig.auth.currentUser;
+      if (user == null) throw AuthException('No hay sesión activa.');
+
+      final result = await SupabaseConfig.client.rpc('verify_otp_code', params: {
+        'p_user_id': user.id,
+        'p_code': code,
+      });
+
+      return result == true;
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      debugPrint('Error verifying OTP: $e');
+      throw AuthException(
+        'Error al verificar el código. Intenta de nuevo.',
+        code: 'verification_error',
+      );
+    }
+  }
+
+  /// Check if current user's email is verified
+  static Future<bool> isEmailVerified() async {
+    try {
+      final user = SupabaseConfig.auth.currentUser;
+      if (user == null) return false;
+
+      final result = await SupabaseConfig.client
+          .from('profiles')
+          .select('email_verified')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      return result?['email_verified'] == true;
+    } catch (e) {
+      debugPrint('Error checking email verification: $e');
+      return false;
+    }
+  }
+
   // ──────────────────────────────────────────
   // Error mapping helpers
   // ──────────────────────────────────────────
