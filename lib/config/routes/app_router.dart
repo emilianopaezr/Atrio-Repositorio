@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/supabase/supabase_config.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/services/auth_service.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/email_verification_screen.dart';
@@ -70,9 +71,24 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Not authenticated → force login
       if (!isAuthenticated && !isAuthRoute) return '/auth/login';
 
-      // Authenticated but on auth route → go home (except verify-email)
-      if (isAuthenticated && isAuthRoute && loc != '/auth/verify-email') {
-        return '/guest/home';
+      // Authenticated: check email verification
+      if (isAuthenticated) {
+        final verified = AuthService.emailVerified;
+
+        // Email NOT verified → force verification screen
+        if (verified == false && loc != '/auth/verify-email') {
+          return '/auth/verify-email';
+        }
+
+        // Email verified (or unknown) but on login/register → go home
+        if (isAuthRoute && loc != '/auth/verify-email') {
+          return '/guest/home';
+        }
+
+        // Email verified but still on verify-email → go home
+        if (verified == true && loc == '/auth/verify-email') {
+          return '/guest/home';
+        }
       }
 
       return null;

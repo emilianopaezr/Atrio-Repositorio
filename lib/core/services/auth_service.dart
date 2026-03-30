@@ -17,6 +17,33 @@ class AuthException implements Exception {
 class AuthService {
   AuthService._();
 
+  /// Cached email verification status.
+  /// null = unknown (not yet checked), true = verified, false = not verified.
+  /// Read synchronously by GoRouter redirect.
+  static bool? emailVerified;
+
+  /// Fetch email_verified from DB and cache it.
+  static Future<bool> fetchEmailVerified() async {
+    final user = SupabaseConfig.auth.currentUser;
+    if (user == null) {
+      emailVerified = null;
+      return false;
+    }
+    try {
+      final result = await SupabaseConfig.client
+          .from('profiles')
+          .select('email_verified')
+          .eq('id', user.id)
+          .maybeSingle();
+      emailVerified = result?['email_verified'] == true;
+    } catch (e) {
+      debugPrint('Error fetching email_verified: $e');
+      // On error, assume verified to avoid blocking the user
+      emailVerified = true;
+    }
+    return emailVerified!;
+  }
+
   /// Sign up with email & password
   static Future<AuthResponse> signUpWithEmail({
     required String email,
@@ -131,11 +158,13 @@ class AuthService {
 
   /// Sign out
   static Future<void> signOut() async {
+    emailVerified = null;
     await SupabaseConfig.auth.signOut();
   }
 
   /// Sign out and clear all cached state
   static Future<void> signOutAndClear() async {
+    emailVerified = null;
     try {
       await RealtimeService.removeAllChannels();
     } catch (_) {}

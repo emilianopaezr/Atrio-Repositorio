@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/utils/constants.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
@@ -141,6 +142,7 @@ class _EmailVerificationScreenState
       if (!mounted) return;
 
       if (result == true) {
+        AuthService.emailVerified = true; // Unblock router
         _showSuccess('Email verificado correctamente.');
         await Future.delayed(const Duration(milliseconds: 600));
         if (mounted) context.go('/guest/home');

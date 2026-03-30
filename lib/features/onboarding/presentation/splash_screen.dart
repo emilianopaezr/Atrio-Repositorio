@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -53,8 +54,16 @@ class _SplashScreenState extends State<SplashScreen>
 
     final session = SupabaseConfig.auth.currentSession;
     if (session != null) {
-      context.go('/guest/home');
+      // Check email verification before allowing access
+      final verified = await AuthService.fetchEmailVerified();
+      if (!mounted) return;
+      if (verified) {
+        context.go('/guest/home');
+      } else {
+        context.go('/auth/verify-email');
+      }
     } else {
+      AuthService.emailVerified = null;
       context.go('/auth/login');
     }
   }

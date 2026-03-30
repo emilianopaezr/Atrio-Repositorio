@@ -58,9 +58,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
       if (!mounted) return;
 
-      // Explicit navigation on success (belt & suspenders with GoRouter redirect)
+      // Check email verification before allowing access
       if (response.session != null) {
-        context.go('/guest/home');
+        final verified = await AuthService.fetchEmailVerified();
+        if (!mounted) return;
+        if (verified) {
+          context.go('/guest/home');
+        } else {
+          context.go('/auth/verify-email');
+        }
       }
     } on AuthException catch (e) {
       if (!mounted) return;

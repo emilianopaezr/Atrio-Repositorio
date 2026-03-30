@@ -63,10 +63,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
       if (!mounted) return;
 
-      // If we got a session back (auto-confirm), navigate to home
+      // If we got a session back (auto-confirm), send to verification
       if (response.session != null) {
+        AuthService.emailVerified = false; // Block access until verified
         _showSuccess('Cuenta creada. Te enviamos un código de verificación.');
-        // Small delay so user sees the success message
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) context.go('/auth/verify-email');
         return;
