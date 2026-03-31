@@ -342,7 +342,7 @@ class DatabaseService {
       'listing_id': listingId,
       'date': date.toIso8601String().split('T')[0],
       'is_available': isAvailable,
-      if (customPrice != null) 'custom_price': customPrice,
+      'custom_price': ?customPrice,
     });
   }
 
@@ -589,8 +589,8 @@ class DatabaseService {
         .from(AppConstants.tableConversations)
         .insert({
           'participant_ids': [userId1, userId2],
-          if (listingId != null) 'listing_id': listingId,
-          if (bookingId != null) 'booking_id': bookingId,
+          'listing_id': ?listingId,
+          'booking_id': ?bookingId,
         })
         .select()
         .single();
@@ -629,7 +629,7 @@ class DatabaseService {
           'sender_id': senderId,
           'text': text,
           'type': type,
-          if (imageUrl != null) 'image_url': imageUrl,
+          'image_url': ?imageUrl,
         })
         .select()
         .single();

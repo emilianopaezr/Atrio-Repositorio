@@ -142,15 +142,20 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               const SizedBox(height: 16),
               Text('Reportar publicación', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: _text)),
               const SizedBox(height: 16),
-              ...reasons.map((r) => RadioListTile<String>(
-                title: Text(r, style: GoogleFonts.inter(fontSize: 14, color: _text)),
-                value: r,
+              RadioGroup<String>(
                 groupValue: selectedReason,
-                activeColor: _limeDark,
                 onChanged: (v) => setSheetState(() => selectedReason = v),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-              )),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: reasons.map((r) => RadioListTile<String>(
+                    title: Text(r, style: GoogleFonts.inter(fontSize: 14, color: _text)),
+                    value: r,
+                    activeColor: _limeDark,
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  )).toList(),
+                ),
+              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -630,7 +635,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 userId2: hostId,
                 listingId: listing.id,
               );
-              if (context.mounted) {
+              if (mounted) {
                 context.push('/chat/${convo['id']}');
               }
             },

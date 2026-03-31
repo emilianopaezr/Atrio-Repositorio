@@ -75,7 +75,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.all(20),
                     itemCount: _reviews.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         Divider(height: 32, color: AtrioColors.guestDivider),
                     itemBuilder: (context, i) {
                       final r = _reviews[i];
