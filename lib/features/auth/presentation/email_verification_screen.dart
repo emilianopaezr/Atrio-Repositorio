@@ -167,7 +167,7 @@ class _EmailVerificationScreenState
     try {
       await SupabaseConfig.client.rpc(
         'request_verification',
-        params: {'p_api_key': AppConstants.resendApiKey},
+        params: {'p_api_key': AppConstants.brevoApiKey},
       );
 
       if (!mounted) return;

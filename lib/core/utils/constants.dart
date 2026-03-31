@@ -38,6 +38,8 @@ class AppConstants {
   // Ratings
   static const superhostMinRating = 4.5;
 
-  // API Keys
+  // API Keys (Brevo - SendinBlue)
+  static const String brevoApiKey = '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';
+  // Legacy Resend key (limited to owner email only)
   static const String resendApiKey = 're_N79P3zqJ_6ydqnR9Pwwr7aQSMYCyw1iHr';
 }

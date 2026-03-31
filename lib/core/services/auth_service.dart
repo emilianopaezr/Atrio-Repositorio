@@ -190,7 +190,7 @@ class AuthService {
   static Future<void> requestVerificationCode() async {
     try {
       await SupabaseConfig.client.rpc('request_verification', params: {
-        'p_api_key': AppConstants.resendApiKey,
+        'p_api_key': AppConstants.brevoApiKey,
       });
     } catch (e) {
       debugPrint('Error requesting verification: $e');
