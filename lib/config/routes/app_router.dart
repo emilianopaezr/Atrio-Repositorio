@@ -80,15 +80,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           return '/auth/verify-email';
         }
 
-        // Email verified (or unknown) but on login/register → go home
-        if (isAuthRoute && loc != '/auth/verify-email') {
+        // Email verified → redirect away from auth routes to home
+        if (verified == true && isAuthRoute) {
           return '/guest/home';
         }
 
-        // Email verified but still on verify-email → go home
-        if (verified == true && loc == '/auth/verify-email') {
-          return '/guest/home';
-        }
+        // verified == null (unknown): stay on current screen, let it resolve
       }
 
       return null;

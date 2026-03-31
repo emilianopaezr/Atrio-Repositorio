@@ -55,6 +55,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
     setState(() => _isLoading = true);
     try {
+      // Pre-set emailVerified BEFORE signup to win the race against
+      // the auth state listener that fires when the session is created
+      AuthService.emailVerified = false;
+
       final response = await AuthService.signUpWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -65,7 +69,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
       // If we got a session back (auto-confirm), send to verification
       if (response.session != null) {
-        AuthService.emailVerified = false; // Block access until verified
         _showSuccess('Cuenta creada. Te enviamos un código de verificación.');
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) context.go('/auth/verify-email');
@@ -79,6 +82,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         );
       }
     } on AuthException catch (e) {
+      AuthService.emailVerified = null; // Reset on failure
       if (!mounted) return;
 
       // If email already exists, offer to go to login
@@ -92,6 +96,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         _showError(e.message);
       }
     } catch (e) {
+      AuthService.emailVerified = null; // Reset on failure
       if (!mounted) return;
       _showError('Ocurrió un error inesperado. Intenta de nuevo.');
     } finally {
