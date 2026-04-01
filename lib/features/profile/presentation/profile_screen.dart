@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/models/enums.dart';
+import '../../../core/models/user_model.dart';
+import '../../../core/models/host_stats_model.dart';
+import '../../../core/models/guest_stats_model.dart';
+import 'dart:math' as math;
 import '../../../core/providers/app_mode_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/host_stats_provider.dart';
@@ -311,6 +315,7 @@ class ProfileScreen extends ConsumerWidget {
                               data: (stats) {
                                 final bookings = stats?.completedBookingsCount ?? 0;
                                 final rating = stats?.averageRating ?? 0;
+                                final response = stats?.responseRate ?? 0;
                                 return _buildStatsRow(
                                   isDark: isDark,
                                   stats: [
@@ -320,7 +325,10 @@ class ProfileScreen extends ConsumerWidget {
                                       label: 'Calificación',
                                       prefix: '\u2605 ',
                                     ),
-                                    _StatData(value: '98%', label: 'Respuesta'),
+                                    _StatData(
+                                      value: response > 0 ? '${response.round()}%' : '-',
+                                      label: 'Respuesta',
+                                    ),
                                   ],
                                 );
                               },
@@ -337,12 +345,20 @@ class ProfileScreen extends ConsumerWidget {
                           : guestStatsAsync.when(
                               data: (stats) {
                                 final bookings = stats?.completedBookingsCount ?? 0;
+                                final cancelRate = stats?.cancellationRate ?? 0;
+                                final reliability = cancelRate > 0 ? (100 - (cancelRate * 100)).round() : (bookings > 0 ? 100 : 0);
                                 return _buildStatsRow(
                                   isDark: isDark,
                                   stats: [
                                     _StatData(value: '$bookings', label: 'Reservas'),
-                                    _StatData(value: '4.9', label: 'Calificación', prefix: '\u2605 '),
-                                    _StatData(value: '100%', label: 'Respuesta'),
+                                    _StatData(
+                                      value: bookings > 0 ? '$reliability%' : '-',
+                                      label: 'Fiabilidad',
+                                    ),
+                                    _StatData(
+                                      value: bookings > 0 ? '0' : '-',
+                                      label: 'Cancelaciones',
+                                    ),
                                   ],
                                 );
                               },
@@ -351,140 +367,26 @@ class ProfileScreen extends ConsumerWidget {
                                 isDark: isDark,
                                 stats: [
                                   _StatData(value: '0', label: 'Reservas'),
-                                  _StatData(value: '-', label: 'Calificación', prefix: '\u2605 '),
-                                  _StatData(value: '-', label: 'Respuesta'),
+                                  _StatData(value: '-', label: 'Fiabilidad'),
+                                  _StatData(value: '-', label: 'Cancelaciones'),
                                 ],
                               ),
                             ),
                     ),
                     const SizedBox(height: 16),
 
-                    // === REPUTATION SCORE CARD ===
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: borderColor),
-                        boxShadow: isDark
-                            ? null
-                            : [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Puntuación de Reputación',
-                                style: AtrioTypography.headingSmall.copyWith(
-                                  color: textPrimary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF22C55E).withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0xFF22C55E).withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Top 5%',
-                                  style: AtrioTypography.caption.copyWith(
-                                    color: const Color(0xFF22C55E),
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                '98',
-                                style: AtrioTypography.displayLarge.copyWith(
-                                  color: textPrimary,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 48,
-                                  height: 1,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '/100',
-                                style: AtrioTypography.headingMedium.copyWith(
-                                  color: textTertiary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          // Progress bar
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: Stack(
-                              children: [
-                                Container(
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? AtrioColors.hostSurfaceVariant
-                                        : AtrioColors.guestSurfaceVariant,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                ),
-                                FractionallySizedBox(
-                                  widthFactor: 0.98,
-                                  child: Container(
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          AtrioColors.neonLime,
-                                          AtrioColors.neonLimeDark,
-                                          AtrioColors.neonLimeDark,
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(6),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AtrioColors.neonLimeDark
-                                              .withValues(alpha: 0.4),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Basado en tu historial de reservas, reseñas y tiempo de respuesta. ¡Sigue así!',
-                            style: AtrioTypography.bodySmall.copyWith(
-                              color: textSecondary,
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
+                    // === REPUTATION SCORE CARD (DYNAMIC) ===
+                    _buildReputationCard(
+                      isDark: isDark,
+                      cardColor: cardColor,
+                      borderColor: borderColor,
+                      textPrimary: textPrimary,
+                      textSecondary: textSecondary,
+                      textTertiary: textTertiary,
+                      isHost: appMode == AppMode.host,
+                      hostStats: hostStatsAsync.value,
+                      guestStats: guestStatsAsync.value,
+                      profile: userAsync.value,
                     ),
                     const SizedBox(height: 16),
 
@@ -551,26 +453,17 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     const SizedBox(height: 16),
 
-                    // === EARNED BADGES ===
-                    _buildEarnedBadgesSection(
-                      context: context,
+                    // === EARNED BADGES (DYNAMIC) ===
+                    _buildDynamicBadgesSection(
                       isDark: isDark,
                       textPrimary: textPrimary,
                       textSecondary: textSecondary,
-                      textTertiary: textTertiary,
                       cardColor: cardColor,
                       borderColor: borderColor,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // === RECENT REVIEWS ===
-                    _buildRecentReviewsSection(
-                      isDark: isDark,
-                      textPrimary: textPrimary,
-                      textSecondary: textSecondary,
-                      textTertiary: textTertiary,
-                      cardColor: cardColor,
-                      borderColor: borderColor,
+                      isHost: appMode == AppMode.host,
+                      hostStats: hostStatsAsync.value,
+                      guestStats: guestStatsAsync.value,
+                      profile: userAsync.value,
                     ),
                     const SizedBox(height: 20),
 
@@ -898,21 +791,408 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  // --- Earned Badges Section ---
-  Widget _buildEarnedBadgesSection({
-    required BuildContext context,
+  // --- REPUTATION SCORE CALCULATION ---
+  static int _calculateReputationScore({
+    required bool isHost,
+    HostStats? hostStats,
+    GuestStats? guestStats,
+    UserProfile? profile,
+  }) {
+    double score = 0;
+
+    // 1. Verification score (max 25 points)
+    if (profile != null) {
+      score += 5; // Account exists
+      if (profile.kycStatus == 'approved') score += 10;
+      if (profile.phone != null && profile.phone!.isNotEmpty) score += 5;
+      if (profile.photoUrl != null && profile.photoUrl!.isNotEmpty) score += 3;
+      if (profile.bio != null && profile.bio!.isNotEmpty) score += 2;
+    }
+
+    if (isHost && hostStats != null) {
+      // 2. Rating score (max 35 points)
+      final rating = hostStats.averageRating;
+      if (rating > 0) {
+        score += (rating / 5.0) * 35;
+      }
+      // 3. Activity score (max 25 points) - logarithmic
+      final bookings = hostStats.completedBookingsCount;
+      if (bookings > 0) {
+        score += math.min(25, (math.log(bookings + 1) / math.log(26)) * 25);
+      }
+      // 4. Response rate (max 15 points)
+      final responseRate = hostStats.responseRate;
+      if (responseRate > 0) {
+        score += (responseRate / 100.0) * 15;
+      }
+    } else if (!isHost && guestStats != null) {
+      // 2. Activity score (max 35 points)
+      final bookings = guestStats.completedBookingsCount;
+      if (bookings > 0) {
+        score += math.min(35, (math.log(bookings + 1) / math.log(26)) * 35);
+      }
+      // 3. Reliability score (max 25 points)
+      final cancelRate = guestStats.cancellationRate;
+      if (bookings > 0) {
+        score += (1 - cancelRate) * 25;
+      }
+      // 4. Loyalty score (max 15 points)
+      if (bookings >= 1) score += 5;
+      if (bookings >= 5) score += 5;
+      if (bookings >= 15) score += 5;
+    }
+
+    return score.round().clamp(0, 100);
+  }
+
+  static String _getReputationLabel(int score) {
+    if (score >= 90) return 'Excelente';
+    if (score >= 70) return 'Muy Bueno';
+    if (score >= 50) return 'Bueno';
+    if (score >= 30) return 'En Progreso';
+    if (score >= 10) return 'Iniciando';
+    return 'Nuevo';
+  }
+
+  static Color _getReputationColor(int score) {
+    if (score >= 80) return const Color(0xFF22C55E);
+    if (score >= 60) return AtrioColors.neonLimeDark;
+    if (score >= 40) return AtrioColors.vibrantOrange;
+    if (score >= 20) return const Color(0xFFF59E0B);
+    return const Color(0xFF6B7280);
+  }
+
+  // --- REPUTATION CARD WIDGET ---
+  Widget _buildReputationCard({
     required bool isDark,
+    required Color cardColor,
+    required Color borderColor,
     required Color textPrimary,
     required Color textSecondary,
     required Color textTertiary,
+    required bool isHost,
+    HostStats? hostStats,
+    GuestStats? guestStats,
+    UserProfile? profile,
+  }) {
+    final score = _calculateReputationScore(
+      isHost: isHost,
+      hostStats: hostStats,
+      guestStats: guestStats,
+      profile: profile,
+    );
+    final label = _getReputationLabel(score);
+    final color = _getReputationColor(score);
+    final factor = score / 100.0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Puntuacion de Reputacion',
+                style: AtrioTypography.headingSmall.copyWith(
+                  color: textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  label,
+                  style: AtrioTypography.caption.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '$score',
+                style: AtrioTypography.displayLarge.copyWith(
+                  color: textPrimary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 48,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '/100',
+                style: AtrioTypography.headingMedium.copyWith(
+                  color: textTertiary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Stack(
+              children: [
+                Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AtrioColors.hostSurfaceVariant
+                        : AtrioColors.guestSurfaceVariant,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                FractionallySizedBox(
+                  widthFactor: factor,
+                  child: Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [color.withValues(alpha: 0.7), color],
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            score < 20
+                ? 'Completa tu perfil, verifica tu identidad y realiza reservas para mejorar tu puntuacion.'
+                : score < 50
+                    ? 'Buen progreso. Sigue completando reservas y obteniendo buenas resenas.'
+                    : score < 80
+                        ? 'Tu reputacion va en aumento. Mantener buenas resenas te acercara al nivel elite.'
+                        : 'Excelente reputacion. Eres un miembro destacado de la comunidad Atrio.',
+            style: AtrioTypography.bodySmall.copyWith(
+              color: textSecondary,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- DYNAMIC BADGES SECTION ---
+  static List<_BadgeData> _calculateBadges({
+    required bool isHost,
+    HostStats? hostStats,
+    GuestStats? guestStats,
+    UserProfile? profile,
+  }) {
+    final List<_BadgeData> earned = [];
+    final List<_BadgeData> locked = [];
+
+    // Universal badges
+    final emailVerified = profile != null; // if profile exists, email was verified
+    if (emailVerified) {
+      earned.add(const _BadgeData(
+        icon: Icons.mark_email_read_rounded,
+        label: 'Email Verificado',
+        color: Color(0xFF22C55E),
+        isEarned: true,
+      ));
+    }
+
+    final hasPhone = profile?.phone != null && profile!.phone!.isNotEmpty;
+    if (hasPhone) {
+      earned.add(const _BadgeData(
+        icon: Icons.phone_android_rounded,
+        label: 'Telefono Verificado',
+        color: Color(0xFF3B82F6),
+        isEarned: true,
+      ));
+    } else {
+      locked.add(const _BadgeData(
+        icon: Icons.phone_android_rounded,
+        label: 'Verifica Telefono',
+        color: Color(0xFF6B7280),
+        isEarned: false,
+      ));
+    }
+
+    final kycApproved = profile?.kycStatus == 'approved';
+    if (kycApproved) {
+      earned.add(const _BadgeData(
+        icon: Icons.verified_user_rounded,
+        label: 'Identidad Verificada',
+        color: Color(0xFF8B5CF6),
+        isEarned: true,
+      ));
+    } else {
+      locked.add(const _BadgeData(
+        icon: Icons.verified_user_rounded,
+        label: 'Verifica Identidad',
+        color: Color(0xFF6B7280),
+        isEarned: false,
+      ));
+    }
+
+    final hasPhoto = profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty;
+    if (hasPhoto) {
+      earned.add(const _BadgeData(
+        icon: Icons.camera_alt_rounded,
+        label: 'Foto de Perfil',
+        color: Color(0xFFEC4899),
+        isEarned: true,
+      ));
+    }
+
+    if (isHost && hostStats != null) {
+      final bookings = hostStats.completedBookingsCount;
+      final rating = hostStats.averageRating;
+
+      if (bookings >= 1) {
+        earned.add(const _BadgeData(
+          icon: Icons.celebration_rounded,
+          label: 'Primera Reserva',
+          color: Color(0xFFF59E0B),
+          isEarned: true,
+        ));
+      } else {
+        locked.add(const _BadgeData(
+          icon: Icons.celebration_rounded,
+          label: 'Primera Reserva',
+          color: Color(0xFF6B7280),
+          isEarned: false,
+        ));
+      }
+
+      if (bookings >= 10 && rating >= 4.5) {
+        earned.add(_BadgeData(
+          icon: Icons.star_rounded,
+          label: 'Superhost',
+          color: const Color(0xFFFFD700),
+          isEarned: true,
+        ));
+      }
+
+      if (bookings >= 25) {
+        earned.add(const _BadgeData(
+          icon: Icons.diamond_rounded,
+          label: 'Anfitrion Elite',
+          color: Color(0xFFD4FF00),
+          isEarned: true,
+        ));
+      }
+
+      if (hostStats.responseRate >= 95) {
+        earned.add(const _BadgeData(
+          icon: Icons.bolt_rounded,
+          label: 'Respuesta Rapida',
+          color: Color(0xFF06B6D4),
+          isEarned: true,
+        ));
+      }
+    } else if (!isHost && guestStats != null) {
+      final bookings = guestStats.completedBookingsCount;
+      final cancelRate = guestStats.cancellationRate;
+
+      if (bookings >= 1) {
+        earned.add(const _BadgeData(
+          icon: Icons.celebration_rounded,
+          label: 'Primera Reserva',
+          color: Color(0xFFF59E0B),
+          isEarned: true,
+        ));
+      } else {
+        locked.add(const _BadgeData(
+          icon: Icons.celebration_rounded,
+          label: 'Primera Reserva',
+          color: Color(0xFF6B7280),
+          isEarned: false,
+        ));
+      }
+
+      if (bookings >= 5 && cancelRate == 0) {
+        earned.add(const _BadgeData(
+          icon: Icons.access_time_filled_rounded,
+          label: 'Siempre Puntual',
+          color: Color(0xFF22C55E),
+          isEarned: true,
+        ));
+      }
+
+      if (bookings >= 10) {
+        earned.add(const _BadgeData(
+          icon: Icons.explore_rounded,
+          label: 'Explorador VIP',
+          color: Color(0xFFFF6B35),
+          isEarned: true,
+        ));
+      }
+
+      if (bookings >= 25 && cancelRate < 0.1) {
+        earned.add(const _BadgeData(
+          icon: Icons.auto_awesome_rounded,
+          label: 'Huesped Elite',
+          color: Color(0xFFFFD700),
+          isEarned: true,
+        ));
+      }
+    }
+
+    // Return earned first, then locked (max 6 visible)
+    final all = [...earned, ...locked];
+    return all.take(6).toList();
+  }
+
+  Widget _buildDynamicBadgesSection({
+    required bool isDark,
+    required Color textPrimary,
+    required Color textSecondary,
     required Color cardColor,
     required Color borderColor,
+    required bool isHost,
+    HostStats? hostStats,
+    GuestStats? guestStats,
+    UserProfile? profile,
   }) {
-    final badges = [
-      _BadgeData(icon: Icons.star_rounded, label: 'Super Huésped', color: const Color(0xFFFFD700)),
-      _BadgeData(icon: Icons.bolt_rounded, label: 'Pagador Rápido', color: AtrioColors.neonLimeDark),
-      _BadgeData(icon: Icons.access_time_filled, label: 'Siempre Puntual', color: const Color(0xFF22C55E)),
-    ];
+    final badges = _calculateBadges(
+      isHost: isHost,
+      hostStats: hostStats,
+      guestStats: guestStats,
+      profile: profile,
+    );
+
+    final earnedCount = badges.where((b) => b.isEarned).length;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -936,238 +1216,88 @@ class ProfileScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Insignias Obtenidas',
+                'Insignias',
                 style: AtrioTypography.headingSmall.copyWith(
                   color: textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                    backgroundColor: Color(0xFFD4FF00),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    duration: Duration(seconds: 1),
-                  ));
-                },
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLimeDark.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Text(
-                  'Ver todo',
-                  style: AtrioTypography.bodySmall.copyWith(
+                  '$earnedCount obtenidas',
+                  style: AtrioTypography.caption.copyWith(
                     color: AtrioColors.neonLimeDark,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.center,
             children: badges.map((badge) {
-              return Column(
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: badge.color.withValues(alpha: 0.12),
-                      border: Border.all(
-                        color: badge.color.withValues(alpha: 0.3),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: badge.color.withValues(alpha: 0.15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+              return SizedBox(
+                width: 80,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: badge.isEarned
+                            ? badge.color.withValues(alpha: 0.12)
+                            : (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.black.withValues(alpha: 0.04)),
+                        border: Border.all(
+                          color: badge.isEarned
+                              ? badge.color.withValues(alpha: 0.3)
+                              : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08)),
+                          width: 1.5,
                         ),
-                      ],
+                        boxShadow: badge.isEarned
+                            ? [
+                                BoxShadow(
+                                  color: badge.color.withValues(alpha: 0.15),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Icon(
+                        badge.isEarned ? badge.icon : Icons.lock_rounded,
+                        color: badge.isEarned
+                            ? badge.color
+                            : (isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.2)),
+                        size: 24,
+                      ),
                     ),
-                    child: Icon(
-                      badge.icon,
-                      color: badge.color,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: 80,
-                    child: Text(
+                    const SizedBox(height: 6),
+                    Text(
                       badge.label,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: AtrioTypography.caption.copyWith(
-                        color: textSecondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
+                        color: badge.isEarned ? textSecondary : textSecondary.withValues(alpha: 0.5),
+                        fontWeight: badge.isEarned ? FontWeight.w600 : FontWeight.w400,
+                        fontSize: 10,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               );
             }).toList(),
           ),
-        ],
-      ),
-    );
-  }
-
-  // --- Recent Reviews Section ---
-  Widget _buildRecentReviewsSection({
-    required bool isDark,
-    required Color textPrimary,
-    required Color textSecondary,
-    required Color textTertiary,
-    required Color cardColor,
-    required Color borderColor,
-  }) {
-    final reviews = [
-      _ReviewData(
-        name: 'Maria Lopez',
-        role: 'Anfitrión',
-        date: 'Feb 2026',
-        rating: 5,
-        text: '¡Huésped absolutamente maravilloso! Muy respetuoso y dejó el espacio en perfectas condiciones. Encantado de hospedar de nuevo.',
-        avatarColor: AtrioColors.vibrantOrange,
-      ),
-      _ReviewData(
-        name: 'Carlos Rivera',
-        role: 'Anfitrión',
-        date: 'Ene 2026',
-        rating: 5,
-        text: 'Excelente comunicación de principio a fin. Puntual y considerado. ¡Muy recomendado!',
-        avatarColor: AtrioColors.neonLimeDark,
-      ),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Reseñas Recientes',
-            style: AtrioTypography.headingSmall.copyWith(
-              color: textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...reviews.map((review) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: review == reviews.last ? 0 : 16,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: review.avatarColor.withValues(alpha: 0.15),
-                        child: Text(
-                          review.name.substring(0, 1),
-                          style: AtrioTypography.labelLarge.copyWith(
-                            color: review.avatarColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              review.name,
-                              style: AtrioTypography.labelMedium.copyWith(
-                                color: textPrimary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  review.role,
-                                  style: AtrioTypography.caption.copyWith(
-                                    color: textTertiary,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                                  child: Container(
-                                    width: 3,
-                                    height: 3,
-                                    decoration: BoxDecoration(
-                                      color: textTertiary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  review.date,
-                                  style: AtrioTypography.caption.copyWith(
-                                    color: textTertiary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Star rating
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(5, (index) {
-                          return Icon(
-                            index < review.rating
-                                ? Icons.star_rounded
-                                : Icons.star_outline_rounded,
-                            size: 14,
-                            color: index < review.rating
-                                ? const Color(0xFFFFB800)
-                                : const Color(0xFFFFB800).withValues(alpha: 0.3),
-                          );
-                        }),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    review.text,
-                    style: AtrioTypography.bodySmall.copyWith(
-                      color: textSecondary,
-                      height: 1.5,
-                    ),
-                  ),
-                  if (review != reviews.last) ...[
-                    const SizedBox(height: 16),
-                    Divider(
-                      color: borderColor,
-                      height: 1,
-                    ),
-                  ],
-                ],
-              ),
-            );
-          }),
         ],
       ),
     );
@@ -1195,26 +1325,9 @@ class _BadgeData {
   final IconData icon;
   final String label;
   final Color color;
+  final bool isEarned;
 
-  const _BadgeData({required this.icon, required this.label, required this.color});
-}
-
-class _ReviewData {
-  final String name;
-  final String role;
-  final String date;
-  final int rating;
-  final String text;
-  final Color avatarColor;
-
-  const _ReviewData({
-    required this.name,
-    required this.role,
-    required this.date,
-    required this.rating,
-    required this.text,
-    required this.avatarColor,
-  });
+  const _BadgeData({required this.icon, required this.label, required this.color, this.isEarned = true});
 }
 
 // === SETTINGS TILE ===

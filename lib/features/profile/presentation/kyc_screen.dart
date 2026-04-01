@@ -1,25 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/database_service.dart';
 
-class KycScreen extends StatelessWidget {
+class KycScreen extends ConsumerStatefulWidget {
   const KycScreen({super.key});
 
   @override
+  ConsumerState<KycScreen> createState() => _KycScreenState();
+}
+
+class _KycScreenState extends ConsumerState<KycScreen> {
+  final _phoneController = TextEditingController();
+  bool _phoneVerified = false;
+  bool _docUploaded = false;
+  bool _selfieUploaded = false;
+  bool _sendingPhone = false;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final userAsync = ref.watch(userProfileStreamProvider);
+
+    return userAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, _) => _buildScaffold(context, null),
+      data: (profile) => _buildScaffold(context, profile),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, dynamic profile) {
+    // Determine step statuses from real data
+    final emailVerified = true; // If they're logged in, email is verified
+    _phoneVerified = profile?.phone != null && (profile.phone as String).isNotEmpty;
+    final kycStatus = profile?.kycStatus ?? 'none';
+    _docUploaded = kycStatus == 'pending' || kycStatus == 'approved';
+    _selfieUploaded = kycStatus == 'approved';
+
+    int completedSteps = 0;
+    if (emailVerified) completedSteps++;
+    if (_phoneVerified) completedSteps++;
+    if (_docUploaded) completedSteps++;
+    if (_selfieUploaded) completedSteps++;
+
+    final statusLabel = completedSteps == 4
+        ? 'Verificacion Completa'
+        : completedSteps == 0
+            ? 'Sin Verificar'
+            : 'Verificacion Parcial';
+    final statusColor = completedSteps == 4
+        ? const Color(0xFF22C55E)
+        : completedSteps >= 2
+            ? AtrioColors.vibrantOrange
+            : const Color(0xFFF59E0B);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back,
-              color: AtrioColors.guestTextPrimary),
+          icon: const Icon(Icons.arrow_back, color: AtrioColors.guestTextPrimary),
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Verificación de Identidad',
+          'Verificacion de Identidad',
           style: AtrioTypography.headingSmall.copyWith(
             color: AtrioColors.guestTextPrimary,
             fontWeight: FontWeight.w700,
@@ -40,10 +98,7 @@ class KycScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    AtrioColors.vibrantOrange,
-                    AtrioColors.vibrantOrange.withValues(alpha: 0.8),
-                  ],
+                  colors: [statusColor, statusColor.withValues(alpha: 0.8)],
                 ),
               ),
               child: Row(
@@ -54,17 +109,20 @@ class KycScreen extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.shield_outlined,
-                        color: Colors.white, size: 28),
+                    child: Icon(
+                      completedSteps == 4 ? Icons.verified : Icons.shield_outlined,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Verificación Parcial',
-                          style: TextStyle(
+                        Text(
+                          statusLabel,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
@@ -72,7 +130,7 @@ class KycScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '2 de 4 pasos completados',
+                          '$completedSteps de 4 pasos completados',
                           style: AtrioTypography.bodySmall.copyWith(
                             color: Colors.white.withValues(alpha: 0.8),
                           ),
@@ -84,13 +142,12 @@ class KycScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            // Progress bar
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: 0.5,
+                value: completedSteps / 4.0,
                 backgroundColor: AtrioColors.guestCardBorder,
-                color: AtrioColors.vibrantOrange,
+                color: statusColor,
                 minHeight: 4,
               ),
             ),
@@ -114,29 +171,17 @@ class KycScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '¿Por qué verificarte?',
+                    'Por que verificarte?',
                     style: AtrioTypography.labelLarge.copyWith(
                       color: AtrioColors.guestTextPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 14),
-                  _BenefitRow(
-                    icon: Icons.verified_user_outlined,
-                    text: 'Mayor confianza de anfitriones y usuarios',
-                  ),
-                  _BenefitRow(
-                    icon: Icons.speed_outlined,
-                    text: 'Reservas aprobadas más rápido',
-                  ),
-                  _BenefitRow(
-                    icon: Icons.workspace_premium_outlined,
-                    text: 'Acceso a espacios exclusivos',
-                  ),
-                  _BenefitRow(
-                    icon: Icons.security_outlined,
-                    text: 'Protección de tu identidad',
-                  ),
+                  _BenefitRow(icon: Icons.verified_user_outlined, text: 'Mayor confianza de anfitriones y usuarios'),
+                  _BenefitRow(icon: Icons.speed_outlined, text: 'Reservas aprobadas mas rapido'),
+                  _BenefitRow(icon: Icons.workspace_premium_outlined, text: 'Acceso a espacios exclusivos'),
+                  _BenefitRow(icon: Icons.security_outlined, text: 'Proteccion de tu identidad'),
                 ],
               ),
             ),
@@ -144,7 +189,7 @@ class KycScreen extends StatelessWidget {
 
             // === VERIFICATION STEPS ===
             Text(
-              'Pasos de Verificación',
+              'Pasos de Verificacion',
               style: AtrioTypography.labelLarge.copyWith(
                 color: AtrioColors.guestTextPrimary,
                 fontWeight: FontWeight.w700,
@@ -152,40 +197,47 @@ class KycScreen extends StatelessWidget {
             ),
             const SizedBox(height: 14),
 
-            _VerificationStep(
+            // Step 1: Email (always completed if user is logged in)
+            const _VerificationStep(
               step: 1,
               title: 'Verificar Email',
               subtitle: 'Tu email ha sido confirmado',
               icon: Icons.email_outlined,
               status: _StepStatus.completed,
             ),
+
+            // Step 2: Phone
             _VerificationStep(
               step: 2,
-              title: 'Verificar Teléfono',
-              subtitle: 'Tu número ha sido verificado',
+              title: 'Verificar Telefono',
+              subtitle: _phoneVerified ? 'Tu numero ha sido verificado' : 'Agrega y verifica tu numero',
               icon: Icons.phone_outlined,
-              status: _StepStatus.completed,
+              status: _phoneVerified ? _StepStatus.completed : _StepStatus.pending,
+              onTap: !_phoneVerified ? () => _showPhoneDialog(context) : null,
             ),
+
+            // Step 3: Document
             _VerificationStep(
               step: 3,
               title: 'Documento de Identidad',
-              subtitle: 'Sube tu INE, pasaporte o licencia',
+              subtitle: _docUploaded ? 'Documento enviado' : 'Sube tu INE, pasaporte o licencia',
               icon: Icons.badge_outlined,
-              status: _StepStatus.pending,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Subida de documentos próximamente'),
-                  ),
-                );
-              },
+              status: _docUploaded
+                  ? _StepStatus.completed
+                  : (_phoneVerified ? _StepStatus.pending : _StepStatus.locked),
+              onTap: !_docUploaded && _phoneVerified ? _pickDocument : null,
             ),
+
+            // Step 4: Selfie
             _VerificationStep(
               step: 4,
-              title: 'Selfie de Verificación',
-              subtitle: 'Toma una foto de tu rostro',
+              title: 'Selfie de Verificacion',
+              subtitle: _selfieUploaded ? 'Selfie verificado' : 'Toma una foto de tu rostro',
               icon: Icons.face_outlined,
-              status: _StepStatus.locked,
+              status: _selfieUploaded
+                  ? _StepStatus.completed
+                  : (_docUploaded ? _StepStatus.pending : _StepStatus.locked),
+              onTap: !_selfieUploaded && _docUploaded ? _pickSelfie : null,
             ),
             const SizedBox(height: 28),
 
@@ -201,15 +253,14 @@ class KycScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_outline,
-                      color: AtrioColors.neonLimeDark, size: 24),
+                  const Icon(Icons.lock_outline, color: AtrioColors.neonLimeDark, size: 24),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Tu información está segura',
+                          'Tu informacion esta segura',
                           style: AtrioTypography.labelMedium.copyWith(
                             color: AtrioColors.neonLimeDark,
                             fontWeight: FontWeight.w700,
@@ -217,7 +268,7 @@ class KycScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Usamos cifrado de grado bancario para proteger tus datos personales. Solo verificamos tu identidad, nunca compartimos tu información.',
+                          'Usamos cifrado de grado bancario para proteger tus datos. Solo verificamos tu identidad, nunca compartimos tu informacion.',
                           style: AtrioTypography.caption.copyWith(
                             color: AtrioColors.guestTextSecondary,
                             height: 1.4,
@@ -234,6 +285,221 @@ class KycScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // === PHONE VERIFICATION DIALOG ===
+  void _showPhoneDialog(BuildContext context) {
+    _phoneController.clear();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Verificar Telefono',
+                    style: AtrioTypography.headingSmall.copyWith(
+                      color: AtrioColors.guestTextPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Ingresa tu numero de celular para verificar tu cuenta.',
+                    style: AtrioTypography.bodySmall.copyWith(
+                      color: AtrioColors.guestTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s()]')),
+                    ],
+                    decoration: InputDecoration(
+                      labelText: 'Numero de celular',
+                      hintText: '+52 55 1234 5678',
+                      prefixIcon: const Icon(Icons.phone_outlined),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: AtrioColors.neonLimeDark, width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _sendingPhone
+                          ? null
+                          : () async {
+                              final phone = _phoneController.text.trim();
+                              if (phone.length < 8) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Ingresa un numero valido')),
+                                );
+                                return;
+                              }
+                              setSheetState(() => _sendingPhone = true);
+                              try {
+                                final userId = AuthService.currentUser?.id;
+                                if (userId != null) {
+                                  await DatabaseService.updateProfile(userId, {'phone': phone});
+                                  ref.invalidate(userProfileStreamProvider);
+                                  if (mounted) {
+                                    Navigator.of(ctx).pop();
+                                    setState(() => _phoneVerified = true);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text('Telefono verificado correctamente'),
+                                        backgroundColor: const Color(0xFF22C55E),
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Error: $e')),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) setSheetState(() => _sendingPhone = false);
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AtrioColors.neonLimeDark,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: _sendingPhone
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Verificar Telefono', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // === DOCUMENT UPLOAD ===
+  Future<void> _pickDocument() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 80);
+    if (image == null) return;
+
+    setState(() {});
+    try {
+      final bytes = await image.readAsBytes();
+      final userId = AuthService.currentUser?.id;
+      if (userId == null) return;
+
+      final path = '$userId/id_document_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await DatabaseService.uploadImage(bucket: 'kyc', path: path, fileBytes: bytes, contentType: 'image/jpeg');
+
+      await DatabaseService.updateProfile(userId, {'kyc_status': 'pending'});
+      ref.invalidate(userProfileStreamProvider);
+
+      setState(() {
+        _docUploaded = true;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Documento subido. En revision.'),
+            backgroundColor: const Color(0xFF22C55E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al subir documento: $e')),
+        );
+      }
+    }
+  }
+
+  // === SELFIE UPLOAD ===
+  Future<void> _pickSelfie() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 1200, imageQuality: 80);
+    if (image == null) return;
+
+    setState(() {});
+    try {
+      final bytes = await image.readAsBytes();
+      final userId = AuthService.currentUser?.id;
+      if (userId == null) return;
+
+      final path = '$userId/selfie_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await DatabaseService.uploadImage(bucket: 'kyc', path: path, fileBytes: bytes, contentType: 'image/jpeg');
+
+      await DatabaseService.updateProfile(userId, {'kyc_status': 'approved'});
+      ref.invalidate(userProfileStreamProvider);
+
+      setState(() {
+        _selfieUploaded = true;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Verificacion completada!'),
+            backgroundColor: const Color(0xFF22C55E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al subir selfie: $e')),
+        );
+      }
+    }
   }
 }
 
@@ -297,8 +563,7 @@ class _VerificationStep extends StatelessWidget {
           color: isLocked ? Colors.white.withValues(alpha: 0.6) : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: isCompleted
-              ? Border.all(
-                  color: AtrioColors.neonLimeDark.withValues(alpha: 0.3))
+              ? Border.all(color: AtrioColors.neonLimeDark.withValues(alpha: 0.3))
               : null,
           boxShadow: isLocked
               ? null
@@ -358,8 +623,7 @@ class _VerificationStep extends StatelessWidget {
             ),
             if (isCompleted)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AtrioColors.neonLime.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
@@ -373,8 +637,7 @@ class _VerificationStep extends StatelessWidget {
                 ),
               )
             else if (!isLocked)
-              const Icon(Icons.arrow_forward_ios,
-                  size: 14, color: AtrioColors.guestTextTertiary),
+              const Icon(Icons.arrow_forward_ios, size: 14, color: AtrioColors.guestTextTertiary),
           ],
         ),
       ),
