@@ -29,8 +29,8 @@ class HostBenefitsScreen extends StatelessWidget {
             ),
             _BenefitCard(
               icon: Icons.money,
-              title: 'Tope máximo de \$99 USD',
-              description: 'Si el 7% supera \$99, solo se cobra \$99. Ejemplo: en una reserva de \$5,000, pagas \$99 en vez de \$350.',
+              title: 'Tope máximo de \$90.000 CLP',
+              description: 'Si el 7% supera \$90.000, solo se cobra \$90.000. Ejemplo: en una reserva de \$5.000.000, pagas \$90.000 en vez de \$350.000.',
               color: AtrioColors.neonLimeDark,
             ),
             _BenefitCard(

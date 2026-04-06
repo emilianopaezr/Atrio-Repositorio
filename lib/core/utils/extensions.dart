@@ -52,7 +52,13 @@ extension StringExtensions on String {
 }
 
 extension DoubleExtensions on double {
-  String get asCurrency => NumberFormat.currency(symbol: '\$', decimalDigits: 2).format(this);
-  String get asCompactCurrency => NumberFormat.compactCurrency(symbol: '\$').format(this);
+  String get asCurrency => NumberFormat.currency(symbol: '\$', decimalDigits: 0, locale: 'es_CL').format(this);
+  String get asCompactCurrency => NumberFormat.compactCurrency(symbol: '\$', decimalDigits: 0).format(this);
   String get asPercentage => '${(this * 100).toStringAsFixed(0)}%';
+}
+
+/// CLP formatter for num (int or double). Returns e.g. "$25.000"
+extension NumCLP on num {
+  static final _fmt = NumberFormat('#,##0', 'es_CL');
+  String get toCLP => '\$${_fmt.format(this)}';
 }

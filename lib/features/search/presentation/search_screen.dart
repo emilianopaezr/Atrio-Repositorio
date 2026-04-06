@@ -8,6 +8,7 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/providers/listings_provider.dart';
+import '../../../core/utils/extensions.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -276,7 +277,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ),
                 ),
                 Text(
-                  '\$${_priceRange.start.toInt()} - \$${_priceRange.end.toInt()}',
+                  '${_priceRange.start.toCLP} - ${_priceRange.end.toCLP}',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -805,7 +806,7 @@ class _NearbyCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
+                        listing.basePrice?.toCLP ?? '\$0',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
@@ -931,7 +932,7 @@ class _SearchResultCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}/${listing.priceUnit == 'hour' ? 'hr' : listing.priceUnit}',
+                            '${listing.basePrice?.toCLP ?? '\$0'}/${listing.priceUnit == 'hour' ? 'hr' : listing.priceUnit}',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,

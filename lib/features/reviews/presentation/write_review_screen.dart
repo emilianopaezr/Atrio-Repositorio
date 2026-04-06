@@ -54,14 +54,21 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
       final userId = SupabaseConfig.auth.currentUser?.id;
       if (userId == null) throw Exception('No autenticado');
 
+      // Validate rating range
+      final safeRating = _rating.clamp(1, 5);
+
+      // Sanitize and limit comment length
+      final comment = _commentController.text.trim();
+      final safeComment = comment.length > 2000 ? comment.substring(0, 2000) : comment;
+
       await SupabaseConfig.client.from('reviews').insert({
         'booking_id': widget.bookingId,
         'listing_id': widget.listingId,
         'reviewer_id': userId,
         'host_id': widget.hostId,
-        'rating': _rating,
-        if (_commentController.text.trim().isNotEmpty)
-          'comment': _commentController.text.trim(),
+        'rating': safeRating,
+        if (safeComment.isNotEmpty)
+          'comment': safeComment,
       });
 
       if (mounted) {

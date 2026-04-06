@@ -63,7 +63,7 @@ class AboutScreen extends StatelessWidget {
                   Text(
                     'Atrio es el marketplace premium que conecta anfitriones con usuarios a través de espacios únicos, experiencias memorables y servicios profesionales.\n\n'
                     'Nuestra plataforma ofrece un ecosistema completo: búsqueda inteligente, reservas en tiempo real con 3 modalidades (por horas, día completo y noches), '
-                    'chat directo con anfitriones, sistema de reseñas verificadas, verificación de identidad (KYC), gestión de pagos con comisiones transparentes (7%, máx \$99 USD), '
+                    'chat directo con anfitriones, sistema de reseñas verificadas, verificación de identidad (KYC), gestión de pagos con comisiones transparentes (7%, máx \$90.000 CLP), '
                     'panel de control para anfitriones con analítica de ingresos, calendario de disponibilidad interactivo, notificaciones en tiempo real, '
                     'servicios rápidos bajo demanda, experiencias con cupos y horarios, sistema de niveles y logros, y resolución de disputas integrada.\n\n'
                     'Ya sea que busques un loft industrial para un shooting, una villa para un retiro creativo, un tour gastronómico, o un servicio de fotografía profesional, '
@@ -145,7 +145,7 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _StatBox(
-                    value: '\$99',
+                    value: '\$90.000',
                     label: 'Fee máximo',
                     isDark: isDark,
                   ),

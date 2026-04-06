@@ -12,6 +12,7 @@ import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/host_stats_provider.dart';
 import '../../../core/providers/notifications_provider.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/utils/extensions.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -25,21 +26,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   final List<String> _periodLabels = ['1S', '1M', '3M', '6M', '1A', 'Todo'];
 
-  // Mock revenue data (12 months)
-  List<FlSpot> get _revenueData => const [
-        FlSpot(0, 1200),
-        FlSpot(1, 1850),
-        FlSpot(2, 1400),
-        FlSpot(3, 2100),
-        FlSpot(4, 1950),
-        FlSpot(5, 2800),
-        FlSpot(6, 3200),
-        FlSpot(7, 2900),
-        FlSpot(8, 3600),
-        FlSpot(9, 3100),
-        FlSpot(10, 4200),
-        FlSpot(11, 4850),
-      ];
+  // Revenue data - starts empty, populated from real bookings
+  List<FlSpot> get _revenueData {
+    final hostProfile = ref.read(hostProfileProvider).value;
+    final totalEarnings = (hostProfile?['total_earnings'] as num?)?.toDouble() ?? 0;
+    // If no earnings, show flat zero line
+    if (totalEarnings <= 0) {
+      return const [FlSpot(0, 0), FlSpot(1, 0), FlSpot(2, 0), FlSpot(3, 0)];
+    }
+    // Show single point with total earnings for now
+    return [const FlSpot(0, 0), FlSpot(1, totalEarnings)];
+  }
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -234,7 +231,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '\$${totalEarnings.toStringAsFixed(2)}',
+              totalEarnings.toCLP,
               style: GoogleFonts.inter(
                 fontSize: 32,
                 fontWeight: FontWeight.w800,
@@ -255,13 +252,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: [
                 _MiniBalance(
                   label: 'Disponible',
-                  amount: '\$${currentBalance.toStringAsFixed(2)}',
+                  amount: currentBalance.toCLP,
                   color: AtrioColors.success,
                 ),
                 const SizedBox(width: 16),
                 _MiniBalance(
                   label: 'Pendiente',
-                  amount: '\$${pendingBalance.toStringAsFixed(2)}',
+                  amount: pendingBalance.toCLP,
                   color: AtrioColors.ratingGold,
                 ),
               ],
@@ -345,7 +342,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   return LineTooltipItem(
-                    '\$${spot.y.toStringAsFixed(0)}',
+                    spot.y.toCLP,
                     GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -592,6 +589,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ],
                             ),
                           ),
+                          if (booking['status'] == 'pending')
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AtrioColors.vibrantOrange.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Pendiente',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AtrioColors.vibrantOrange,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),

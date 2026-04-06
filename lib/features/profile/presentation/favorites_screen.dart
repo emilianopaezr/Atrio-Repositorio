@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/models/listing_model.dart';
+import '../../../core/utils/extensions.dart';
 
 /// Provider for user's favorite listings using favorite_listing_ids from profiles
 final favoritesProvider = FutureProvider<List<Listing>>((ref) async {
@@ -285,7 +286,7 @@ class _FavoriteCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}/${listing.priceUnit == 'hour' ? 'hr' : listing.priceUnit}',
+                            '${listing.basePrice?.toCLP ?? '\$0'}/${listing.priceUnit == 'hour' ? 'hr' : listing.priceUnit}',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,

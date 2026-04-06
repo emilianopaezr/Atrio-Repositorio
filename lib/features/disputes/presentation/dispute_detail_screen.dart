@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/disputes_provider.dart';
+import '../../../core/utils/extensions.dart';
 
 class DisputeDetailScreen extends ConsumerStatefulWidget {
   final String disputeId;
@@ -109,7 +110,7 @@ class _DisputeDetailScreenState extends ConsumerState<DisputeDetailScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      '\$${dispute.amount.toStringAsFixed(2)} en juego',
+                                      '${dispute.amount.toCLP} en juego',
                                       style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
                                     ),
                                   ),

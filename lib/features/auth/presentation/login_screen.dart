@@ -178,35 +178,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     try {
       await AuthService.resetPassword(email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Enlace de recuperación enviado a $email',
-                  style: GoogleFonts.inter(fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AtrioColors.neonLimeDark,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      _showError(e.message);
-    } catch (e) {
-      if (!mounted) return;
-      _showError('No se pudo enviar el enlace. Intenta de nuevo.');
+    } catch (_) {
+      // Silently ignore errors to prevent email enumeration
     }
+    if (!mounted) return;
+    // Always show success message regardless of whether email exists
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Si el email está registrado, recibirás un enlace de recuperación.',
+                style: GoogleFonts.inter(fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AtrioColors.neonLimeDark,
+        behavior: SnackBarBehavior.floating,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   void _showError(String message) {

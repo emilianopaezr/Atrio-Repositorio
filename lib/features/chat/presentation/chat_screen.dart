@@ -101,6 +101,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty || _isSending) return;
 
+    // Limit message length
+    if (text.length > 5000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El mensaje es demasiado largo (máx 5000 caracteres)')),
+      );
+      return;
+    }
+
     setState(() => _isSending = true);
     _messageController.clear();
 
@@ -113,10 +121,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       });
 
       // Update conversation last message
+      final previewText = text.length > 100 ? '${text.substring(0, 100)}...' : text;
       await SupabaseConfig.client
           .from('conversations')
           .update({
-            'last_message_text': text,
+            'last_message_text': previewText,
             'last_message_sender': _currentUserId,
             'last_message_at': DateTime.now().toIso8601String(),
           })

@@ -122,7 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _card(border, surface, [
                   _infoTile('Idioma', 'Español', textP, textT),
                   _divider(),
-                  _infoTile('Moneda', 'USD', textP, textT),
+                  _infoTile('Moneda', 'CLP', textP, textT),
                   _divider(),
                   _infoTile('Zona horaria', DateTime.now().timeZoneName, textP, textT),
                 ]),

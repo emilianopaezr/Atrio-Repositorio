@@ -15,6 +15,7 @@ class ReviewsListScreen extends StatefulWidget {
 class _ReviewsListScreenState extends State<ReviewsListScreen> {
   List<Map<String, dynamic>> _reviews = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -23,12 +24,13 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
   }
 
   Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
     try {
       final data = await DatabaseService.getListingReviews(widget.listingId);
       if (mounted) setState(() { _reviews = data; _loading = false; });
     } catch (e) {
       debugPrint('ReviewsList error: $e');
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() { _loading = false; _error = 'Error al cargar reseñas'; });
     }
   }
 
@@ -54,7 +56,23 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
         centerTitle: true,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AtrioColors.neonLimeDark))
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: AtrioColors.guestTextTertiary),
+                      const SizedBox(height: 12),
+                      Text(_error!, style: GoogleFonts.inter(fontSize: 15, color: textS)),
+                      const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: _load,
+                        child: Text('Reintentar', style: GoogleFonts.inter(color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                )
           : _reviews.isEmpty
               ? Center(
                   child: Column(

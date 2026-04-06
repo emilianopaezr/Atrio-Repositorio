@@ -7,7 +7,7 @@ import '../models/pricing_result_model.dart';
 ///
 /// Commission model:
 ///   - Standard guest service fee: 7% of subtotal
-///   - Cap: if 7% exceeds $99 USD, charge max $99 USD
+///   - Cap: if 7% exceeds $90.000 CLP, charge max $90.000 CLP
 ///   - Host commission: 1% (early adopter) or progressive
 class PricingEngineService {
   PricingEngineService._();
@@ -21,8 +21,8 @@ class PricingEngineService {
   /// Number of bookings that qualify for promotional rate
   static const int promoBookingThreshold = 5;
 
-  /// Maximum commission cap in USD
-  static const double maxFeeCap = 99.0;
+  /// Maximum commission cap in CLP
+  static const double maxFeeCap = 90000.0;
 
   /// Get the effective fee rate based on host's booking count
   static double getEffectiveFeeRate(int hostBookingsCount) {
@@ -81,9 +81,9 @@ class PricingEngineService {
     final baseTotal = basePrice * nights;
     var hostCommission = baseTotal * hostCommissionRate;
 
-    // Apply $99 cap for flat-fee model
-    if (hostCommission > 99) {
-      hostCommission = 99;
+    // Apply cap for flat-fee model
+    if (hostCommission > maxFeeCap) {
+      hostCommission = maxFeeCap;
     }
 
     // Guest service fee: 7% capped at $99

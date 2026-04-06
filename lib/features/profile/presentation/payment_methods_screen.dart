@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 
-class PaymentMethodsScreen extends StatelessWidget {
+class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
+
+  @override
+  State<PaymentMethodsScreen> createState() => _PaymentMethodsScreenState();
+}
+
+class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
+  bool _stripeConnected = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +39,107 @@ class PaymentMethodsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // === STRIPE INTEGRATION BANNER ===
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF635BFF), Color(0xFF8B5CF6)],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.bolt, color: Colors.white, size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Pagos con Stripe',
+                              style: GoogleFonts.inter(
+                                fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Pagos seguros y rapidos',
+                              style: GoogleFonts.inter(
+                                fontSize: 13, color: Colors.white.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_stripeConnected)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AtrioColors.neonLime.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_circle, size: 14, color: AtrioColors.neonLime),
+                              const SizedBox(width: 4),
+                              Text('Activo', style: GoogleFonts.inter(
+                                fontSize: 12, fontWeight: FontWeight.w700, color: AtrioColors.neonLime,
+                              )),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (!_stripeConnected) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() => _stripeConnected = true);
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Row(children: [
+                              const Icon(Icons.check_circle, color: Colors.black, size: 20),
+                              const SizedBox(width: 10),
+                              Text('Stripe conectado exitosamente', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)),
+                            ]),
+                            backgroundColor: AtrioColors.neonLime,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF635BFF),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                        child: Text('Conectar con Stripe', style: GoogleFonts.inter(
+                          fontSize: 15, fontWeight: FontWeight.w700,
+                        )),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
             // === SAVED CARDS ===
             Text(
               'Tarjetas Guardadas',
@@ -57,15 +166,9 @@ class PaymentMethodsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // === ADD NEW METHOD ===
+            // === ADD NEW CARD ===
             GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Agregar método de pago próximamente'),
-                  ),
-                );
-              },
+              onTap: () => _showAddCardSheet(context),
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -73,7 +176,6 @@ class PaymentMethodsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: AtrioColors.neonLimeDark.withValues(alpha: 0.3),
-                    style: BorderStyle.solid,
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -89,16 +191,14 @@ class PaymentMethodsScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color:
-                            AtrioColors.neonLimeDark.withValues(alpha: 0.1),
+                        color: AtrioColors.neonLimeDark.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.add,
-                          color: AtrioColors.neonLimeDark, size: 20),
+                      child: const Icon(Icons.add, color: AtrioColors.neonLimeDark, size: 20),
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Agregar Método de Pago',
+                      'Agregar Tarjeta',
                       style: AtrioTypography.labelLarge.copyWith(
                         color: AtrioColors.neonLimeDark,
                         fontWeight: FontWeight.w600,
@@ -123,76 +223,200 @@ class PaymentMethodsScreen extends StatelessWidget {
               icon: Icons.account_balance,
               title: 'Transferencia Bancaria',
               subtitle: 'Paga directamente desde tu banco',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                  backgroundColor: Color(0xFFD4FF00),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  duration: Duration(seconds: 1),
-                ));
-              },
-            ),
-            _PaymentOption(
-              icon: Icons.paypal_outlined,
-              title: 'PayPal',
-              subtitle: 'Vincula tu cuenta de PayPal',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                  backgroundColor: Color(0xFFD4FF00),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  duration: Duration(seconds: 1),
-                ));
-              },
+              badge: 'Pronto',
             ),
             _PaymentOption(
               icon: Icons.apple,
               title: 'Apple Pay',
-              subtitle: 'Pago rápido con tu dispositivo',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                  backgroundColor: Color(0xFFD4FF00),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  duration: Duration(seconds: 1),
-                ));
-              },
+              subtitle: 'Pago rapido con tu dispositivo',
+              badge: 'Pronto',
+            ),
+            _PaymentOption(
+              icon: Icons.g_mobiledata_rounded,
+              title: 'Google Pay',
+              subtitle: 'Paga con tu cuenta de Google',
+              badge: 'Pronto',
             ),
             const SizedBox(height: 28),
 
-            // === PAYMENT HISTORY ===
-            Text(
-              'Historial de Pagos',
-              style: AtrioTypography.labelLarge.copyWith(
-                color: AtrioColors.guestTextPrimary,
-                fontWeight: FontWeight.w700,
+            // === SECURITY INFO ===
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF635BFF).withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFF635BFF).withValues(alpha: 0.15),
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-            _TransactionItem(
-              title: 'Loft Premium Centro',
-              date: '15 Mar 2026',
-              amount: '-\$451.00',
-              status: 'Completado',
-            ),
-            _TransactionItem(
-              title: 'Estudio Creativo',
-              date: '28 Feb 2026',
-              amount: '-\$180.00',
-              status: 'Completado',
-            ),
-            _TransactionItem(
-              title: 'Villa con Piscina',
-              date: '10 Feb 2026',
-              amount: '-\$920.00',
-              status: 'Reembolsado',
-              isRefund: true,
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline, color: Color(0xFF635BFF), size: 24),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pagos 100% seguros',
+                          style: AtrioTypography.labelMedium.copyWith(
+                            color: const Color(0xFF635BFF),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Tus pagos son procesados por Stripe con cifrado de grado bancario. Atrio nunca almacena tus datos de tarjeta.',
+                          style: AtrioTypography.caption.copyWith(
+                            color: AtrioColors.guestTextSecondary,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 40),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddCardSheet(BuildContext context) {
+    final numberCtrl = TextEditingController();
+    final expiryCtrl = TextEditingController();
+    final cvcCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Icon(Icons.credit_card, color: Color(0xFF635BFF), size: 24),
+                  const SizedBox(width: 10),
+                  Text('Agregar Tarjeta', style: GoogleFonts.inter(
+                    fontSize: 20, fontWeight: FontWeight.w800,
+                    color: AtrioColors.guestTextPrimary,
+                  )),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Tu tarjeta sera procesada de forma segura por Stripe',
+                style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.guestTextSecondary),
+              ),
+              const SizedBox(height: 20),
+              _cardField(numberCtrl, 'Numero de tarjeta', '4242 4242 4242 4242', Icons.credit_card),
+              const SizedBox(height: 12),
+              _cardField(nameCtrl, 'Nombre del titular', 'NOMBRE APELLIDO', Icons.person_outline),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _cardField(expiryCtrl, 'MM/AA', '12/27', Icons.calendar_today_outlined)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _cardField(cvcCtrl, 'CVC', '123', Icons.lock_outline)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Row(children: [
+                        const Icon(Icons.check_circle, color: Colors.black, size: 20),
+                        const SizedBox(width: 10),
+                        Text('Tarjeta agregada correctamente', style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600, color: Colors.black,
+                        )),
+                      ]),
+                      backgroundColor: AtrioColors.neonLime,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF635BFF),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.bolt, size: 20),
+                  label: Text('Guardar con Stripe', style: GoogleFonts.inter(
+                    fontSize: 16, fontWeight: FontWeight.w700,
+                  )),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock_outline, size: 12, color: AtrioColors.guestTextTertiary),
+                    const SizedBox(width: 4),
+                    Text('Procesado de forma segura por Stripe', style: GoogleFonts.inter(
+                      fontSize: 11, color: AtrioColors.guestTextTertiary,
+                    )),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _cardField(TextEditingController ctrl, String label, String hint, IconData icon) {
+    return TextField(
+      controller: ctrl,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, size: 20),
+        filled: true,
+        fillColor: const Color(0xFFF8F7FC),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF635BFF), width: 2),
         ),
       ),
     );
@@ -238,16 +462,13 @@ class _CreditCard extends StatelessWidget {
               Text(
                 brand,
                 style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 2,
-                  color: Colors.white,
+                  fontSize: 14, fontWeight: FontWeight.w800,
+                  letterSpacing: 2, color: Colors.white,
                 ),
               ),
               if (isDefault)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AtrioColors.neonLime.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -255,8 +476,7 @@ class _CreditCard extends StatelessWidget {
                   child: Text(
                     'Por defecto',
                     style: AtrioTypography.caption.copyWith(
-                      color: AtrioColors.neonLime,
-                      fontWeight: FontWeight.w600,
+                      color: AtrioColors.neonLime, fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -266,11 +486,8 @@ class _CreditCard extends StatelessWidget {
           Text(
             '•••• •••• •••• $lastFour',
             style: const TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 2,
-              color: Colors.white,
+              fontFamily: 'Roboto', fontSize: 18, fontWeight: FontWeight.w600,
+              letterSpacing: 2, color: Colors.white,
             ),
           ),
           const SizedBox(height: 16),
@@ -282,22 +499,37 @@ class _CreditCard extends StatelessWidget {
                   Text(
                     'VÁLIDA HASTA',
                     style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1,
-                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 9, fontWeight: FontWeight.w600,
+                      letterSpacing: 1, color: Colors.white.withValues(alpha: 0.6),
                     ),
                   ),
                   Text(
                     expiry,
                     style: const TextStyle(
-                      fontFamily: 'Roboto',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      fontFamily: 'Roboto', fontSize: 14,
+                      fontWeight: FontWeight.w600, color: Colors.white,
                     ),
                   ),
                 ],
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.bolt, size: 12, color: Colors.white),
+                    const SizedBox(width: 2),
+                    Text('Stripe', style: TextStyle(
+                      fontSize: 10, fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    )),
+                  ],
+                ),
               ),
             ],
           ),
@@ -311,82 +543,13 @@ class _PaymentOption extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final String? badge;
 
   const _PaymentOption({
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F7FC),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 22, color: AtrioColors.guestTextSecondary),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: AtrioTypography.labelLarge.copyWith(
-                        color: AtrioColors.guestTextPrimary,
-                        fontWeight: FontWeight.w600,
-                      )),
-                  Text(subtitle,
-                      style: AtrioTypography.caption.copyWith(
-                        color: AtrioColors.guestTextSecondary,
-                      )),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios,
-                size: 14, color: AtrioColors.guestTextTertiary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TransactionItem extends StatelessWidget {
-  final String title;
-  final String date;
-  final String amount;
-  final String status;
-  final bool isRefund;
-
-  const _TransactionItem({
-    required this.title,
-    required this.date,
-    required this.amount,
-    required this.status,
-    this.isRefund = false,
+    this.badge,
   });
 
   @override
@@ -410,58 +573,38 @@ class _TransactionItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isRefund
-                  ? AtrioColors.neonLime.withValues(alpha: 0.1)
-                  : AtrioColors.neonLimeDark.withValues(alpha: 0.1),
+              color: const Color(0xFFF8F7FC),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              isRefund ? Icons.replay : Icons.receipt_long_outlined,
-              size: 20,
-              color: isRefund
-                  ? AtrioColors.neonLimeDark
-                  : AtrioColors.neonLimeDark,
-            ),
+            child: Icon(icon, size: 22, color: AtrioColors.guestTextSecondary),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: AtrioTypography.labelMedium.copyWith(
-                      color: AtrioColors.guestTextPrimary,
-                      fontWeight: FontWeight.w600,
-                    )),
-                Text(date,
-                    style: AtrioTypography.caption.copyWith(
-                      color: AtrioColors.guestTextSecondary,
-                    )),
+                Text(title, style: AtrioTypography.labelLarge.copyWith(
+                  color: AtrioColors.guestTextPrimary, fontWeight: FontWeight.w600,
+                )),
+                Text(subtitle, style: AtrioTypography.caption.copyWith(
+                  color: AtrioColors.guestTextSecondary,
+                )),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: isRefund
-                      ? AtrioColors.neonLimeDark
-                      : AtrioColors.guestTextPrimary,
-                ),
+          if (badge != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AtrioColors.neonLimeDark.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-              Text(
-                status,
-                style: AtrioTypography.caption.copyWith(
-                  color: AtrioColors.guestTextSecondary,
-                ),
-              ),
-            ],
-          ),
+              child: Text(badge!, style: AtrioTypography.caption.copyWith(
+                color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600,
+              )),
+            )
+          else
+            const Icon(Icons.arrow_forward_ios, size: 14, color: AtrioColors.guestTextTertiary),
         ],
       ),
     );

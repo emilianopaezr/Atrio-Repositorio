@@ -52,9 +52,12 @@ class DatabaseService {
       query = query.eq('category', category);
     }
     if (search != null && search.isNotEmpty) {
-      // Sanitize search input: remove PostgREST special chars
-      final sanitized = search.replaceAll(RegExp(r'[%_\\()\[\]{}|^$.*+?]'), '').trim();
-      if (sanitized.isNotEmpty) {
+      // Sanitize search input: remove PostgREST filter special chars and limit length
+      final truncated = search.length > 100 ? search.substring(0, 100) : search;
+      final sanitized = truncated
+          .replaceAll(RegExp(r'[%_\\()\[\]{}|^$.*+?<>;"' "'" r'`/]'), '')
+          .trim();
+      if (sanitized.isNotEmpty && sanitized.length >= 2) {
         query = query.or('title.ilike.%$sanitized%,description.ilike.%$sanitized%');
       }
     }
@@ -342,7 +345,7 @@ class DatabaseService {
       'listing_id': listingId,
       'date': date.toIso8601String().split('T')[0],
       'is_available': isAvailable,
-      'custom_price': ?customPrice,
+      if (customPrice != null) 'custom_price': customPrice,
     });
   }
 
@@ -589,8 +592,8 @@ class DatabaseService {
         .from(AppConstants.tableConversations)
         .insert({
           'participant_ids': [userId1, userId2],
-          'listing_id': ?listingId,
-          'booking_id': ?bookingId,
+          if (listingId != null) 'listing_id': listingId,
+          if (bookingId != null) 'booking_id': bookingId,
         })
         .select()
         .single();
@@ -629,7 +632,7 @@ class DatabaseService {
           'sender_id': senderId,
           'text': text,
           'type': type,
-          'image_url': ?imageUrl,
+          if (imageUrl != null) 'image_url': imageUrl,
         })
         .select()
         .single();

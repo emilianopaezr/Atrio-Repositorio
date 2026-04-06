@@ -13,6 +13,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/pricing_engine_service.dart';
 import '../../../shared/widgets/availability_calendar.dart';
 import '../../../shared/widgets/time_slot_picker.dart';
+import '../../../core/utils/extensions.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   final String listingId;
@@ -541,17 +542,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       children: [
                         _priceRow(
                           _isPerPerson(listing)
-                              ? '\$${base.toStringAsFixed(0)} x $_guests persona${_guests > 1 ? 's' : ''}${mode == 'hours' ? ' x $blocks bloque${blocks > 1 ? 's' : ''}' : ''}'
+                              ? '${base.toCLP} x $_guests persona${_guests > 1 ? 's' : ''}${mode == 'hours' ? ' x $blocks bloque${blocks > 1 ? 's' : ''}' : ''}'
                               : mode == 'hours'
-                                  ? '\$${base.toStringAsFixed(0)} x $blocks bloque${blocks > 1 ? 's' : ''} (${blockH}h c/u)'
-                                  : '\$${base.toStringAsFixed(0)} x $unitSuffix',
+                                  ? '${base.toCLP} x $blocks bloque${blocks > 1 ? 's' : ''} (${blockH}h c/u)'
+                                  : '${base.toCLP} x $unitSuffix',
                           sub,
                         ),
                         if (clean > 0) _priceRow('Limpieza', clean),
                         _priceRow(
                           _isPromoRate
                               ? 'Tarifa promo ($feeLabel) 🎉'
-                              : 'Tarifa de servicio ($feeLabel${fee >= 99 ? ', máx \$99' : ''})',
+                              : 'Tarifa de servicio ($feeLabel${fee >= 90000 ? ', máx \$90.000' : ''})',
                           fee,
                         ),
                         if (_isPromoRate)
@@ -585,7 +586,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('Total', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
-                            Text('\$${total.toStringAsFixed(2)}', style: AtrioTypography.priceLarge.copyWith(color: AtrioColors.guestTextPrimary)),
+                            Text(total.toCLP, style: AtrioTypography.priceLarge.copyWith(color: AtrioColors.guestTextPrimary)),
                           ],
                         ),
                       ],
@@ -594,12 +595,32 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ─── Payment method ───
+                  // ─── Payment method (Stripe) ───
                   Text('Método de Pago', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
                   const SizedBox(height: 12),
-                  _paymentTile(0, Icons.credit_card_rounded, 'Visa **** 4242', 'Exp 12/24'),
+                  _paymentTile(0, Icons.credit_card_rounded, 'Visa **** 4521', 'Exp 12/27'),
                   const SizedBox(height: 8),
-                  _paymentTile(1, Icons.apple, 'Apple Pay', null),
+                  _paymentTile(1, Icons.credit_card_rounded, 'Mastercard **** 8890', 'Exp 08/26'),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => context.push('/payment-methods'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AtrioColors.guestSurface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AtrioColors.guestCardBorder),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.add, size: 16, color: AtrioColors.neonLimeDark),
+                          const SizedBox(width: 6),
+                          Text('Agregar tarjeta', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
+                        ],
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 24),
 
@@ -608,16 +629,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
                   const SizedBox(height: 16),
 
-                  // ─── Security ───
+                  // ─── Security (Stripe branding) ───
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.lock_outline, size: 13, color: AtrioColors.guestTextTertiary),
-                      const SizedBox(width: 6),
+                      const Icon(Icons.bolt, size: 13, color: Color(0xFF635BFF)),
+                      const SizedBox(width: 4),
                       Text(
-                        'PAGO SEGURO CIFRADO CON SSL',
+                        'PAGO SEGURO POR STRIPE',
                         style: GoogleFonts.inter(fontSize: 10, color: AtrioColors.guestTextTertiary, letterSpacing: 1, fontWeight: FontWeight.w600),
                       ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.lock_outline, size: 11, color: AtrioColors.guestTextTertiary),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -656,7 +679,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '\$${total.toStringAsFixed(2)}',
+                            total.toCLP,
                             style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black.withValues(alpha: 0.7)),
                           ),
                         ],
@@ -705,7 +728,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   ]),
                 const SizedBox(height: 6),
                 Row(children: [
-                  Text('\$${base.toStringAsFixed(0)}', style: AtrioTypography.priceMedium.copyWith(color: AtrioColors.guestTextPrimary)),
+                  Text(base.toCLP, style: AtrioTypography.priceMedium.copyWith(color: AtrioColors.guestTextPrimary)),
                   Text(' / ${_unitLabel(listing.priceUnit)}', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary)),
                   const Spacer(),
                   if (listing.rating > 0) ...[
@@ -843,7 +866,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     padding: const EdgeInsets.only(bottom: 10),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Text(label, style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.guestTextSecondary)),
-      Text('\$${amount.toStringAsFixed(2)}', style: AtrioTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary)),
+      Text(amount.toCLP, style: AtrioTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary)),
     ]),
   );
 

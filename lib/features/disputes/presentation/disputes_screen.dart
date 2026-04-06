@@ -6,6 +6,7 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/disputes_provider.dart';
 import '../../../core/models/dispute_model.dart';
+import '../../../core/utils/extensions.dart';
 
 class DisputesScreen extends ConsumerWidget {
   const DisputesScreen({super.key});
@@ -214,7 +215,7 @@ class _DisputeCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '\$${dispute.amount.toStringAsFixed(2)}',
+                    dispute.amount.toCLP,
                     style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime),
                   ),
                 ),

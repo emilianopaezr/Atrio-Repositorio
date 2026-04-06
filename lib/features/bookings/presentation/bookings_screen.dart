@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/bookings_provider.dart';
+import '../../../core/utils/extensions.dart';
 
 class BookingsScreen extends ConsumerStatefulWidget {
   const BookingsScreen({super.key});
@@ -369,12 +370,13 @@ class _BookingCard extends StatelessWidget {
     final images = List<String>.from(listing['images'] ?? []);
     final checkIn = DateTime.tryParse(booking['check_in'] ?? '');
     final checkOut = DateTime.tryParse(booking['check_out'] ?? '');
-    final total = booking['total']?.toString() ?? '0';
+    final totalNum = (booking['total'] as num?) ?? 0;
+    final total = totalNum.toCLP;
     final listingType = listing['type'] as String?;
 
     return GestureDetector(
       onTap: () {
-        final bookingId = booking['id']?.toString() ?? 'demo';
+        final bookingId = booking['id']?.toString() ?? '';
         context.push('/booking-detail/$bookingId');
       },
       child: Container(
@@ -507,7 +509,7 @@ class _BookingCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     // Price
                     Text(
-                      '\$$total',
+                      total,
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,

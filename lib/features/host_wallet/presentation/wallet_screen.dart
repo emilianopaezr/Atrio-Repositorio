@@ -6,6 +6,7 @@ import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/host_wallet_provider.dart';
 import '../../../core/providers/host_stats_provider.dart';
 import '../../../shared/widgets/level_badge.dart';
+import '../../../core/utils/extensions.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -216,7 +217,7 @@ class _BalanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '\$${_formatBalance(balance)}',
+            balance.toCLP,
             style: AtrioTypography.displayLarge.copyWith(
               color: Colors.white,
               fontSize: 36,
@@ -267,17 +268,6 @@ class _BalanceCard extends StatelessWidget {
     );
   }
 
-  String _formatBalance(double value) {
-    final parts = value.toStringAsFixed(2).split('.');
-    final intPart = parts[0];
-    final decPart = parts[1];
-    final buffer = StringBuffer();
-    for (int i = 0; i < intPart.length; i++) {
-      if (i > 0 && (intPart.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(intPart[i]);
-    }
-    return '${buffer.toString()}.$decPart';
-  }
 }
 
 class _CardButton extends StatelessWidget {
@@ -566,57 +556,6 @@ class _RecentTransfersSection extends StatelessWidget {
 
   const _RecentTransfersSection({required this.transactionsAsync});
 
-  // Demo transfers used when real data is empty
-  static final List<Map<String, dynamic>> _demoTransfers = [
-    {
-      'icon': Icons.arrow_downward_rounded,
-      'iconBg': const Color(0xFF1B3A1B),
-      'iconColor': const Color(0xFF66BB6A),
-      'title': 'Retiro a Chase',
-      'date': '12 Mar, 2026',
-      'amount': '+\$1,250.00',
-      'amountColor': const Color(0xFF66BB6A),
-      'status': 'Completado',
-      'statusColor': const Color(0xFF1B3A1B),
-      'statusTextColor': const Color(0xFF66BB6A),
-    },
-    {
-      'icon': Icons.receipt_long_rounded,
-      'iconBg': const Color(0xFF3A1B1B),
-      'iconColor': AtrioColors.error,
-      'title': 'Comisión',
-      'date': '10 Mar, 2026',
-      'amount': '-\$187.50',
-      'amountColor': AtrioColors.error,
-      'status': 'Procesado',
-      'statusColor': AtrioColors.hostSurfaceVariant,
-      'statusTextColor': AtrioColors.hostTextSecondary,
-    },
-    {
-      'icon': Icons.arrow_downward_rounded,
-      'iconBg': const Color(0xFF1B3A1B),
-      'iconColor': const Color(0xFF66BB6A),
-      'title': 'Reserva #4821',
-      'date': '8 Mar, 2026',
-      'amount': '+\$890.00',
-      'amountColor': const Color(0xFF66BB6A),
-      'status': 'Completado',
-      'statusColor': const Color(0xFF1B3A1B),
-      'statusTextColor': const Color(0xFF66BB6A),
-    },
-    {
-      'icon': Icons.arrow_upward_rounded,
-      'iconBg': const Color(0xFF1A2744),
-      'iconColor': const Color(0xFF64B5F6),
-      'title': 'Retiro a PayPal',
-      'date': '5 Mar, 2026',
-      'amount': '+\$2,100.00',
-      'amountColor': const Color(0xFF66BB6A),
-      'status': 'Pendiente',
-      'statusColor': const Color(0xFF3A2E1B),
-      'statusTextColor': AtrioColors.vibrantOrange,
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -632,7 +571,7 @@ class _RecentTransfersSection extends StatelessWidget {
         const SizedBox(height: 14),
         transactionsAsync.when(
           data: (transactions) {
-            // Use real transactions if available, otherwise demo
+            // Show real transactions or empty state
             if (transactions.isNotEmpty) {
               return Column(
                 children: transactions.take(4).map((tx) {
@@ -660,7 +599,7 @@ class _RecentTransfersSection extends StatelessWidget {
                     title: description,
                     date: dateStr,
                     amount:
-                        '${isPositive ? '+' : '-'}\$${amount.abs().toStringAsFixed(2)}',
+                        '${isPositive ? '+' : '-'}${amount.abs().toCLP}',
                     amountColor: isPositive
                         ? const Color(0xFF66BB6A)
                         : AtrioColors.error,
@@ -672,22 +611,25 @@ class _RecentTransfersSection extends StatelessWidget {
               );
             }
 
-            // Demo data
-            return Column(
-              children: _demoTransfers
-                  .map((t) => _TransferTile(
-                        icon: t['icon'] as IconData,
-                        iconBg: t['iconBg'] as Color,
-                        iconColor: t['iconColor'] as Color,
-                        title: t['title'] as String,
-                        date: t['date'] as String,
-                        amount: t['amount'] as String,
-                        amountColor: t['amountColor'] as Color,
-                        status: t['status'] as String,
-                        statusColor: t['statusColor'] as Color,
-                        statusTextColor: t['statusTextColor'] as Color,
-                      ))
-                  .toList(),
+            // Empty state for new users
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Column(
+                children: [
+                  Icon(Icons.receipt_long_outlined, size: 48, color: AtrioColors.hostTextTertiary.withValues(alpha: 0.4)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Sin transacciones aún',
+                    style: AtrioTypography.labelLarge.copyWith(color: AtrioColors.hostTextSecondary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tus ingresos aparecerán aquí cuando\nrecibas tu primera reserva',
+                    style: AtrioTypography.caption.copyWith(color: AtrioColors.hostTextTertiary, height: 1.4),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             );
           },
           loading: () => const SizedBox(
@@ -698,21 +640,14 @@ class _RecentTransfersSection extends StatelessWidget {
               ),
             ),
           ),
-          error: (_, _) => Column(
-            children: _demoTransfers
-                .map((t) => _TransferTile(
-                      icon: t['icon'] as IconData,
-                      iconBg: t['iconBg'] as Color,
-                      iconColor: t['iconColor'] as Color,
-                      title: t['title'] as String,
-                      date: t['date'] as String,
-                      amount: t['amount'] as String,
-                      amountColor: t['amountColor'] as Color,
-                      status: t['status'] as String,
-                      statusColor: t['statusColor'] as Color,
-                      statusTextColor: t['statusTextColor'] as Color,
-                    ))
-                .toList(),
+          error: (_, _) => Container(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                'Error al cargar transacciones',
+                style: AtrioTypography.caption.copyWith(color: AtrioColors.hostTextTertiary),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -944,78 +879,18 @@ class _TaxDocumentsSection extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _MonthChip(label: 'Mar 2026', isLatest: true),
-                  _MonthChip(label: 'Feb 2026'),
-                  _MonthChip(label: 'Ene 2026'),
-                  _MonthChip(label: 'Dic 2025'),
-                ],
+              const SizedBox(height: 12),
+              Text(
+                'Disponible cuando tengas actividad financiera',
+                style: AtrioTypography.caption.copyWith(
+                  color: AtrioColors.hostTextTertiary,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MonthChip extends StatelessWidget {
-  final String label;
-  final bool isLatest;
-
-  const _MonthChip({required this.label, this.isLatest = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-          backgroundColor: Color(0xFFD4FF00),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: Duration(seconds: 1),
-        ));
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isLatest
-              ? AtrioColors.neonLimeDark.withValues(alpha: 0.15)
-              : AtrioColors.hostSurfaceVariant,
-          borderRadius: BorderRadius.circular(10),
-          border: isLatest
-              ? Border.all(
-                  color: AtrioColors.neonLimeDark.withValues(alpha: 0.4))
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.download_rounded,
-              size: 14,
-              color: isLatest
-                  ? AtrioColors.neonLime
-                  : AtrioColors.hostTextSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: AtrioTypography.caption.copyWith(
-                color: isLatest
-                    ? AtrioColors.neonLime
-                    : AtrioColors.hostTextSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

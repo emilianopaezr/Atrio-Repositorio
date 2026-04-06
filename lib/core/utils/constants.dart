@@ -1,5 +1,3 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 class AppConstants {
   AppConstants._();
 
@@ -35,11 +33,11 @@ class AppConstants {
   static const initialCommissionRate = 0.01;
   static const standardCommissionRate = 0.09;
   static const superhostCommissionRate = 0.07;
-  static const maxCommissionUsd = 99.0;
+  static const maxCommissionClp = 90000.0;
 
   // Ratings
   static const superhostMinRating = 4.5;
 
-  // API Keys loaded from .env
-  static String get brevoApiKey => dotenv.env['BREVO_API_KEY'] ?? '';
+  // API keys are stored server-side (Supabase vault/secrets).
+  // Never expose third-party API keys in client code.
 }

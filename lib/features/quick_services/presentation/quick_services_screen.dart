@@ -4,6 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../config/theme/app_colors.dart';
+import '../../../core/utils/extensions.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/database_service.dart';
 
 /// Quick Services - casual gig marketplace
 /// Flow:
@@ -35,21 +38,21 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   ];
 
   final List<_ServiceData> _availableServices = [
-    _ServiceData(id: 'qs1', title: 'Ayuda con Mudanza', description: 'Carga y descarga de cajas, muebles y enseres. Cuento con camioneta propia.', provider: 'Juan M.', providerRating: 4.8, providerJobs: 34, price: 25, category: 'Mudanza', icon: Icons.local_shipping_rounded, isVerified: true),
-    _ServiceData(id: 'qs2', title: 'Armado de Muebles', description: 'Ikea, Sodimac y mas. Armado profesional con herramientas propias.', provider: 'Carlos R.', providerRating: 4.9, providerJobs: 52, price: 30, category: 'Armado', icon: Icons.handyman_rounded, isVerified: true),
-    _ServiceData(id: 'qs3', title: 'Limpieza Profunda', description: 'Departamento o casa completa. Incluyo productos de limpieza.', provider: 'Maria L.', providerRating: 4.7, providerJobs: 28, price: 40, category: 'Limpieza', icon: Icons.cleaning_services_rounded, isVerified: false),
-    _ServiceData(id: 'qs4', title: 'Apoyo en Evento', description: 'Organizacion, montaje y logistica para todo tipo de eventos.', provider: 'Ana G.', providerRating: 4.6, providerJobs: 19, price: 35, category: 'Eventos', icon: Icons.celebration_rounded, isVerified: false),
-    _ServiceData(id: 'qs5', title: 'Pintura de Interiores', description: 'Pintura de paredes, techos y acabados. Material incluido.', provider: 'Roberto P.', providerRating: 4.8, providerJobs: 41, price: 45, category: 'Reparaciones', icon: Icons.format_paint_rounded, isVerified: true),
-    _ServiceData(id: 'qs6', title: 'Jardineria Basica', description: 'Corte de cesped, poda de arbustos y limpieza general.', provider: 'Pedro S.', providerRating: 4.5, providerJobs: 16, price: 20, category: 'Jardineria', icon: Icons.grass_rounded, isVerified: false),
-    _ServiceData(id: 'qs7', title: 'Montaje de TV', description: 'Instalacion de televisor en pared con soporte incluido.', provider: 'Luis F.', providerRating: 4.9, providerJobs: 63, price: 35, category: 'Armado', icon: Icons.tv_rounded, isVerified: true),
-    _ServiceData(id: 'qs8', title: 'Limpieza Post-Obra', description: 'Limpieza completa de escombros y polvo despues de remodelacion.', provider: 'Sandra V.', providerRating: 4.7, providerJobs: 22, price: 55, category: 'Limpieza', icon: Icons.cleaning_services_rounded, isVerified: false),
+    _ServiceData(id: 'qs1', title: 'Ayuda con Mudanza', description: 'Carga y descarga de cajas, muebles y enseres. Cuento con camioneta propia.', provider: 'Juan M.', providerRating: 4.8, providerJobs: 34, price: 25000, category: 'Mudanza', icon: Icons.local_shipping_rounded, isVerified: true),
+    _ServiceData(id: 'qs2', title: 'Armado de Muebles', description: 'Ikea, Sodimac y mas. Armado profesional con herramientas propias.', provider: 'Carlos R.', providerRating: 4.9, providerJobs: 52, price: 30000, category: 'Armado', icon: Icons.handyman_rounded, isVerified: true),
+    _ServiceData(id: 'qs3', title: 'Limpieza Profunda', description: 'Departamento o casa completa. Incluyo productos de limpieza.', provider: 'Maria L.', providerRating: 4.7, providerJobs: 28, price: 40000, category: 'Limpieza', icon: Icons.cleaning_services_rounded, isVerified: false),
+    _ServiceData(id: 'qs4', title: 'Apoyo en Evento', description: 'Organizacion, montaje y logistica para todo tipo de eventos.', provider: 'Ana G.', providerRating: 4.6, providerJobs: 19, price: 35000, category: 'Eventos', icon: Icons.celebration_rounded, isVerified: false),
+    _ServiceData(id: 'qs5', title: 'Pintura de Interiores', description: 'Pintura de paredes, techos y acabados. Material incluido.', provider: 'Roberto P.', providerRating: 4.8, providerJobs: 41, price: 45000, category: 'Reparaciones', icon: Icons.format_paint_rounded, isVerified: true),
+    _ServiceData(id: 'qs6', title: 'Jardineria Basica', description: 'Corte de cesped, poda de arbustos y limpieza general.', provider: 'Pedro S.', providerRating: 4.5, providerJobs: 16, price: 20000, category: 'Jardineria', icon: Icons.grass_rounded, isVerified: false),
+    _ServiceData(id: 'qs7', title: 'Montaje de TV', description: 'Instalacion de televisor en pared con soporte incluido.', provider: 'Luis F.', providerRating: 4.9, providerJobs: 63, price: 35000, category: 'Armado', icon: Icons.tv_rounded, isVerified: true),
+    _ServiceData(id: 'qs8', title: 'Limpieza Post-Obra', description: 'Limpieza completa de escombros y polvo despues de remodelacion.', provider: 'Sandra V.', providerRating: 4.7, providerJobs: 22, price: 55000, category: 'Limpieza', icon: Icons.cleaning_services_rounded, isVerified: false),
   ];
 
   final List<_ServiceRequest> _requests = [
-    _ServiceRequest(id: 'qr1', title: 'Necesito ayuda para mover sofa', description: 'Sofa grande de 3 cuerpos, piso 4 sin ascensor. Necesito 2 personas.', requester: 'Daniela M.', budget: 30, category: 'Mudanza', urgency: 'Hoy', offers: 3, postedAgo: 'Hace 2h'),
-    _ServiceRequest(id: 'qr2', title: 'Armar escritorio de IKEA', description: 'Modelo MALM con 2 cajones. Ya tengo las herramientas basicas.', requester: 'Tomas R.', budget: 25, category: 'Armado', urgency: 'Semana', offers: 5, postedAgo: 'Hace 4h'),
-    _ServiceRequest(id: 'qr3', title: 'Limpieza profunda depto 2 hab', description: '65m2, cocina, bano, sala y 2 habitaciones. Preferible traer productos.', requester: 'Camila S.', budget: 50, category: 'Limpieza', urgency: 'Manana', offers: 2, postedAgo: 'Hace 1h'),
-    _ServiceRequest(id: 'qr4', title: 'Pintar habitacion infantil', description: 'Habitacion de 12m2, paredes lisas. Color a definir, compro la pintura.', requester: 'Lucia V.', budget: 60, category: 'Reparaciones', urgency: 'Semana', offers: 1, postedAgo: 'Hace 6h'),
+    _ServiceRequest(id: 'qr1', title: 'Necesito ayuda para mover sofa', description: 'Sofa grande de 3 cuerpos, piso 4 sin ascensor. Necesito 2 personas.', requester: 'Daniela M.', budget: 30000, category: 'Mudanza', urgency: 'Hoy', offers: 3, postedAgo: 'Hace 2h'),
+    _ServiceRequest(id: 'qr2', title: 'Armar escritorio de IKEA', description: 'Modelo MALM con 2 cajones. Ya tengo las herramientas basicas.', requester: 'Tomas R.', budget: 25000, category: 'Armado', urgency: 'Semana', offers: 5, postedAgo: 'Hace 4h'),
+    _ServiceRequest(id: 'qr3', title: 'Limpieza profunda depto 2 hab', description: '65m2, cocina, bano, sala y 2 habitaciones. Preferible traer productos.', requester: 'Camila S.', budget: 50000, category: 'Limpieza', urgency: 'Manana', offers: 2, postedAgo: 'Hace 1h'),
+    _ServiceRequest(id: 'qr4', title: 'Pintar habitacion infantil', description: 'Habitacion de 12m2, paredes lisas. Color a definir, compro la pintura.', requester: 'Lucia V.', budget: 60000, category: 'Reparaciones', urgency: 'Semana', offers: 1, postedAgo: 'Hace 6h'),
   ];
 
   @override
@@ -192,7 +195,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                   Text(service.category, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
                 ])),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('\$${service.price.toInt()}', style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+                  Text(service.price.toCLP, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
                   Text('/hora', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
                 ]),
               ]),
@@ -219,7 +222,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                     ]),
                   ])),
                   GestureDetector(
-                    onTap: () { Navigator.pop(ctx); _showChatSnack(service.provider); },
+                    onTap: () { Navigator.pop(ctx); _openChat(context); },
                     child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.chat_outlined, size: 20, color: AtrioColors.neonLime)),
                   ),
                 ]),
@@ -234,7 +237,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
               SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
                 onPressed: () { Navigator.pop(ctx); _showHireConfirmation(service); },
                 style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-                child: Text('Contratar por \$${service.price.toInt()}/hr', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                child: Text('Contratar por ${service.price.toCLP}/hr', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
               )),
               const SizedBox(height: 12),
               Center(child: Text('Pago seguro · Garantía Atrio', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary))),
@@ -272,7 +275,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Presupuesto', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
                   const SizedBox(height: 2),
-                  Text('\$${request.budget.toInt()}', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+                  Text(request.budget.toCLP, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
                 ]),
                 const Spacer(),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -300,7 +303,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
             )),
             const SizedBox(height: 12),
             SizedBox(width: double.infinity, height: 48, child: OutlinedButton.icon(
-              onPressed: () { Navigator.pop(ctx); _showChatSnack(request.requester); },
+              onPressed: () { Navigator.pop(ctx); _openChat(context); },
               style: OutlinedButton.styleFrom(foregroundColor: AtrioColors.neonLime, side: BorderSide(color: AtrioColors.neonLime.withValues(alpha: 0.3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
               icon: const Icon(Icons.chat_outlined, size: 18),
               label: Text('Preguntar antes', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
@@ -313,9 +316,15 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   }
 
   void _showHireConfirmation(_ServiceData service) {
+    final serviceFeeRate = 0.07;
+    final serviceFee = service.price * serviceFeeRate;
+    final total = service.price + serviceFee;
+    bool hiring = false;
+
     showModalBottomSheet(
       context: context, backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
         padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -325,8 +334,28 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           const SizedBox(height: 20),
           Text('Confirmar contratacion', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
           const SizedBox(height: 8),
-          Text('${service.provider} realizara "${service.title}" por \$${service.price.toInt()}/hora', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
+          Text('${service.provider} realizara "${service.title}" por ${service.price.toCLP}/hora', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
           const SizedBox(height: 20),
+          // Price breakdown
+          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
+            child: Column(children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Precio del servicio', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
+                Text(service.price.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+              ]),
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Tarifa Atrio (7%)', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
+                Text(serviceFee.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+              ]),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(color: AtrioColors.hostCardBorder, height: 1)),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Total', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+                Text(total.toCLP, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 10),
           // Milestones
           Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -340,22 +369,81 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           ),
           const SizedBox(height: 20),
           SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), Expanded(child: Text('Servicio contratado! Chatea con ${service.provider}', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)))]),
-                backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), duration: const Duration(seconds: 3),
-              ));
+            onPressed: hiring ? null : () async {
+              setSheetState(() => hiring = true);
+              try {
+                await _hireAndChat(service, serviceFee, total);
+                if (ctx.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Error: $e'), backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ));
+                }
+              } finally {
+                if (ctx.mounted) setSheetState(() => hiring = false);
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-            child: Text('Confirmar y chatear', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+            child: hiring
+                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
+                : Text('Confirmar y pagar ${total.toCLP}', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
           )),
           const SizedBox(height: 10),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
           const SizedBox(height: 8),
         ]),
       ),
+      ),
     );
+  }
+
+  /// Create a service booking and open chat with the host
+  Future<void> _hireAndChat(_ServiceData service, double fee, double total) async {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+    // Use test host as provider (since these are demo services)
+    const hostId = '053c11bd-9fd7-484e-bb30-d75532d4db54';
+
+    // Create a booking record for the quick service
+    final now = DateTime.now();
+    await DatabaseService.createBooking({
+      'guest_id': currentUser.id,
+      'host_id': hostId,
+      'check_in': now.toIso8601String(),
+      'check_out': now.add(const Duration(hours: 2)).toIso8601String(),
+      'guests_count': 1,
+      'base_total': service.price,
+      'cleaning_fee': 0,
+      'service_fee': fee,
+      'total': total,
+      'status': 'confirmed',
+      'payment_status': 'pending',
+      'rental_mode': 'hours',
+      'notes': 'Servicio Rapido: ${service.title}',
+    });
+
+    // Create/get conversation and navigate to chat
+    final convo = await DatabaseService.getOrCreateConversation(
+      userId1: currentUser.id,
+      userId2: hostId,
+    );
+
+    // Send initial message
+    await DatabaseService.sendMessage(
+      conversationId: convo['id'],
+      senderId: currentUser.id,
+      text: 'Hola! Acabo de contratar "${service.title}" por ${service.price.toCLP}/hr. Coordinemos los detalles.',
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), const Expanded(child: Text('Servicio contratado!', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
+        backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+      context.push('/chat/${convo['id']}');
+    }
   }
 
   void _showMakeOffer(_ServiceRequest request) {
@@ -428,9 +516,11 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   }
 
   void _showOfferConfirmation(_ServiceRequest request, double price, String message) {
+    bool sending = false;
     showModalBottomSheet(
       context: context, backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
         padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -442,14 +532,24 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           const SizedBox(height: 8),
           Text('Para: "${request.title}"', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary), textAlign: TextAlign.center),
           const SizedBox(height: 20),
-          // Summary
+          // Summary with fee
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
             child: Column(children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text('Tu precio', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
-                Text('\$${price.toInt()}', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+                Text(price.toCLP, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+              ]),
+              const SizedBox(height: 8),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Tarifa Atrio (7%)', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
+                Text((price * 0.07).toCLP, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
+              ]),
+              const SizedBox(height: 4),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Recibirás', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
+                Text((price * 0.93).toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AtrioColors.neonLimeDark)),
               ]),
               if (message.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -470,29 +570,88 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           ),
           const SizedBox(height: 20),
           SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), const Expanded(child: Text('Oferta enviada exitosamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
-                backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ));
+            onPressed: sending ? null : () async {
+              setSheetState(() => sending = true);
+              try {
+                await _sendOfferAndChat(request, price, message);
+                if (ctx.mounted) Navigator.pop(ctx);
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Error: $e'), backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ));
+                }
+              } finally {
+                if (ctx.mounted) setSheetState(() => sending = false);
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-            child: Text('Confirmar y enviar', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+            child: sending
+                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
+                : Text('Confirmar y enviar', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
           )),
           const SizedBox(height: 10),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver a editar', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
           const SizedBox(height: 8),
         ]),
       ),
+      ),
     );
   }
 
-  void _showChatSnack(String name) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [const Icon(Icons.chat_bubble_outline, color: Colors.black, size: 18), const SizedBox(width: 10), Text('Abriendo chat con $name...', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black))]),
-      backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), duration: const Duration(seconds: 2),
-    ));
+  /// Send offer as a message and open chat
+  Future<void> _sendOfferAndChat(_ServiceRequest request, double price, String message) async {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+    const hostId = '053c11bd-9fd7-484e-bb30-d75532d4db54';
+
+    final convo = await DatabaseService.getOrCreateConversation(
+      userId1: currentUser.id,
+      userId2: hostId,
+    );
+
+    final offerText = 'Oferta para "${request.title}": ${price.toCLP}'
+        '${message.isNotEmpty ? '\n\n$message' : ''}';
+
+    await DatabaseService.sendMessage(
+      conversationId: convo['id'],
+      senderId: currentUser.id,
+      text: offerText,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), const Expanded(child: Text('Oferta enviada!', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
+        backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+      context.push('/chat/${convo['id']}');
+    }
+  }
+
+  /// Open a real chat with the host
+  Future<void> _openChat(BuildContext ctx) async {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return;
+    const hostId = '053c11bd-9fd7-484e-bb30-d75532d4db54';
+
+    try {
+      final convo = await DatabaseService.getOrCreateConversation(
+        userId1: currentUser.id,
+        userId2: hostId,
+      );
+      if (mounted) {
+        context.push('/chat/${convo['id']}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error al abrir chat: $e'),
+          backgroundColor: Colors.red, behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+      }
+    }
   }
 }
 
@@ -535,7 +694,7 @@ class _ServiceCard extends StatelessWidget {
           ])),
           const SizedBox(width: 10),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('\$${service.price.toInt()}', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+            Text(service.price.toCLP, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
             Text('/hora', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextTertiary)),
           ]),
         ]),
@@ -557,7 +716,7 @@ class _RequestCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(request.title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary))),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(8)), child: Text('\$${request.budget.toInt()}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black))),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(8)), child: Text(request.budget.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black))),
           ]),
           const SizedBox(height: 6),
           Text(request.description, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),

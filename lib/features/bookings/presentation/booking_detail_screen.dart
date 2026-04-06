@@ -9,6 +9,7 @@ import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/bookings_provider.dart';
 import '../../../core/services/database_service.dart';
 import '../../../config/supabase/supabase_config.dart';
+import '../../../core/utils/extensions.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
   final String bookingId;
@@ -155,6 +156,8 @@ class BookingDetailScreen extends ConsumerWidget {
         final conversationId = bookingData['conversation_id'] as String?;
         final hostId = bookingData['host_id'] as String?;
         final listingId = bookingData['listing_id'] as String?;
+        final currentUserId = SupabaseConfig.auth.currentUser?.id;
+        final isHost = currentUserId != null && currentUserId == hostId;
 
         int nights = 0;
         if (checkIn != null && checkOut != null) {
@@ -457,7 +460,6 @@ class BookingDetailScreen extends ConsumerWidget {
                             ),
                             GestureDetector(
                               onTap: () async {
-                                final currentUserId = SupabaseConfig.auth.currentUser?.id;
                                 if (currentUserId == null || hostId == null) return;
 
                                 if (conversationId != null) {
@@ -518,18 +520,18 @@ class BookingDetailScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 16),
                             _PriceRow(
-                              label: '\$${listingBasePrice.toStringAsFixed(2)} x $nights $listingPriceUnit${nights != 1 ? 's' : ''}',
-                              value: '\$${baseTotal.toStringAsFixed(2)}',
+                              label: '${listingBasePrice.toCLP} x $nights $listingPriceUnit${nights != 1 ? 's' : ''}',
+                              value: baseTotal.toCLP,
                             ),
                             if (cleaningFee > 0)
                               _PriceRow(
                                 label: 'Tarifa de limpieza',
-                                value: '\$${cleaningFee.toStringAsFixed(2)}',
+                                value: cleaningFee.toCLP,
                               ),
                             if (serviceFee > 0)
                               _PriceRow(
                                 label: 'Tarifa de servicio Atrio',
-                                value: '\$${serviceFee.toStringAsFixed(2)}',
+                                value: serviceFee.toCLP,
                               ),
                             const Divider(height: 24),
                             Row(
@@ -543,7 +545,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 Text(
-                                  '\$${total.toStringAsFixed(2)} USD',
+                                  '${total.toCLP} CLP',
                                   style: const TextStyle(
                                     fontFamily: 'Roboto',
                                     fontSize: 20,
@@ -607,8 +609,135 @@ class BookingDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 24),
 
-                      // Action Buttons
-                      if (status == 'pending' || status == 'confirmed' || status == 'active')
+                      // Host Action Buttons (confirm/reject pending bookings)
+                      if (isHost && status == 'pending')
+                        Column(
+                          children: [
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  await DatabaseService.updateBookingStatus(bookingId, 'confirmed');
+                                  ref.invalidate(bookingDetailProvider(bookingId));
+                                  ref.invalidate(hostBookingsProvider);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(children: [
+                                          const Icon(Icons.check_circle, color: Colors.black, size: 18),
+                                          const SizedBox(width: 8),
+                                          const Text('Reserva confirmada', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+                                        ]),
+                                        backgroundColor: AtrioColors.neonLime,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AtrioColors.neonLime,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  elevation: 0,
+                                ),
+                                icon: const Icon(Icons.check_rounded, size: 20),
+                                label: Text('Confirmar Reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () async {
+                                  final confirm = await showModalBottomSheet<bool>(
+                                    context: context,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (ctx) => Container(
+                                      padding: const EdgeInsets.all(24),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                                          const SizedBox(height: 24),
+                                          Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(color: AtrioColors.error.withValues(alpha: 0.1), shape: BoxShape.circle),
+                                            child: const Icon(Icons.block_rounded, size: 40, color: AtrioColors.error),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          Text('Rechazar Reserva', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.guestTextPrimary)),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            'El huesped sera notificado y podra buscar otra opcion.',
+                                            style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.guestTextSecondary, height: 1.4),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          const SizedBox(height: 24),
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: ElevatedButton(
+                                              onPressed: () => Navigator.pop(ctx, true),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: AtrioColors.error,
+                                                foregroundColor: Colors.white,
+                                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                                elevation: 0,
+                                              ),
+                                              child: Text('Si, rechazar', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: TextButton(
+                                              onPressed: () => Navigator.pop(ctx, false),
+                                              child: Text('Volver', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15, color: AtrioColors.guestTextPrimary)),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                  if (confirm == true) {
+                                    await DatabaseService.updateBookingStatus(bookingId, 'rejected');
+                                    ref.invalidate(bookingDetailProvider(bookingId));
+                                    ref.invalidate(hostBookingsProvider);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('Reserva rechazada'),
+                                          backgroundColor: AtrioColors.guestTextPrimary,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AtrioColors.error,
+                                  side: BorderSide(color: AtrioColors.error.withValues(alpha: 0.3)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                ),
+                                icon: const Icon(Icons.close_rounded, size: 18),
+                                label: Text('Rechazar Reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+
+                      // Guest Action Buttons
+                      if (!isHost && (status == 'pending' || status == 'confirmed' || status == 'active'))
                         Column(
                           children: [
                             // Contact host button
@@ -616,7 +745,6 @@ class BookingDetailScreen extends ConsumerWidget {
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () async {
-                                  final currentUserId = SupabaseConfig.auth.currentUser?.id;
                                   if (currentUserId == null || hostId == null) return;
 
                                   if (conversationId != null) {

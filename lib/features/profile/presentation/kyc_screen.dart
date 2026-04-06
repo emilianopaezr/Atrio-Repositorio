@@ -343,7 +343,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                     ],
                     decoration: InputDecoration(
                       labelText: 'Numero de celular',
-                      hintText: '+52 55 1234 5678',
+                      hintText: '+56 9 1234 5678',
                       prefixIcon: const Icon(Icons.phone_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -363,9 +363,10 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                           ? null
                           : () async {
                               final phone = _phoneController.text.trim();
-                              if (phone.length < 8) {
+                              final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+                              if (digits.length < 9 || digits.length > 15) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Ingresa un numero valido')),
+                                  const SnackBar(content: Text('Ingresa un numero valido (ej: +56 9 1234 5678)')),
                                 );
                                 return;
                               }

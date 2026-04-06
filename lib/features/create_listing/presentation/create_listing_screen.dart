@@ -63,6 +63,23 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       for (final img in picked) {
         if (_pickedImages.length >= 8) break;
         final bytes = await img.readAsBytes();
+        // Validate file size (max 10 MB)
+        if (bytes.lengthInBytes > 10 * 1024 * 1024) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('La imagen es demasiado grande (máx 10 MB)',
+                  style: GoogleFonts.inter(color: Colors.white)),
+              backgroundColor: AtrioColors.error,
+              behavior: SnackBarBehavior.floating,
+            ));
+          }
+          continue;
+        }
+        // Validate file extension
+        final ext = img.path.split('.').last.toLowerCase();
+        if (!{'jpg', 'jpeg', 'png', 'webp'}.contains(ext)) {
+          continue;
+        }
         setState(() {
           _pickedImages.add(img);
           _imageBytes.add(bytes);
@@ -77,6 +94,47 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     if (_selectedType == null || _titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Completa todos los campos requeridos',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+        backgroundColor: AtrioColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+      return;
+    }
+
+    // Validate price
+    final price = double.tryParse(_priceController.text.trim()) ?? 0;
+    if (price <= 0 || price > 99999999) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Ingresa un precio válido mayor a 0',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+        backgroundColor: AtrioColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+      return;
+    }
+
+    // Validate capacity if provided
+    final capacityText = _capacityController.text.trim();
+    if (capacityText.isNotEmpty) {
+      final capacity = int.tryParse(capacityText) ?? 0;
+      if (capacity <= 0 || capacity > 10000) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Ingresa una capacidad válida',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+          backgroundColor: AtrioColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+        return;
+      }
+    }
+
+    // Validate title length
+    if (_titleController.text.trim().length > 200) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('El título es demasiado largo (máx 200 caracteres)',
             style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: AtrioColors.error,
         behavior: SnackBarBehavior.floating,
@@ -326,7 +384,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Comisión del 7% (máx \$99)',
+                      'Comisión del 7% (máx \$90.000)',
                       style: AtrioTypography.labelLarge.copyWith(
                         color: AtrioColors.neonLimeDark,
                         fontWeight: FontWeight.w800,
@@ -334,7 +392,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Si el 7% supera \$99, solo se cobran \$99. Transparencia total.',
+                      'Si el 7% supera \$90.000, solo se cobran \$90.000. Transparencia total.',
                       style: AtrioTypography.bodySmall.copyWith(
                         color: AtrioColors.hostTextSecondary,
                       ),
@@ -890,7 +948,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 24),
         AtrioTextField(
           controller: _priceController,
-          label: 'Precio base (USD)',
+          label: 'Precio base (CLP)',
           hint: '0.00',
           keyboardType: TextInputType.number,
           prefixIcon: const Padding(
@@ -951,7 +1009,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Atrio cobra 7% de comisión por reserva. Si el 7% supera \$99 USD, solo se cobran \$99.',
+                  'Atrio cobra 7% de comisión por reserva. Si el 7% supera \$90.000 CLP, solo se cobran \$90.000.',
                   style: AtrioTypography.bodySmall.copyWith(
                     color: AtrioColors.hostTextPrimary,
                   ),

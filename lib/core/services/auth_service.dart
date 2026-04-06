@@ -38,8 +38,8 @@ class AuthService {
       emailVerified = result?['email_verified'] == true;
     } catch (e) {
       debugPrint('Error fetching email_verified: $e');
-      // On error, assume verified to avoid blocking the user
-      emailVerified = true;
+      // On error, keep previous state or set null to retry later
+      emailVerified ??= null;
     }
     return emailVerified!;
   }
@@ -187,11 +187,11 @@ class AuthService {
   static bool get isAuthenticated => currentUser != null;
 
   /// Request email verification OTP
+  /// Note: The Brevo API key is stored server-side in Supabase vault/secrets.
+  /// Never send API keys from the client.
   static Future<void> requestVerificationCode() async {
     try {
-      await SupabaseConfig.client.rpc('request_verification', params: {
-        'p_api_key': AppConstants.brevoApiKey,
-      });
+      await SupabaseConfig.client.rpc('request_verification');
     } catch (e) {
       debugPrint('Error requesting verification: $e');
       throw AuthException(

@@ -11,6 +11,7 @@ import '../../../core/providers/availability_provider.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/models/enums.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/utils/extensions.dart';
 
 const _bg = AtrioColors.guestSurfaceVariant;
 const _white = AtrioColors.guestSurface;
@@ -104,11 +105,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     if (listing == null) return;
     final type = listing['type'] as String? ?? 'space';
     final typeLabel = type == 'space' ? 'espacio' : type == 'experience' ? 'experiencia' : 'servicio';
-    final price = (listing['base_price'] as num?)?.toStringAsFixed(0) ?? '0';
+    final price = (listing['base_price'] as num?)?.toCLP ?? '\$0';
     final title = listing['title'] as String? ?? '';
     final unit = listing['price_unit'] as String? ?? 'session';
     SharePlus.instance.share(
-      ShareParams(text: '¡Mira este $typeLabel en Atrio! $title - \$$price/${_priceUnit(unit)}'),
+      ShareParams(text: '¡Mira este $typeLabel en Atrio! $title - $price/${_priceUnit(unit)}'),
     );
   }
 
@@ -541,7 +542,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
+                    listing.basePrice?.toCLP ?? '\$0',
                     style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black),
                   ),
                   Text(
@@ -1238,7 +1239,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
+                  listing.basePrice?.toCLP ?? '\$0',
                   style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: _text),
                 ),
                 Text(

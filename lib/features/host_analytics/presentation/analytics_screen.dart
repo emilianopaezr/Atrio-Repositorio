@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/utils/extensions.dart';
 // Database queries are done inline via SupabaseConfig.client
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
@@ -16,6 +17,7 @@ class AnalyticsScreen extends ConsumerStatefulWidget {
 class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   int _periodIdx = 1; // 0=week, 1=month, 2=year
   bool _loading = true;
+  String? _error;
   double _totalRevenue = 0;
   int _totalBookings = 0;
   double _avgRating = 0;
@@ -31,7 +33,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _loading = true);
+    setState(() { _loading = true; _error = null; });
     final uid = SupabaseConfig.auth.currentUser?.id;
     if (uid == null) return;
 
@@ -110,7 +112,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       }
     } catch (e) {
       debugPrint('Analytics error: $e');
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() { _loading = false; _error = 'Error al cargar analíticas'; });
     }
   }
 
@@ -139,6 +141,22 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AtrioColors.neonLime))
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: AtrioColors.hostTextTertiary),
+                      const SizedBox(height: 12),
+                      Text(_error!, style: GoogleFonts.inter(fontSize: 15, color: textS)),
+                      const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: _loadData,
+                        child: Text('Reintentar', style: GoogleFonts.inter(color: AtrioColors.neonLime, fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                )
           : RefreshIndicator(
               onRefresh: _loadData,
               color: AtrioColors.neonLime,
@@ -176,7 +194,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                             style: GoogleFonts.inter(
                                 fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
-                        Text('\$${_totalRevenue.toStringAsFixed(0)} USD',
+                        Text('${_totalRevenue.toCLP} CLP',
                             style: GoogleFonts.inter(
                                 fontSize: 36, fontWeight: FontWeight.w900, color: Colors.black)),
                         if (_dailyRevenue.isNotEmpty) ...[
@@ -351,7 +369,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                                 ],
                               ),
                             ),
-                            Text('\$${price.toStringAsFixed(0)}',
+                            Text(price.toCLP,
                                 style: GoogleFonts.inter(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,

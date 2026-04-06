@@ -21,7 +21,7 @@ abstract class Listing with _$Listing {
     double? latitude,
     double? longitude,
     @JsonKey(name: 'base_price') double? basePrice,
-    @Default('USD') String currency,
+    @Default('CLP') String currency,
     @JsonKey(name: 'price_unit') @Default('night') String priceUnit,
     @JsonKey(name: 'cleaning_fee') @Default(0) double cleaningFee,
     int? capacity,

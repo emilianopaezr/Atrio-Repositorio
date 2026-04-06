@@ -7,6 +7,7 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/providers/listings_provider.dart';
+import '../../../core/utils/extensions.dart';
 
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -446,7 +447,7 @@ class _ListingCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}/${_unitShort(listing.priceUnit)}',
+                        '${listing.basePrice?.toCLP ?? '\$0'}/${_unitShort(listing.priceUnit)}',
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,

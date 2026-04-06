@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/listings_provider.dart';
 import '../../../core/providers/host_stats_provider.dart';
+import '../../../core/services/database_service.dart';
 import '../../../shared/widgets/atrio_button.dart';
 import '../../../shared/widgets/level_badge.dart';
+import '../../../core/utils/extensions.dart';
 
 class HostListingsScreen extends ConsumerWidget {
   const HostListingsScreen({super.key});
@@ -152,7 +155,12 @@ class HostListingsScreen extends ConsumerWidget {
                         final basePrice =
                             (listing['base_price'] as num?)?.toDouble();
 
-                        return Container(
+                        return GestureDetector(
+                          onTap: () => context.push('/listing/${listing['id']}'),
+                          onLongPress: () => _showListingOptions(
+                            context, ref, listing, userId,
+                          ),
+                          child: Container(
                           margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             color: AtrioColors.hostSurface,
@@ -206,7 +214,7 @@ class HostListingsScreen extends ConsumerWidget {
                                               borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
-                                              '\$${basePrice.toStringAsFixed(0)}',
+                                              basePrice.toCLP,
                                               style: AtrioTypography.priceSmall.copyWith(
                                                 color: Colors.white,
                                               ),
@@ -280,6 +288,7 @@ class HostListingsScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
+                        ),
                         );
                       },
                     ),
@@ -294,6 +303,185 @@ class HostListingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showListingOptions(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> listing,
+    String userId,
+  ) {
+    final listingId = listing['id'] as String;
+    final status = listing['status'] as String? ?? 'draft';
+    final title = listing['title'] as String? ?? 'Sin título';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AtrioColors.hostBackground,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AtrioColors.hostCardBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AtrioColors.hostTextPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 20),
+            // View listing
+            _OptionTile(
+              icon: Icons.visibility_outlined,
+              label: 'Ver anuncio',
+              color: AtrioColors.hostTextPrimary,
+              onTap: () {
+                Navigator.pop(ctx);
+                context.push('/listing/$listingId');
+              },
+            ),
+            // Toggle publish/pause
+            if (status == 'published')
+              _OptionTile(
+                icon: Icons.pause_circle_outline,
+                label: 'Pausar anuncio',
+                color: AtrioColors.vibrantOrange,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await DatabaseService.updateListing(listingId, {'status': 'paused'});
+                  ref.invalidate(hostListingsProvider(userId));
+                },
+              )
+            else
+              _OptionTile(
+                icon: Icons.play_circle_outline,
+                label: 'Publicar anuncio',
+                color: AtrioColors.neonLimeDark,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await DatabaseService.updateListing(listingId, {'status': 'published'});
+                  ref.invalidate(hostListingsProvider(userId));
+                },
+              ),
+            // Delete
+            _OptionTile(
+              icon: Icons.delete_outline,
+              label: 'Eliminar anuncio',
+              color: AtrioColors.error,
+              onTap: () async {
+                Navigator.pop(ctx);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogCtx) => AlertDialog(
+                    backgroundColor: AtrioColors.hostBackground,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    title: Text(
+                      'Eliminar anuncio',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        color: AtrioColors.hostTextPrimary,
+                      ),
+                    ),
+                    content: Text(
+                      'Se eliminará "$title" permanentemente. Esta acción no se puede deshacer.',
+                      style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogCtx, false),
+                        child: Text('Cancelar', style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogCtx, true),
+                        child: Text('Eliminar', style: GoogleFonts.inter(color: AtrioColors.error, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await DatabaseService.deleteListing(listingId);
+                  ref.invalidate(hostListingsProvider(userId));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Anuncio eliminado'),
+                        backgroundColor: AtrioColors.hostTextPrimary,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OptionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _OptionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: AtrioColors.hostSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AtrioColors.hostCardBorder),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: color),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+            const Spacer(),
+            Icon(Icons.chevron_right, size: 20, color: AtrioColors.hostTextTertiary),
           ],
         ),
       ),

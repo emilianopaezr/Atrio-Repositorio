@@ -10,7 +10,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../core/utils/constants.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   const EmailVerificationScreen({super.key});
@@ -165,10 +164,7 @@ class _EmailVerificationScreenState
     setState(() => _isResending = true);
 
     try {
-      await SupabaseConfig.client.rpc(
-        'request_verification',
-        params: {'p_api_key': AppConstants.brevoApiKey},
-      );
+      await SupabaseConfig.client.rpc('request_verification');
 
       if (!mounted) return;
 

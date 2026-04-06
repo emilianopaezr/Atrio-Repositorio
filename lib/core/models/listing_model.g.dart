@@ -28,7 +28,7 @@ _Listing _$ListingFromJson(Map<String, dynamic> json) => _Listing(
   latitude: (json['latitude'] as num?)?.toDouble(),
   longitude: (json['longitude'] as num?)?.toDouble(),
   basePrice: (json['base_price'] as num?)?.toDouble(),
-  currency: json['currency'] as String? ?? 'USD',
+  currency: json['currency'] as String? ?? 'CLP',
   priceUnit: json['price_unit'] as String? ?? 'night',
   cleaningFee: (json['cleaning_fee'] as num?)?.toDouble() ?? 0,
   capacity: (json['capacity'] as num?)?.toInt(),
