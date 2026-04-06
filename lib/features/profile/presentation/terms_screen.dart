@@ -97,7 +97,7 @@ class TermsScreen extends StatelessWidget {
 
             _SectionTitle('11. Contacto', isDark),
             _SectionBody(
-              'Para consultas sobre estos términos, puede contactarnos a través de:\n\n• Email: legal@atrio.app\n• Centro de Ayuda dentro de la aplicación\n• Dirección: Atrio Technologies SpA, Santiago de Chile, Chile',
+              'Para consultas sobre estos términos, puede contactarnos a través de:\n\n• Email: legal@atriocompany.cloud\n• Centro de Ayuda dentro de la aplicación\n• Dirección: Atrio Technologies SpA, Santiago de Chile, Chile',
               isDark,
             ),
 

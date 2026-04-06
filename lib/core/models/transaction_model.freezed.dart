@@ -217,7 +217,7 @@ return $default(_that.id,_that.hostId,_that.bookingId,_that.type,_that.amount,_t
 @JsonSerializable()
 
 class _Transaction implements Transaction {
-  const _Transaction({required this.id, @JsonKey(name: 'host_id') required this.hostId, @JsonKey(name: 'booking_id') this.bookingId, required this.type, required this.amount, this.currency = 'USD', this.status = 'pending', this.description, @JsonKey(name: 'created_at') this.createdAt});
+  const _Transaction({required this.id, @JsonKey(name: 'host_id') required this.hostId, @JsonKey(name: 'booking_id') this.bookingId, required this.type, required this.amount, this.currency = 'CLP', this.status = 'pending', this.description, @JsonKey(name: 'created_at') this.createdAt});
   factory _Transaction.fromJson(Map<String, dynamic> json) => _$TransactionFromJson(json);
 
 @override final  String id;

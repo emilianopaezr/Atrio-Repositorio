@@ -79,7 +79,7 @@ class PricingResult {
       case 'HOOK_1_PERCENT':
         return 'Gancho 1%';
       case 'STANDARD_7_CAP99':
-        return 'Comisión 7% (máx \$99)';
+        return 'Comisión 7% (máx \$90.000)';
       case 'FLAT_FEE_CAP':
         return 'Comisión con Tope';
       case 'EARLY_ADOPTER':
@@ -111,7 +111,7 @@ class PricingResult {
       case 'HOOK_1_PERCENT':
         return 'Tarifa especial de lanzamiento';
       case 'STANDARD_7_CAP99':
-        return 'Tarifa estándar (7%, máx \$99)';
+        return 'Tarifa estándar (7%, máx \$90.000)';
       case 'FLAT_FEE_CAP':
         return 'Tarifa protegida con tope máximo';
       case 'EARLY_ADOPTER':
@@ -123,11 +123,11 @@ class PricingResult {
     }
   }
 
-  bool get hasCommissionCap => guestServiceFeeAmount >= 99;
+  bool get hasCommissionCap => guestServiceFeeAmount >= 90000;
 
-  /// Whether the fee was capped at $99
+  /// Whether the fee was capped at $90.000 CLP
   bool get isFeeCapped {
     final raw = (baseTotal + cleaningFee) * guestServiceFeeRate;
-    return raw > 99 && guestServiceFeeAmount <= 99;
+    return raw > 90000 && guestServiceFeeAmount <= 90000;
   }
 }

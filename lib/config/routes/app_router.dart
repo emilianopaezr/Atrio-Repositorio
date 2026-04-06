@@ -55,7 +55,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: false,
     refreshListenable: authNotifier,
     redirect: (context, state) {
       final session = SupabaseConfig.client.auth.currentSession;

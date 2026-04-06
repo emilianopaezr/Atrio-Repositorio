@@ -11,7 +11,7 @@ abstract class Transaction with _$Transaction {
     @JsonKey(name: 'booking_id') String? bookingId,
     required String type,
     required double amount,
-    @Default('USD') String currency,
+    @Default('CLP') String currency,
     @Default('pending') String status,
     String? description,
     @JsonKey(name: 'created_at') DateTime? createdAt,

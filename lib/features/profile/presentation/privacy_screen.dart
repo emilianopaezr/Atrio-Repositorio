@@ -67,7 +67,7 @@ class PrivacyScreen extends StatelessWidget {
 
             _SectionTitle('6. Sus Derechos', isDark),
             _SectionBody(
-              'Usted tiene derecho a:\n\n• Acceder a sus datos personales almacenados en nuestra plataforma\n• Rectificar información inexacta o desactualizada\n• Solicitar la eliminación de sus datos personales\n• Oponerse al procesamiento de sus datos para fines específicos\n• Solicitar la portabilidad de sus datos en formato estructurado\n• Retirar su consentimiento en cualquier momento\n\nPara ejercer estos derechos, contáctenos a través de privacy@atrio.app',
+              'Usted tiene derecho a:\n\n• Acceder a sus datos personales almacenados en nuestra plataforma\n• Rectificar información inexacta o desactualizada\n• Solicitar la eliminación de sus datos personales\n• Oponerse al procesamiento de sus datos para fines específicos\n• Solicitar la portabilidad de sus datos en formato estructurado\n• Retirar su consentimiento en cualquier momento\n\nPara ejercer estos derechos, contáctenos a través de privacy@atriocompany.cloud',
               isDark,
             ),
 
@@ -91,7 +91,7 @@ class PrivacyScreen extends StatelessWidget {
 
             _SectionTitle('10. Contacto', isDark),
             _SectionBody(
-              'Si tiene preguntas sobre esta política de privacidad o sobre cómo manejamos su información personal, puede contactarnos:\n\n• Email: privacy@atrio.app\n• Centro de Ayuda dentro de la aplicación\n• Responsable de Protección de Datos: dpo@atrio.app',
+              'Si tiene preguntas sobre esta política de privacidad o sobre cómo manejamos su información personal, puede contactarnos:\n\n• Email: privacy@atriocompany.cloud\n• Centro de Ayuda dentro de la aplicación\n• Responsable de Protección de Datos: dpo@atriocompany.cloud',
               isDark,
             ),
 

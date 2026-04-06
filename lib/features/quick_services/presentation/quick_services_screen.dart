@@ -26,6 +26,9 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _selectedCategory = 'Todos';
+  List<Map<String, dynamic>> _realServices = [];
+  bool _isLoading = true;
+  String? _error;
 
   final _categories = [
     'Todos',
@@ -37,28 +40,11 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     'Reparaciones',
   ];
 
-  final List<_ServiceData> _availableServices = [
-    _ServiceData(id: 'qs1', title: 'Ayuda con Mudanza', description: 'Carga y descarga de cajas, muebles y enseres. Cuento con camioneta propia.', provider: 'Juan M.', providerRating: 4.8, providerJobs: 34, price: 25000, category: 'Mudanza', icon: Icons.local_shipping_rounded, isVerified: true),
-    _ServiceData(id: 'qs2', title: 'Armado de Muebles', description: 'Ikea, Sodimac y mas. Armado profesional con herramientas propias.', provider: 'Carlos R.', providerRating: 4.9, providerJobs: 52, price: 30000, category: 'Armado', icon: Icons.handyman_rounded, isVerified: true),
-    _ServiceData(id: 'qs3', title: 'Limpieza Profunda', description: 'Departamento o casa completa. Incluyo productos de limpieza.', provider: 'Maria L.', providerRating: 4.7, providerJobs: 28, price: 40000, category: 'Limpieza', icon: Icons.cleaning_services_rounded, isVerified: false),
-    _ServiceData(id: 'qs4', title: 'Apoyo en Evento', description: 'Organizacion, montaje y logistica para todo tipo de eventos.', provider: 'Ana G.', providerRating: 4.6, providerJobs: 19, price: 35000, category: 'Eventos', icon: Icons.celebration_rounded, isVerified: false),
-    _ServiceData(id: 'qs5', title: 'Pintura de Interiores', description: 'Pintura de paredes, techos y acabados. Material incluido.', provider: 'Roberto P.', providerRating: 4.8, providerJobs: 41, price: 45000, category: 'Reparaciones', icon: Icons.format_paint_rounded, isVerified: true),
-    _ServiceData(id: 'qs6', title: 'Jardineria Basica', description: 'Corte de cesped, poda de arbustos y limpieza general.', provider: 'Pedro S.', providerRating: 4.5, providerJobs: 16, price: 20000, category: 'Jardineria', icon: Icons.grass_rounded, isVerified: false),
-    _ServiceData(id: 'qs7', title: 'Montaje de TV', description: 'Instalacion de televisor en pared con soporte incluido.', provider: 'Luis F.', providerRating: 4.9, providerJobs: 63, price: 35000, category: 'Armado', icon: Icons.tv_rounded, isVerified: true),
-    _ServiceData(id: 'qs8', title: 'Limpieza Post-Obra', description: 'Limpieza completa de escombros y polvo despues de remodelacion.', provider: 'Sandra V.', providerRating: 4.7, providerJobs: 22, price: 55000, category: 'Limpieza', icon: Icons.cleaning_services_rounded, isVerified: false),
-  ];
-
-  final List<_ServiceRequest> _requests = [
-    _ServiceRequest(id: 'qr1', title: 'Necesito ayuda para mover sofa', description: 'Sofa grande de 3 cuerpos, piso 4 sin ascensor. Necesito 2 personas.', requester: 'Daniela M.', budget: 30000, category: 'Mudanza', urgency: 'Hoy', offers: 3, postedAgo: 'Hace 2h'),
-    _ServiceRequest(id: 'qr2', title: 'Armar escritorio de IKEA', description: 'Modelo MALM con 2 cajones. Ya tengo las herramientas basicas.', requester: 'Tomas R.', budget: 25000, category: 'Armado', urgency: 'Semana', offers: 5, postedAgo: 'Hace 4h'),
-    _ServiceRequest(id: 'qr3', title: 'Limpieza profunda depto 2 hab', description: '65m2, cocina, bano, sala y 2 habitaciones. Preferible traer productos.', requester: 'Camila S.', budget: 50000, category: 'Limpieza', urgency: 'Manana', offers: 2, postedAgo: 'Hace 1h'),
-    _ServiceRequest(id: 'qr4', title: 'Pintar habitacion infantil', description: 'Habitacion de 12m2, paredes lisas. Color a definir, compro la pintura.', requester: 'Lucia V.', budget: 60000, category: 'Reparaciones', urgency: 'Semana', offers: 1, postedAgo: 'Hace 6h'),
-  ];
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadServices();
   }
 
   @override
@@ -67,14 +53,24 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     super.dispose();
   }
 
-  List<_ServiceData> get _filteredServices {
-    if (_selectedCategory == 'Todos') return _availableServices;
-    return _availableServices.where((s) => s.category == _selectedCategory).toList();
+  Future<void> _loadServices() async {
+    setState(() { _isLoading = true; _error = null; });
+    try {
+      final data = await DatabaseService.getPublishedListings(type: 'service', limit: 50);
+      if (mounted) setState(() { _realServices = data; _isLoading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = 'Error al cargar servicios'; _isLoading = false; });
+    }
   }
 
-  List<_ServiceRequest> get _filteredRequests {
-    if (_selectedCategory == 'Todos') return _requests;
-    return _requests.where((r) => r.category == _selectedCategory).toList();
+  List<Map<String, dynamic>> get _filteredServices {
+    if (_selectedCategory == 'Todos') return _realServices;
+    final cat = _selectedCategory.toLowerCase();
+    return _realServices.where((s) {
+      final category = (s['category'] as String? ?? '').toLowerCase();
+      final tags = List<String>.from(s['tags'] ?? []);
+      return category.contains(cat) || tags.any((t) => t.toLowerCase().contains(cat));
+    }).toList();
   }
 
   @override
@@ -156,16 +152,38 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: _filteredServices.length,
-                  itemBuilder: (context, index) => _ServiceCard(service: _filteredServices[index], onTap: () => _showServiceDetail(_filteredServices[index])),
-                ),
-                ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: _filteredRequests.length,
-                  itemBuilder: (context, index) => _RequestCard(request: _filteredRequests[index], onTap: () => _showRequestDetail(_filteredRequests[index])),
-                ),
+                _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: AtrioColors.neonLime))
+                  : _error != null
+                    ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Text(_error!, style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
+                        const SizedBox(height: 12),
+                        TextButton(onPressed: _loadServices, child: Text('Reintentar', style: GoogleFonts.inter(color: AtrioColors.neonLime))),
+                      ]))
+                    : _filteredServices.isEmpty
+                      ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.handyman_rounded, size: 48, color: AtrioColors.hostTextTertiary),
+                          const SizedBox(height: 12),
+                          Text('No hay servicios disponibles', style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextSecondary)),
+                          const SizedBox(height: 4),
+                          Text('Publica el tuyo con el botón +', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
+                        ]))
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: _filteredServices.length,
+                          itemBuilder: (context, index) {
+                            final s = _filteredServices[index];
+                            return _RealServiceCard(service: s, onTap: () => _showRealServiceDetail(s));
+                          },
+                        ),
+                // Solicitudes tab - coming soon
+                Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.campaign_rounded, size: 48, color: AtrioColors.hostTextTertiary),
+                  const SizedBox(height: 12),
+                  Text('Solicitudes próximamente', style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextSecondary)),
+                  const SizedBox(height: 4),
+                  Text('Pronto podrás publicar lo que necesitas', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
+                ])),
               ],
             ),
           ),
@@ -174,7 +192,19 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     );
   }
 
-  void _showServiceDetail(_ServiceData service) {
+  void _showRealServiceDetail(Map<String, dynamic> service) {
+    final title = service['title'] ?? 'Servicio';
+    final description = service['description'] ?? '';
+    final price = (service['base_price'] as num?)?.toDouble() ?? 0;
+    final priceUnit = service['price_unit'] ?? 'session';
+    final rating = (service['rating'] as num?)?.toDouble() ?? 0;
+    final reviewCount = (service['review_count'] as num?)?.toInt() ?? 0;
+    final hostId = service['host_id'] as String;
+    final host = service['host'] as Map<String, dynamic>?;
+    final hostName = host?['display_name'] ?? 'Proveedor';
+    final hostVerified = host?['is_verified'] == true;
+    final category = service['category'] ?? service['type'] ?? '';
+
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (ctx) => DraggableScrollableSheet(
@@ -187,42 +217,43 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 24),
               Row(children: [
-                Container(width: 56, height: 56, decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)), child: Icon(service.icon, color: AtrioColors.neonLime, size: 28)),
+                Container(width: 56, height: 56, decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.handyman_rounded, color: AtrioColors.neonLime, size: 28)),
                 const SizedBox(width: 16),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(service.title, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
+                  Text(title, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
                   const SizedBox(height: 4),
-                  Text(service.category, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
+                  Text(category, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
                 ])),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text(service.price.toCLP, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
-                  Text('/hora', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
+                  Text(price.toCLP, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+                  Text('/$priceUnit', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
                 ]),
               ]),
               const SizedBox(height: 20),
-              Text(service.description, style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.5)),
+              if (description.isNotEmpty)
+                Text(description, style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.5)),
               const SizedBox(height: 24),
               // Provider card
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
                 child: Row(children: [
-                  CircleAvatar(radius: 22, backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.15), child: Text(service.provider[0], style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AtrioColors.neonLime, fontSize: 18))),
+                  CircleAvatar(radius: 22, backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.15), child: Text(hostName[0], style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AtrioColors.neonLime, fontSize: 18))),
                   const SizedBox(width: 12),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(children: [
-                      Text(service.provider, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
-                      if (service.isVerified) ...[const SizedBox(width: 6), Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark)],
+                      Text(hostName, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+                      if (hostVerified) ...[const SizedBox(width: 6), Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark)],
                     ]),
                     const SizedBox(height: 2),
                     Row(children: [
                       const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3),
-                      Text('${service.providerRating}', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-                      Text(' · ${service.providerJobs} trabajos', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
+                      Text(rating.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                      Text(' · $reviewCount reseñas', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
                     ]),
                   ])),
                   GestureDetector(
-                    onTap: () { Navigator.pop(ctx); _openChat(context); },
+                    onTap: () { Navigator.pop(ctx); _openChatWith(hostId); },
                     child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.chat_outlined, size: 20, color: AtrioColors.neonLime)),
                   ),
                 ]),
@@ -235,9 +266,9 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
               _StepItem(step: '3', title: 'Confirmas y pagas', subtitle: 'Solo pagas cuando estas satisfecho'),
               const SizedBox(height: 24),
               SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-                onPressed: () { Navigator.pop(ctx); _showHireConfirmation(service); },
+                onPressed: () { Navigator.pop(ctx); _showRealHireConfirmation(service); },
                 style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-                child: Text('Contratar por ${service.price.toCLP}/hr', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                child: Text('Contratar por ${price.toCLP}/$priceUnit', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
               )),
               const SizedBox(height: 12),
               Center(child: Text('Pago seguro · Garantía Atrio', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary))),
@@ -249,76 +280,17 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     );
   }
 
-  void _showRequestDetail(_ServiceRequest request) {
-    showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7, maxChildSize: 0.9, minChildSize: 0.4,
-        builder: (_, scrollCtrl) => Container(
-          decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-          child: ListView(controller: scrollCtrl, padding: const EdgeInsets.all(24), children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 24),
-            Row(children: [
-              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.schedule, size: 14, color: Colors.orange), const SizedBox(width: 4), Text(request.urgency, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.orange))])),
-              const Spacer(),
-              Text(request.postedAgo, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
-            ]),
-            const SizedBox(height: 16),
-            Text(request.title, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
-            const SizedBox(height: 10),
-            Text(request.description, style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.5)),
-            const SizedBox(height: 20),
-            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
-              child: Row(children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Presupuesto', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
-                  const SizedBox(height: 2),
-                  Text(request.budget.toCLP, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
-                ]),
-                const Spacer(),
-                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('Solicitado por', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
-                  const SizedBox(height: 2),
-                  Text(request.requester, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-                ]),
-              ]),
-            ),
-            const SizedBox(height: 14),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), decoration: BoxDecoration(color: AtrioColors.hostSurfaceVariant, borderRadius: BorderRadius.circular(12)),
-              child: Row(children: [
-                Icon(Icons.how_to_reg, size: 18, color: AtrioColors.neonLimeDark), const SizedBox(width: 8),
-                Text('${request.offers} personas ya ofertaron', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
-                const Spacer(),
-                Text(request.category, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
-              ]),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(width: double.infinity, height: 54, child: ElevatedButton.icon(
-              onPressed: () { Navigator.pop(ctx); _showMakeOffer(request); },
-              style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-              icon: const Icon(Icons.send_rounded, size: 20),
-              label: Text('Hacer oferta', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
-            )),
-            const SizedBox(height: 12),
-            SizedBox(width: double.infinity, height: 48, child: OutlinedButton.icon(
-              onPressed: () { Navigator.pop(ctx); _openChat(context); },
-              style: OutlinedButton.styleFrom(foregroundColor: AtrioColors.neonLime, side: BorderSide(color: AtrioColors.neonLime.withValues(alpha: 0.3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-              icon: const Icon(Icons.chat_outlined, size: 18),
-              label: Text('Preguntar antes', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
-            )),
-            const SizedBox(height: 20),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  void _showHireConfirmation(_ServiceData service) {
-    final serviceFeeRate = 0.07;
-    final serviceFee = service.price * serviceFeeRate;
-    final total = service.price + serviceFee;
+  void _showRealHireConfirmation(Map<String, dynamic> service) {
+    final title = service['title'] ?? 'Servicio';
+    final price = (service['base_price'] as num?)?.toDouble() ?? 0;
+    final priceUnit = service['price_unit'] ?? 'session';
+    final hostId = service['host_id'] as String;
+    final host = service['host'] as Map<String, dynamic>?;
+    final hostName = host?['display_name'] ?? 'Proveedor';
+    final listingId = service['id'] as String;
+    const serviceFeeRate = 0.07;
+    final serviceFee = price * serviceFeeRate;
+    final total = price + serviceFee;
     bool hiring = false;
 
     showModalBottomSheet(
@@ -334,14 +306,14 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           const SizedBox(height: 20),
           Text('Confirmar contratacion', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
           const SizedBox(height: 8),
-          Text('${service.provider} realizara "${service.title}" por ${service.price.toCLP}/hora', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
+          Text('$hostName realizará "$title" por ${price.toCLP}/$priceUnit', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
           const SizedBox(height: 20),
           // Price breakdown
           Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
             child: Column(children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text('Precio del servicio', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
-                Text(service.price.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                Text(price.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
               ]),
               const SizedBox(height: 8),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -372,7 +344,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
             onPressed: hiring ? null : () async {
               setSheetState(() => hiring = true);
               try {
-                await _hireAndChat(service, serviceFee, total);
+                await _hireRealService(hostId, listingId, title, price, serviceFee, total);
                 if (ctx.mounted) Navigator.pop(ctx);
               } catch (e) {
                 if (mounted) {
@@ -388,7 +360,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
             style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
             child: hiring
                 ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
-                : Text('Confirmar y pagar ${total.toCLP}', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                : Text('Confirmar ${total.toCLP}', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
           )),
           const SizedBox(height: 10),
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
@@ -399,241 +371,53 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     );
   }
 
-  /// Create a service booking and open chat with the host
-  Future<void> _hireAndChat(_ServiceData service, double fee, double total) async {
+  /// Create a service booking and open chat with the real host
+  Future<void> _hireRealService(String hostId, String listingId, String title, double price, double fee, double total) async {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
-    // Use test host as provider (since these are demo services)
-    const hostId = '053c11bd-9fd7-484e-bb30-d75532d4db54';
 
-    // Create a booking record for the quick service
     final now = DateTime.now();
     await DatabaseService.createBooking({
       'guest_id': currentUser.id,
       'host_id': hostId,
+      'listing_id': listingId,
       'check_in': now.toIso8601String(),
       'check_out': now.add(const Duration(hours: 2)).toIso8601String(),
       'guests_count': 1,
-      'base_total': service.price,
+      'base_total': price,
       'cleaning_fee': 0,
       'service_fee': fee,
       'total': total,
-      'status': 'confirmed',
+      'status': 'pending',
       'payment_status': 'pending',
       'rental_mode': 'hours',
-      'notes': 'Servicio Rapido: ${service.title}',
+      'notes': 'Servicio Rápido: $title',
     });
 
-    // Create/get conversation and navigate to chat
     final convo = await DatabaseService.getOrCreateConversation(
       userId1: currentUser.id,
       userId2: hostId,
     );
 
-    // Send initial message
     await DatabaseService.sendMessage(
       conversationId: convo['id'],
       senderId: currentUser.id,
-      text: 'Hola! Acabo de contratar "${service.title}" por ${service.price.toCLP}/hr. Coordinemos los detalles.',
+      text: 'Hola! Acabo de solicitar "$title" por ${price.toCLP}. Coordinemos los detalles.',
     );
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), const Expanded(child: Text('Servicio contratado!', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
+        content: const Row(children: [Icon(Icons.check_circle, color: Colors.black, size: 20), SizedBox(width: 10), Expanded(child: Text('Servicio solicitado!', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
         backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ));
       context.push('/chat/${convo['id']}');
     }
   }
 
-  void _showMakeOffer(_ServiceRequest request) {
-    final priceController = TextEditingController(text: request.budget.toInt().toString());
-    final messageController = TextEditingController();
-    showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 20),
-            Text('Hacer oferta', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
-            const SizedBox(height: 4),
-            Text('Para: "${request.title}"', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
-            const SizedBox(height: 20),
-            Text('Tu precio (\$)', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: priceController, keyboardType: TextInputType.number,
-              style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AtrioColors.neonLime),
-              decoration: InputDecoration(
-                prefixText: '\$ ', prefixStyle: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: AtrioColors.neonLime),
-                filled: true, fillColor: AtrioColors.hostSurface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.hostCardBorder)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.hostCardBorder)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.neonLimeDark, width: 1.5)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text('Mensaje (opcional)', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: messageController, maxLines: 3,
-              style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextPrimary),
-              decoration: InputDecoration(
-                hintText: 'Cuentale por que eres la mejor opcion...', hintStyle: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary),
-                filled: true, fillColor: AtrioColors.hostSurface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.hostCardBorder)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.hostCardBorder)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: AtrioColors.neonLimeDark, width: 1.5)),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-              onPressed: () {
-                final price = priceController.text.trim();
-                final msg = messageController.text.trim();
-                if (price.isEmpty || double.tryParse(price) == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: const Text('Ingresa un precio válido', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
-                    backgroundColor: Colors.red, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ));
-                  return;
-                }
-                Navigator.pop(ctx);
-                _showOfferConfirmation(request, double.parse(price), msg);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-              child: Text('Revisar oferta', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
-            )),
-            const SizedBox(height: 12),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  void _showOfferConfirmation(_ServiceRequest request, double price, String message) {
-    bool sending = false;
-    showModalBottomSheet(
-      context: context, backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 24),
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.send_rounded, size: 40, color: AtrioColors.neonLime)),
-          const SizedBox(height: 20),
-          Text('Confirmar oferta', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
-          const SizedBox(height: 8),
-          Text('Para: "${request.title}"', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary), textAlign: TextAlign.center),
-          const SizedBox(height: 20),
-          // Summary with fee
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
-            child: Column(children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Tu precio', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
-                Text(price.toCLP, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
-              ]),
-              const SizedBox(height: 8),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Tarifa Atrio (7%)', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
-                Text((price * 0.07).toCLP, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
-              ]),
-              const SizedBox(height: 4),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Recibirás', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
-                Text((price * 0.93).toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AtrioColors.neonLimeDark)),
-              ]),
-              if (message.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                const Divider(color: AtrioColors.hostCardBorder, height: 1),
-                const SizedBox(height: 12),
-                Align(alignment: Alignment.centerLeft, child: Text('Mensaje:', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary))),
-                const SizedBox(height: 4),
-                Align(alignment: Alignment.centerLeft, child: Text(message, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary), maxLines: 3, overflow: TextOverflow.ellipsis)),
-              ],
-              const SizedBox(height: 12),
-              const Divider(color: AtrioColors.hostCardBorder, height: 1),
-              const SizedBox(height: 12),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Solicitante', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
-                Text(request.requester, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-              ]),
-            ]),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-            onPressed: sending ? null : () async {
-              setSheetState(() => sending = true);
-              try {
-                await _sendOfferAndChat(request, price, message);
-                if (ctx.mounted) Navigator.pop(ctx);
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Error: $e'), backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ));
-                }
-              } finally {
-                if (ctx.mounted) setSheetState(() => sending = false);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-            child: sending
-                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
-                : Text('Confirmar y enviar', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
-          )),
-          const SizedBox(height: 10),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver a editar', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
-          const SizedBox(height: 8),
-        ]),
-      ),
-      ),
-    );
-  }
-
-  /// Send offer as a message and open chat
-  Future<void> _sendOfferAndChat(_ServiceRequest request, double price, String message) async {
+  /// Open a real chat with a specific host
+  Future<void> _openChatWith(String hostId) async {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
-    const hostId = '053c11bd-9fd7-484e-bb30-d75532d4db54';
-
-    final convo = await DatabaseService.getOrCreateConversation(
-      userId1: currentUser.id,
-      userId2: hostId,
-    );
-
-    final offerText = 'Oferta para "${request.title}": ${price.toCLP}'
-        '${message.isNotEmpty ? '\n\n$message' : ''}';
-
-    await DatabaseService.sendMessage(
-      conversationId: convo['id'],
-      senderId: currentUser.id,
-      text: offerText,
-    );
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), const Expanded(child: Text('Oferta enviada!', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
-        backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
-      context.push('/chat/${convo['id']}');
-    }
-  }
-
-  /// Open a real chat with the host
-  Future<void> _openChat(BuildContext ctx) async {
-    final currentUser = AuthService.currentUser;
-    if (currentUser == null) return;
-    const hostId = '053c11bd-9fd7-484e-bb30-d75532d4db54';
 
     try {
       final convo = await DatabaseService.getOrCreateConversation(
@@ -655,81 +439,39 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   }
 }
 
-// ═══════ DATA MODELS ═══════
-class _ServiceData {
-  final String id, title, description, provider, category;
-  final double providerRating, price;
-  final int providerJobs;
-  final IconData icon;
-  final bool isVerified;
-  const _ServiceData({required this.id, required this.title, required this.description, required this.provider, required this.providerRating, required this.providerJobs, required this.price, required this.category, required this.icon, required this.isVerified});
-}
-
-class _ServiceRequest {
-  final String id, title, description, requester, category, urgency, postedAgo;
-  final double budget;
-  final int offers;
-  const _ServiceRequest({required this.id, required this.title, required this.description, required this.requester, required this.budget, required this.category, required this.urgency, required this.offers, required this.postedAgo});
-}
-
-// ═══════ SERVICE CARD ═══════
-class _ServiceCard extends StatelessWidget {
-  final _ServiceData service;
+// ═══════ REAL SERVICE CARD ═══════
+class _RealServiceCard extends StatelessWidget {
+  final Map<String, dynamic> service;
   final VoidCallback onTap;
-  const _ServiceCard({required this.service, required this.onTap});
+  const _RealServiceCard({required this.service, required this.onTap});
   @override
   Widget build(BuildContext context) {
+    final title = service['title'] ?? 'Servicio';
+    final price = (service['base_price'] as num?)?.toDouble() ?? 0;
+    final priceUnit = service['price_unit'] ?? 'session';
+    final rating = (service['rating'] as num?)?.toDouble() ?? 0;
+    final reviewCount = (service['review_count'] as num?)?.toInt() ?? 0;
+    final host = service['host'] as Map<String, dynamic>?;
+    final hostName = host?['display_name'] ?? 'Proveedor';
+    final hostVerified = host?['is_verified'] == true;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
         child: Row(children: [
-          Container(width: 50, height: 50, decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)), child: Icon(service.icon, color: AtrioColors.neonLime, size: 26)),
+          Container(width: 50, height: 50, decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.handyman_rounded, color: AtrioColors.neonLime, size: 26)),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [Expanded(child: Text(service.title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)), if (service.isVerified) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark))]),
+            Row(children: [Expanded(child: Text(title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)), if (hostVerified) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark))]),
             const SizedBox(height: 2),
-            Text('${service.provider} · ${service.providerJobs} trabajos', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text('$hostName · $reviewCount reseñas', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 6),
-            Row(children: [const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3), Text('${service.providerRating}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary))]),
+            Row(children: [const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3), Text(rating.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary))]),
           ])),
           const SizedBox(width: 10),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(service.price.toCLP, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
-            Text('/hora', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextTertiary)),
-          ]),
-        ]),
-      ),
-    );
-  }
-}
-
-// ═══════ REQUEST CARD ═══════
-class _RequestCard extends StatelessWidget {
-  final _ServiceRequest request;
-  final VoidCallback onTap;
-  const _RequestCard({required this.request, required this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(child: Text(request.title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary))),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(8)), child: Text(request.budget.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black))),
-          ]),
-          const SizedBox(height: 6),
-          Text(request.description, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary), maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 10),
-          Row(children: [
-            Icon(Icons.person_outline, size: 14, color: AtrioColors.hostTextTertiary), const SizedBox(width: 4),
-            Text(request.requester, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
-            const SizedBox(width: 12),
-            Icon(Icons.schedule, size: 14, color: Colors.orange), const SizedBox(width: 4),
-            Text(request.urgency, style: GoogleFonts.inter(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.w600)),
-            const Spacer(),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: AtrioColors.hostSurfaceVariant, borderRadius: BorderRadius.circular(8)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.how_to_reg, size: 12, color: AtrioColors.neonLimeDark), const SizedBox(width: 4), Text('${request.offers} ofertas', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextSecondary, fontWeight: FontWeight.w600))])),
+            Text(price.toCLP, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
+            Text('/$priceUnit', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextTertiary)),
           ]),
         ]),
       ),

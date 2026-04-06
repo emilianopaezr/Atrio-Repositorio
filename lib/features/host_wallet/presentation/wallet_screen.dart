@@ -405,7 +405,7 @@ class _LinkedAccountsSection extends StatelessWidget {
           iconBgColor: const Color(0xFF1A2744),
           iconColor: const Color(0xFF64B5F6),
           title: 'PayPal',
-          subtitle: 'carlos@email.com',
+          subtitle: 'Sin configurar',
           trailing: const Icon(
             Icons.chevron_right_rounded,
             color: AtrioColors.hostTextTertiary,

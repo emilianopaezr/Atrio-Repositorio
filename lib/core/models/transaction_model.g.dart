@@ -12,7 +12,7 @@ _Transaction _$TransactionFromJson(Map<String, dynamic> json) => _Transaction(
   bookingId: json['booking_id'] as String?,
   type: json['type'] as String,
   amount: (json['amount'] as num).toDouble(),
-  currency: json['currency'] as String? ?? 'USD',
+  currency: json['currency'] as String? ?? 'CLP',
   status: json['status'] as String? ?? 'pending',
   description: json['description'] as String?,
   createdAt: json['created_at'] == null
