@@ -38,7 +38,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Selecciona una calificacion',
+          content: Text('Selecciona una calificación',
               style: GoogleFonts.inter(color: Colors.white)),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
@@ -74,7 +74,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Resena enviada!',
+            content: Text('Reseña enviada!',
                 style: GoogleFonts.inter(color: Colors.black)),
             backgroundColor: AtrioColors.neonLime,
             behavior: SnackBarBehavior.floating,
@@ -107,7 +107,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
         backgroundColor: AtrioColors.guestBackground,
         elevation: 0,
         title: Text(
-          'Escribir Resena',
+          'Escribir Reseña',
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -242,7 +242,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
                         ),
                       )
                     : Text(
-                        'Enviar Resena',
+                        'Enviar Reseña',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

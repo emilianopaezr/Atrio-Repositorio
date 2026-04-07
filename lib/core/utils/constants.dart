@@ -38,6 +38,19 @@ class AppConstants {
   // Ratings
   static const superhostMinRating = 4.5;
 
+  // Category labels (used in home, search, filters)
+  static const categoryLabels = ['Todos', 'Espacios', 'Experiencias', 'Servicios'];
+  static const categoryTypes = [null, 'space', 'experience', 'service'];
+
+  // Default location (Santiago, Chile)
+  static const defaultLatitude = -33.4489;
+  static const defaultLongitude = -70.6693;
+
+  // Input limits
+  static const maxTitleLength = 100;
+  static const maxDescriptionLength = 2000;
+  static const maxImagesPerListing = 10;
+
   // API keys are stored server-side (Supabase vault/secrets).
   // Never expose third-party API keys in client code.
 }

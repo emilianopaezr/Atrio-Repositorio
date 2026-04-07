@@ -41,7 +41,7 @@ class AuthService {
       // On error, keep previous state or set null to retry later
       emailVerified ??= null;
     }
-    return emailVerified!;
+    return emailVerified ?? false;
   }
 
   /// Sign up with email & password
@@ -291,7 +291,7 @@ class AuthService {
     }
 
     // Weak password
-    if (msg.contains('password') && msg.contains('weak') ||
+    if ((msg.contains('password') && msg.contains('weak')) ||
         msg.contains('password should be')) {
       return AuthException(
         'La contraseña es demasiado débil. Usa al menos 8 caracteres con mayúsculas y números.',

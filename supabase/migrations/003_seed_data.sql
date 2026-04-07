@@ -60,7 +60,7 @@ BEGIN
     'Estudio', ARRAY['fotografía', 'eventos', 'industrial', 'premium'],
     ARRAY['WiFi', 'Estacionamiento', 'Cocina', 'Aire Acondicionado', 'Iluminación Profesional', 'Blackout'],
     'Av. Italia 1234', 'Santiago', 'Chile', -33.4372, -70.6345,
-    150.00, 'USD', 'hour', 25.00, 30, 'published', 4.8, 24, 1250, TRUE
+    120000, 'CLP', 'hour', 20000, 30, 'published', 4.8, 24, 1250, TRUE
   );
 
   -- Listing 2: Villa con Piscina
@@ -78,7 +78,7 @@ BEGIN
     'Villa', ARRAY['piscina', 'lujo', 'vista', 'retiro'],
     ARRAY['Piscina', 'Jacuzzi', 'WiFi', 'Estacionamiento', 'Quincho', 'Vista Panorámica', 'Aire Acondicionado'],
     'Camino La Dehesa 8900', 'Santiago', 'Chile', -33.3721, -70.5234,
-    450.00, 'USD', 'night', 80.00, 15, 'published', 4.9, 18, 890, TRUE
+    350000, 'CLP', 'night', 60000, 15, 'published', 4.9, 18, 890, TRUE
   );
 
   -- Listing 3: Tour Gastronómico
@@ -95,7 +95,7 @@ BEGIN
     'Gastronomía', ARRAY['comida', 'tour', 'vino', 'cultural'],
     ARRAY['Degustaciones Incluidas', 'Guía Bilingüe', 'Grupo Reducido'],
     'Barrio Lastarria', 'Santiago', 'Chile', -33.4378, -70.6401,
-    85.00, 'USD', 'person', 0, 8, 'published', 4.7, 42, 2100
+    65000, 'CLP', 'person', 0, 8, 'published', 4.7, 42, 2100
   );
 
   -- Listing 4: Fotografía Profesional
@@ -112,7 +112,7 @@ BEGIN
     'Fotografía', ARRAY['fotografía', 'profesional', 'retratos', 'marcas'],
     ARRAY['Equipo Profesional', '50 Fotos Editadas', 'Asistente Incluido'],
     'A domicilio / Estudio', 'Santiago', 'Chile', -33.4489, -70.6693,
-    200.00, 'USD', 'session', 0, 1, 'published', 5.0, 8, 456
+    150000, 'CLP', 'session', 0, 1, 'published', 5.0, 8, 456
   );
 
   -- Listing 5: Rooftop Event Space
@@ -129,7 +129,7 @@ BEGIN
     'Evento', ARRAY['rooftop', 'terraza', 'vista', 'evento', 'corporativo'],
     ARRAY['Bar Equipado', 'Sonido Profesional', 'Vista 360°', 'Mobiliario Premium', 'WiFi', 'Estacionamiento VIP'],
     'Av. Apoquindo 4500, Piso 25', 'Santiago', 'Chile', -33.4180, -70.6010,
-    800.00, 'USD', 'session', 150.00, 80, 'published', 4.6, 12, 678, TRUE
+    650000, 'CLP', 'session', 120000, 80, 'published', 4.6, 12, 678, TRUE
   );
 
   -- Listing 6: Clase de Surf
@@ -146,7 +146,7 @@ BEGIN
     'Deporte', ARRAY['surf', 'deporte', 'playa', 'principiante'],
     ARRAY['Equipo Incluido', 'Instructor Certificado', 'Grupo Reducido', 'Seguro Incluido'],
     'Playa Reñaca', 'Viña del Mar', 'Chile', -33.0153, -71.5516,
-    65.00, 'USD', 'person', 0, 4, 'published', 4.9, 56, 3200
+    55000, 'CLP', 'person', 0, 4, 'published', 4.9, 56, 3200
   );
 
   -- =============================================
@@ -158,7 +158,7 @@ BEGIN
   VALUES (
     booking1_id, test_guest_id, test_host_id, listing1_id,
     '2026-03-15 10:00:00+00', '2026-03-15 14:00:00+00',
-    2, 600.00, 25.00, 62.50, 687.50, 'confirmed', 'paid'
+    2, 480000, 20000, 50000, 550000, 'confirmed', 'paid'
   );
 
   -- =============================================

@@ -36,8 +36,16 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     'Limpieza',
     'Armado',
     'Eventos',
-    'Jardineria',
+    'Jardinería',
     'Reparaciones',
+    'Pintura',
+    'Plomería',
+    'Electricidad',
+    'Tecnología',
+    'Mascotas',
+    'Belleza',
+    'Clases',
+    'Cocina',
   ];
 
   @override
@@ -304,7 +312,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           const SizedBox(height: 24),
           Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.check_circle_outline, size: 48, color: AtrioColors.neonLime)),
           const SizedBox(height: 20),
-          Text('Confirmar contratacion', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
+          Text('Confirmar contratación', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
           const SizedBox(height: 8),
           Text('$hostName realizará "$title" por ${price.toCLP}/$priceUnit', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
           const SizedBox(height: 20),

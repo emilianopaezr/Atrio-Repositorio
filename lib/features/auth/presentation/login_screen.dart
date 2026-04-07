@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/utils/extensions.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -48,6 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
     if (_isLoading) return;
+    Haptics.medium();
 
     setState(() => _isLoading = true);
     try {

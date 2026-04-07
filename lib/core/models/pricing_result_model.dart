@@ -123,11 +123,13 @@ class PricingResult {
     }
   }
 
-  bool get hasCommissionCap => guestServiceFeeAmount >= 90000;
+  static const double _maxFeeCap = 90000.0;
+
+  bool get hasCommissionCap => guestServiceFeeAmount >= _maxFeeCap;
 
   /// Whether the fee was capped at $90.000 CLP
   bool get isFeeCapped {
     final raw = (baseTotal + cleaningFee) * guestServiceFeeRate;
-    return raw > 90000 && guestServiceFeeAmount <= 90000;
+    return raw > _maxFeeCap && guestServiceFeeAmount <= _maxFeeCap;
   }
 }

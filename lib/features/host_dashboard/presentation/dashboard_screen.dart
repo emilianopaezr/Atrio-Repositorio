@@ -26,16 +26,92 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   final List<String> _periodLabels = ['1S', '1M', '3M', '6M', '1A', 'Todo'];
 
-  // Revenue data - starts empty, populated from real bookings
-  List<FlSpot> get _revenueData {
-    final hostProfile = ref.read(hostProfileProvider).value;
-    final totalEarnings = (hostProfile?['total_earnings'] as num?)?.toDouble() ?? 0;
-    // If no earnings, show flat zero line
-    if (totalEarnings <= 0) {
-      return const [FlSpot(0, 0), FlSpot(1, 0), FlSpot(2, 0), FlSpot(3, 0)];
+  /// Number of buckets per period
+  int get _bucketCount {
+    switch (_selectedPeriodIndex) {
+      case 0: return 7;   // 1 semana → 7 días
+      case 1: return 4;   // 1 mes → 4 semanas
+      case 2: return 12;  // 3 meses → 12 semanas
+      case 3: return 6;   // 6 meses → 6 meses
+      case 4: return 12;  // 1 año → 12 meses
+      case 5: return 12;  // Todo → 12 meses
+      default: return 7;
     }
-    // Show single point with total earnings for now
-    return [const FlSpot(0, 0), FlSpot(1, totalEarnings)];
+  }
+
+  /// Bucket duration in days (or months for monthly buckets)
+  Duration get _periodDuration {
+    switch (_selectedPeriodIndex) {
+      case 0: return const Duration(days: 7);
+      case 1: return const Duration(days: 30);
+      case 2: return const Duration(days: 90);
+      case 3: return const Duration(days: 180);
+      case 4: return const Duration(days: 365);
+      case 5: return const Duration(days: 365 * 2);
+      default: return const Duration(days: 7);
+    }
+  }
+
+  /// Compute revenue spots from bookings within selected period.
+  /// Returns evenly-spaced spots from index 0..bucketCount-1.
+  List<FlSpot> _computeRevenueData(List<Map<String, dynamic>> bookings) {
+    final now = DateTime.now();
+    final periodStart = now.subtract(_periodDuration);
+    final buckets = List<double>.filled(_bucketCount, 0);
+    final totalMs = _periodDuration.inMilliseconds;
+
+    for (final b in bookings) {
+      final status = b['status'] as String?;
+      // Only count revenue-generating bookings
+      if (status != 'confirmed' && status != 'active' && status != 'completed') {
+        continue;
+      }
+      final createdRaw = b['created_at'] as String?;
+      if (createdRaw == null) continue;
+      final created = DateTime.tryParse(createdRaw);
+      if (created == null || created.isBefore(periodStart) || created.isAfter(now)) continue;
+
+      final amount = (b['total'] as num?)?.toDouble()
+          ?? (b['base_total'] as num?)?.toDouble()
+          ?? 0;
+      final offsetMs = created.millisecondsSinceEpoch - periodStart.millisecondsSinceEpoch;
+      var bucketIdx = ((offsetMs / totalMs) * _bucketCount).floor();
+      if (bucketIdx < 0) bucketIdx = 0;
+      if (bucketIdx >= _bucketCount) bucketIdx = _bucketCount - 1;
+      buckets[bucketIdx] += amount;
+    }
+
+    return List.generate(
+      _bucketCount,
+      (i) => FlSpot(i.toDouble(), buckets[i]),
+    );
+  }
+
+  /// Format bucket index → label for X axis
+  String _bucketLabel(int index) {
+    final now = DateTime.now();
+    switch (_selectedPeriodIndex) {
+      case 0: {
+        // Days of week
+        final d = now.subtract(Duration(days: 6 - index));
+        const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        return days[(d.weekday - 1) % 7];
+      }
+      case 1: return 'S${index + 1}';
+      case 2: return 'S${index + 1}';
+      case 3: {
+        final m = DateTime(now.year, now.month - (5 - index), 1);
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        return months[m.month - 1];
+      }
+      case 4:
+      case 5: {
+        final m = DateTime(now.year, now.month - (11 - index), 1);
+        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        return months[m.month - 1];
+      }
+      default: return '';
+    }
   }
 
   String _getGreeting() {
@@ -82,7 +158,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const SizedBox(height: 24),
 
                 // ===== LINE CHART =====
-                _buildChart(),
+                _buildChart(allBookingsAsync),
                 const SizedBox(height: 8),
 
                 // ===== PERIOD TABS =====
@@ -295,112 +371,169 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ────────────────────────────────────────────
   // LINE CHART
   // ────────────────────────────────────────────
-  Widget _buildChart() {
+  Widget _buildChart(AsyncValue<List<Map<String, dynamic>>> bookingsAsync) {
+    final spots = bookingsAsync.maybeWhen(
+      data: (bookings) => _computeRevenueData(bookings),
+      orElse: () => List.generate(_bucketCount, (i) => FlSpot(i.toDouble(), 0)),
+    );
+
+    final maxValue = spots.fold<double>(0, (m, s) => s.y > m ? s.y : m);
+    final maxY = maxValue <= 0 ? 1000.0 : (maxValue * 1.25);
+    final hasData = maxValue > 0;
+    final labelInterval = (_bucketCount / 6).ceilToDouble().clamp(1.0, 12.0);
+
     return SizedBox(
       height: 200,
-      child: LineChart(
-        LineChartData(
-          gridData: const FlGridData(show: false),
-          titlesData: FlTitlesData(
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 28,
-                interval: 2,
-                getTitlesWidget: (value, meta) {
-                  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                  final index = value.toInt();
-                  if (index < 0 || index >= months.length) return const SizedBox.shrink();
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      months[index],
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12, left: 4, top: 8),
+        child: Stack(
+          children: [
+            LineChart(
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: maxY / 4,
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: AtrioColors.hostCardBorder.withValues(alpha: 0.3),
+                    strokeWidth: 1,
+                    dashArray: const [4, 4],
+                  ),
+                ),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      interval: labelInterval,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= _bucketCount) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            _bucketLabel(index),
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              color: AtrioColors.hostTextTertiary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                minX: 0,
+                maxX: (_bucketCount - 1).toDouble(),
+                minY: 0,
+                maxY: maxY,
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  handleBuiltInTouches: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (_) => AtrioColors.hostSurfaceVariant,
+                    tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        return LineTooltipItem(
+                          spot.y.toCLP,
+                          GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AtrioColors.neonLime,
+                          ),
+                        );
+                      }).toList();
+                    },
+                  ),
+                  getTouchedSpotIndicator: (barData, spotIndexes) {
+                    return spotIndexes.map((index) {
+                      return TouchedSpotIndicatorData(
+                        const FlLine(
+                          color: AtrioColors.hostTextTertiary,
+                          strokeWidth: 0.5,
+                          dashArray: [4, 4],
+                        ),
+                        FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 5,
+                              color: AtrioColors.neonLime,
+                              strokeWidth: 2,
+                              strokeColor: AtrioColors.hostBackground,
+                            );
+                          },
+                        ),
+                      );
+                    }).toList();
+                  },
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    curveSmoothness: 0.3,
+                    preventCurveOverShooting: true,
+                    color: AtrioColors.neonLime,
+                    barWidth: 2.5,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(
+                      show: hasData,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 3,
+                          color: AtrioColors.neonLime,
+                          strokeWidth: 2,
+                          strokeColor: AtrioColors.hostBackground,
+                        );
+                      },
+                    ),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AtrioColors.neonLime.withValues(alpha: 0.25),
+                          AtrioColors.neonLime.withValues(alpha: 0.05),
+                          AtrioColors.neonLime.withValues(alpha: 0.0),
+                        ],
+                        stops: const [0.0, 0.6, 1.0],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+            ),
+            if (!hasData)
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.show_chart_rounded,
+                        size: 32, color: AtrioColors.hostTextTertiary.withValues(alpha: 0.5)),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Sin ingresos en este período',
                       style: GoogleFonts.inter(
-                        fontSize: 10,
+                        fontSize: 12,
                         color: AtrioColors.hostTextTertiary,
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          minX: 0,
-          maxX: 11,
-          minY: 0,
-          maxY: 5500,
-          lineTouchData: LineTouchData(
-            enabled: true,
-            handleBuiltInTouches: true,
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => AtrioColors.hostSurfaceVariant,
-              tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  return LineTooltipItem(
-                    spot.y.toCLP,
-                    GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AtrioColors.neonLime,
-                    ),
-                  );
-                }).toList();
-              },
-            ),
-            getTouchedSpotIndicator: (barData, spotIndexes) {
-              return spotIndexes.map((index) {
-                return TouchedSpotIndicatorData(
-                  const FlLine(
-                    color: AtrioColors.hostTextTertiary,
-                    strokeWidth: 0.5,
-                    dashArray: [4, 4],
-                  ),
-                  FlDotData(
-                    show: true,
-                    getDotPainter: (spot, percent, barData, index) {
-                      return FlDotCirclePainter(
-                        radius: 5,
-                        color: AtrioColors.neonLime,
-                        strokeWidth: 2,
-                        strokeColor: AtrioColors.hostBackground,
-                      );
-                    },
-                  ),
-                );
-              }).toList();
-            },
-          ),
-          lineBarsData: [
-            LineChartBarData(
-              spots: _revenueData,
-              isCurved: true,
-              curveSmoothness: 0.3,
-              color: AtrioColors.neonLime,
-              barWidth: 2.5,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AtrioColors.neonLime.withValues(alpha: 0.25),
-                    AtrioColors.neonLime.withValues(alpha: 0.05),
-                    AtrioColors.neonLime.withValues(alpha: 0.0),
                   ],
-                  stops: const [0.0, 0.6, 1.0],
                 ),
               ),
-            ),
           ],
         ),
-        duration: const Duration(milliseconds: 300),
       ),
     );
   }
@@ -409,30 +542,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // PERIOD TABS
   // ────────────────────────────────────────────
   Widget _buildPeriodTabs() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(_periodLabels.length, (index) {
-        final isSelected = index == _selectedPeriodIndex;
-        return GestureDetector(
-          onTap: () => setState(() => _selectedPeriodIndex = index),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? AtrioColors.neonLime : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              _periodLabels[index],
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.black : AtrioColors.hostTextTertiary,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(_periodLabels.length, (index) {
+          final isSelected = index == _selectedPeriodIndex;
+          return GestureDetector(
+            onTap: () {
+              Haptics.selection();
+              setState(() => _selectedPeriodIndex = index);
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? AtrioColors.neonLime : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _periodLabels[index],
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.black : AtrioColors.hostTextTertiary,
+                ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 

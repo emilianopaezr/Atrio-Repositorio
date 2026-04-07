@@ -34,11 +34,11 @@ class DisputesScreen extends ConsumerWidget {
                         color: AtrioColors.hostSurfaceVariant,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                      child: Icon(Icons.arrow_back, color: AtrioColors.hostTextPrimary, size: 20),
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Text('Disputas', style: AtrioTypography.headingLarge.copyWith(color: Colors.white)),
+                  Text('Disputas', style: AtrioTypography.headingLarge.copyWith(color: AtrioColors.hostTextPrimary)),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -46,7 +46,7 @@ class DisputesScreen extends ConsumerWidget {
                       color: AtrioColors.hostSurfaceVariant,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.filter_list, color: Colors.white, size: 20),
+                    child: Icon(Icons.filter_list, color: AtrioColors.hostTextPrimary, size: 20),
                   ),
                 ],
               ),
@@ -80,15 +80,35 @@ class DisputesScreen extends ConsumerWidget {
                       child: Text('No hay disputas', style: AtrioTypography.bodyLarge.copyWith(color: AtrioColors.hostTextSecondary)),
                     );
                   }
-                  return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                    itemCount: disputes.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) => _DisputeCard(dispute: disputes[index]),
+                  return RefreshIndicator(
+                    color: AtrioColors.neonLimeDark,
+                    onRefresh: () async => ref.invalidate(filteredDisputesProvider),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                      itemCount: disputes.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) => _DisputeCard(dispute: disputes[index]),
+                    ),
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, _) => Center(child: Text('Error al cargar', style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.error))),
+                error: (_, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_off_rounded, size: 48, color: AtrioColors.error.withValues(alpha: 0.6)),
+                      const SizedBox(height: 16),
+                      Text('Error al cargar disputas', style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.hostTextSecondary)),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: () => ref.invalidate(filteredDisputesProvider),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('Reintentar'),
+                        style: TextButton.styleFrom(foregroundColor: AtrioColors.neonLimeDark),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -130,8 +150,8 @@ class _FilterChip extends StatelessWidget {
           label,
           style: GoogleFonts.inter(
             fontSize: 13,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w100,
-            color: isActive ? Colors.white : AtrioColors.hostTextSecondary,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+            color: isActive ? AtrioColors.hostTextPrimary : AtrioColors.hostTextSecondary,
           ),
         ),
       ),
@@ -202,7 +222,7 @@ class _DisputeCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(dispute.title, style: AtrioTypography.labelMedium.copyWith(color: Colors.white)),
+                      Text(dispute.title, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
                       const SizedBox(height: 2),
                       Text('#${dispute.id}', style: AtrioTypography.caption.copyWith(color: AtrioColors.hostTextSecondary)),
                     ],
@@ -229,7 +249,7 @@ class _DisputeCard extends StatelessWidget {
                   decoration: BoxDecoration(color: _statusColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 6),
-                Text(_statusLabel, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w100, color: _statusColor)),
+                Text(_statusLabel, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: _statusColor)),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

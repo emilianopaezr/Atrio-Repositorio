@@ -940,7 +940,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                 ),
                               ),
                               icon: const Icon(Icons.star_rounded, size: 18),
-                              label: const Text('Escribir Resena'),
+                              label: const Text('Escribir Reseña'),
                             ),
                           ),
                         ),

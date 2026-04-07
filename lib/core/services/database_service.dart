@@ -341,12 +341,15 @@ class DatabaseService {
     bool isAvailable, {
     double? customPrice,
   }) async {
-    await _client.from(AppConstants.tableAvailability).upsert({
-      'listing_id': listingId,
-      'date': date.toIso8601String().split('T')[0],
-      'is_available': isAvailable,
-      if (customPrice != null) 'custom_price': customPrice,
-    });
+    await _client.from(AppConstants.tableAvailability).upsert(
+      {
+        'listing_id': listingId,
+        'date': date.toIso8601String().split('T')[0],
+        'is_available': isAvailable,
+        'custom_price': ?customPrice,
+      },
+      onConflict: 'listing_id,date',
+    );
   }
 
   /// Batch set availability for date range
@@ -367,7 +370,10 @@ class DatabaseService {
       current = current.add(const Duration(days: 1));
     }
     if (dates.isNotEmpty) {
-      await _client.from(AppConstants.tableAvailability).upsert(dates);
+      await _client.from(AppConstants.tableAvailability).upsert(
+            dates,
+            onConflict: 'listing_id,date',
+          );
     }
   }
 
@@ -592,8 +598,8 @@ class DatabaseService {
         .from(AppConstants.tableConversations)
         .insert({
           'participant_ids': [userId1, userId2],
-          if (listingId != null) 'listing_id': listingId,
-          if (bookingId != null) 'booking_id': bookingId,
+          'listing_id': ?listingId,
+          'booking_id': ?bookingId,
         })
         .select()
         .single();
@@ -632,7 +638,7 @@ class DatabaseService {
           'sender_id': senderId,
           'text': text,
           'type': type,
-          if (imageUrl != null) 'image_url': imageUrl,
+          'image_url': ?imageUrl,
         })
         .select()
         .single();

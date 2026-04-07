@@ -7,6 +7,8 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/providers/listings_provider.dart';
+import '../../../core/providers/app_mode_provider.dart';
+import '../../../core/utils/constants.dart';
 import '../../../core/utils/extensions.dart';
 
 
@@ -19,11 +21,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedCategory = 0;
-  final _categories = ['Todos', 'Espacios', 'Experiencias', 'Servicios'];
-  final _categoryFilters = [null, 'space', 'experience', 'service'];
 
   ListingsFilter get _currentFilter => ListingsFilter(
-        type: _categoryFilters[_selectedCategory],
+        type: AppConstants.categoryTypes[_selectedCategory],
       );
 
   @override
@@ -140,7 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _categories.length,
+                    itemCount: AppConstants.categoryLabels.length,
                     itemBuilder: (context, index) {
                       final isSelected = _selectedCategory == index;
                       return Padding(
@@ -162,7 +162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                             ),
                             child: Text(
-                              _categories[index],
+                              AppConstants.categoryLabels[index],
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight:
@@ -258,43 +258,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       color: AtrioColors.neonLime.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AtrioColors.neonLime.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.home_work_rounded,
-                            color: AtrioColors.neonLime, size: 24),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Se anfitrion en Atrio',
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AtrioColors.neonLime.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Publica tu espacio y genera ingresos',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: Colors.white60,
-                              ),
+                            child: const Icon(Icons.home_work_rounded,
+                                color: AtrioColors.neonLime, size: 24),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Sé anfitrión en Atrio',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Publica tu espacio y genera ingresos',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: Colors.white60,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                          const Icon(Icons.chevron_right_rounded,
+                              color: AtrioColors.neonLime, size: 24),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Haptics.medium();
+                            ref.read(appModeProvider.notifier).switchToHost();
+                            context.go('/host/dashboard');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AtrioColors.neonLime,
+                            foregroundColor: Colors.black,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.rocket_launch_rounded, size: 18),
+                          label: Text(
+                            'Sé anfitrión',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: AtrioColors.neonLime, size: 24),
                     ],
                   ),
                 ),

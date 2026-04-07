@@ -1,8 +1,16 @@
 # Signing keys & secrets
 android/key.properties
+android/local.properties
 **/*.jks
 **/*.keystore
 .env
+
+# Build scripts with secrets
+run_secure.bat
+run_secure.sh
+
+# VS Code launch configs (may contain API keys)
+.vscode/launch.json
 
 # Miscellaneous
 *.class

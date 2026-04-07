@@ -175,8 +175,8 @@ BEGIN
     v_host_commission_rate := 0.01;
     v_guest_fee_rate := 0.07;
 
-  -- MODEL 2: FLAT-FEE CAP (booking > $500 OR > 7 days)
-  ELSIF v_base_total > 500 OR v_nights > 7 THEN
+  -- MODEL 2: FLAT-FEE CAP (booking > $400.000 CLP OR > 7 days)
+  ELSIF v_base_total > 400000 OR v_nights > 7 THEN
     v_pricing_model := 'FLAT_FEE_CAP';
     v_pricing_phase := NULL;
     v_host_commission_rate := 0.09;
@@ -210,9 +210,9 @@ BEGIN
   -- ========================================
   v_host_commission := v_base_total * v_host_commission_rate;
 
-  -- Apply $99 cap for FLAT_FEE_CAP model
-  IF v_pricing_model = 'FLAT_FEE_CAP' AND v_host_commission > 99 THEN
-    v_host_commission := 99;
+  -- Apply $90.000 CLP cap for FLAT_FEE_CAP model
+  IF v_pricing_model = 'FLAT_FEE_CAP' AND v_host_commission > 90000 THEN
+    v_host_commission := 90000;
   END IF;
 
   v_guest_fee := (v_base_total + v_cleaning_fee) * v_guest_fee_rate;
@@ -435,8 +435,8 @@ INSERT INTO pricing_config (key, value, description) VALUES
   ('hook_duration_months', '6', 'Hook model: duration in months'),
   ('hook_max_hosts', '100', 'Hook model: max early adopter hosts'),
   ('flat_fee_host_commission_rate', '0.09', 'Flat-fee model: host commission rate'),
-  ('flat_fee_cap_amount', '99', 'Flat-fee model: max commission USD'),
-  ('flat_fee_min_booking_amount', '500', 'Flat-fee model: min booking total to trigger'),
+  ('flat_fee_cap_amount', '90000', 'Flat-fee model: max commission CLP'),
+  ('flat_fee_min_booking_amount', '400000', 'Flat-fee model: min booking total CLP to trigger'),
   ('flat_fee_min_days', '7', 'Flat-fee model: min days to trigger'),
   ('early_adopter_free_bookings', '3', 'Early adopter: free commission bookings count'),
   ('standard_host_commission_rate', '0.09', 'Standard commission rate'),

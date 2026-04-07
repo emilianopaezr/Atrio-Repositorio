@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../config/supabase/supabase_config.dart';
+import '../../../core/services/storage_service.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -144,6 +147,94 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  Future<void> _pickAndSendImage() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? AtrioColors.hostSurface
+          : AtrioColors.guestSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: AtrioColors.neonLimeDark),
+              title: const Text('Galería'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: AtrioColors.neonLimeDark),
+              title: const Text('Cámara'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      imageQuality: 80,
+    );
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    if (bytes.lengthInBytes > 5 * 1024 * 1024) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('La imagen es demasiado grande (máx 5 MB)')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isSending = true);
+    try {
+      final imageUrl = await StorageService.uploadChatImage(
+        conversationId: widget.conversationId,
+        fileBytes: bytes,
+        fileName: picked.name,
+      );
+
+      await SupabaseConfig.client.from('messages').insert({
+        'conversation_id': widget.conversationId,
+        'sender_id': _currentUserId,
+        'text': '',
+        'type': 'image',
+        'image_url': imageUrl,
+      });
+
+      await SupabaseConfig.client
+          .from('conversations')
+          .update({
+            'last_message_text': '📷 Imagen',
+            'last_message_sender': _currentUserId,
+            'last_message_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', widget.conversationId);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al enviar imagen'), backgroundColor: AtrioColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -192,8 +283,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                backgroundColor: Color(0xFFD4FF00),
+                content: const Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
+                backgroundColor: AtrioColors.neonLime,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 duration: Duration(seconds: 1),
@@ -272,6 +363,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 time: timeStr,
                                 isMe: isMe,
                                 isDark: isDark,
+                                imageUrl: msg['type'] == 'image' ? msg['image_url'] as String? : null,
                               ),
                             ],
                           );
@@ -294,19 +386,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.add_circle_outline,
+                  icon: Icon(Icons.image_rounded,
                       color: isDark
                           ? AtrioColors.hostTextSecondary
                           : AtrioColors.guestTextSecondary),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                      backgroundColor: Color(0xFFD4FF00),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      duration: Duration(seconds: 1),
-                    ));
-                  },
+                  onPressed: _isSending ? null : _pickAndSendImage,
                 ),
                 Expanded(
                   child: Container(
@@ -383,16 +467,20 @@ class _MessageBubble extends StatelessWidget {
   final String time;
   final bool isMe;
   final bool isDark;
+  final String? imageUrl;
 
   const _MessageBubble({
     required this.text,
     required this.time,
     required this.isMe,
     required this.isDark,
+    this.imageUrl,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isImage = imageUrl != null && imageUrl!.isNotEmpty;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -400,7 +488,9 @@ class _MessageBubble extends StatelessWidget {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         margin: const EdgeInsets.symmetric(vertical: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: isImage
+            ? const EdgeInsets.all(4)
+            : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isMe
               ? AtrioColors.neonLimeDark
@@ -417,27 +507,85 @@ class _MessageBubble extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              text,
-              style: AtrioTypography.bodyMedium.copyWith(
-                color: isMe
-                    ? Colors.white
-                    : isDark
-                        ? AtrioColors.hostTextPrimary
-                        : AtrioColors.guestTextPrimary,
+            if (isImage)
+              GestureDetector(
+                onTap: () => _showFullImage(context, imageUrl!),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl!,
+                    width: 220,
+                    height: 220,
+                    fit: BoxFit.cover,
+                    placeholder: (_, _) => Container(
+                      width: 220, height: 220,
+                      color: Colors.grey[300],
+                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    ),
+                    errorWidget: (_, _, _) => Container(
+                      width: 220, height: 220,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.broken_image, size: 40),
+                    ),
+                  ),
+                ),
+              ),
+            if (!isImage)
+              Text(
+                text,
+                style: AtrioTypography.bodyMedium.copyWith(
+                  color: isMe
+                      ? Colors.white
+                      : isDark
+                          ? AtrioColors.hostTextPrimary
+                          : AtrioColors.guestTextPrimary,
+                ),
+              ),
+            Padding(
+              padding: isImage ? const EdgeInsets.only(top: 4, right: 8, bottom: 2) : EdgeInsets.zero,
+              child: Text(
+                time,
+                style: AtrioTypography.caption.copyWith(
+                  color: isMe
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : isDark
+                          ? AtrioColors.hostTextTertiary
+                          : AtrioColors.guestTextTertiary,
+                  fontSize: 10,
+                ),
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              time,
-              style: AtrioTypography.caption.copyWith(
-                color: isMe
-                    ? Colors.white.withValues(alpha: 0.7)
-                    : isDark
-                        ? AtrioColors.hostTextTertiary
-                        : AtrioColors.guestTextTertiary,
-                fontSize: 10,
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullImage(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: InteractiveViewer(
+                child: CachedNetworkImage(
+                  imageUrl: url,
+                  fit: BoxFit.contain,
+                ),
               ),
+            ),
+            IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                child: const Icon(Icons.close, color: Colors.white, size: 20),
+              ),
+              onPressed: () => Navigator.pop(ctx),
             ),
           ],
         ),

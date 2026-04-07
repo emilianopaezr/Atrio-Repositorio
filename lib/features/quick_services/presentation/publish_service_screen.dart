@@ -1,9 +1,13 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
+import '../../../core/services/storage_service.dart';
+import '../../../core/utils/extensions.dart';
 
 
 class PublishServiceScreen extends ConsumerStatefulWidget {
@@ -25,15 +29,25 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   String _selectedCategory = 'Mudanza';
   String _selectedUrgency = 'Flexible';
   bool _isLoading = false;
+  final List<XFile> _pickedImages = [];
+  final List<Uint8List> _imageBytes = [];
+  static const int _maxImages = 3;
 
   final _categories = [
     'Mudanza',
     'Limpieza',
     'Armado',
     'Eventos',
-    'Jardineria',
+    'Jardinería',
     'Reparaciones',
     'Pintura',
+    'Plomería',
+    'Electricidad',
+    'Tecnología',
+    'Mascotas',
+    'Belleza',
+    'Clases',
+    'Cocina',
     'Otro',
   ];
 
@@ -49,9 +63,16 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
     'Limpieza': Icons.cleaning_services_rounded,
     'Armado': Icons.handyman_rounded,
     'Eventos': Icons.celebration_rounded,
-    'Jardineria': Icons.grass_rounded,
+    'Jardinería': Icons.grass_rounded,
     'Reparaciones': Icons.build_rounded,
     'Pintura': Icons.format_paint_rounded,
+    'Plomería': Icons.plumbing_rounded,
+    'Electricidad': Icons.electrical_services_rounded,
+    'Tecnología': Icons.computer_rounded,
+    'Mascotas': Icons.pets_rounded,
+    'Belleza': Icons.face_retouching_natural_rounded,
+    'Clases': Icons.school_rounded,
+    'Cocina': Icons.restaurant_rounded,
     'Otro': Icons.more_horiz_rounded,
   };
 
@@ -65,24 +86,137 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImages() async {
+    if (_pickedImages.length >= _maxImages) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Máximo $_maxImages fotos', style: GoogleFonts.inter(color: Colors.white)),
+          backgroundColor: AtrioColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+      }
+      return;
+    }
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AtrioColors.hostSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 16),
+            Text('Agregar foto', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.photo_library_rounded, color: AtrioColors.neonLimeDark),
+              ),
+              title: Text('Galería', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.camera_alt_rounded, color: AtrioColors.neonLimeDark),
+              ),
+              title: Text('Cámara', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+          ]),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+    final picker = ImagePicker();
+    List<XFile> picked;
+    final remaining = _maxImages - _pickedImages.length;
+    if (source == ImageSource.gallery) {
+      picked = await picker.pickMultiImage(maxWidth: 1200, maxHeight: 1200, imageQuality: 85);
+      if (picked.length > remaining) picked = picked.sublist(0, remaining);
+    } else {
+      final photo = await picker.pickImage(source: ImageSource.camera, maxWidth: 1200, maxHeight: 1200, imageQuality: 85);
+      picked = photo != null ? [photo] : [];
+    }
+
+    for (final img in picked) {
+      if (_pickedImages.length >= _maxImages) break;
+      final bytes = await img.readAsBytes();
+      if (bytes.lengthInBytes > 5 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Una imagen es demasiado grande (máx 5 MB)', style: GoogleFonts.inter(color: Colors.white)),
+            backgroundColor: AtrioColors.error,
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
+        continue;
+      }
+      final ext = img.path.split('.').last.toLowerCase();
+      if (!{'jpg', 'jpeg', 'png', 'webp'}.contains(ext)) continue;
+      setState(() {
+        _pickedImages.add(img);
+        _imageBytes.add(bytes);
+      });
+    }
+  }
+
   Future<void> _publish() async {
     if (!_formKey.currentState!.validate()) return;
 
+    Haptics.medium();
     setState(() => _isLoading = true);
 
     try {
       final userId = SupabaseConfig.auth.currentUser?.id;
       if (userId == null) throw Exception('No autenticado');
 
-      await SupabaseConfig.client
-          .from('profiles')
-          .select('display_name')
-          .eq('id', userId)
-          .single();
+      // Upload images first
+      final imageUrls = <String>[];
+      final tempListingId = DateTime.now().millisecondsSinceEpoch.toString();
+      for (int i = 0; i < _pickedImages.length; i++) {
+        final url = await StorageService.uploadListingImage(
+          hostId: userId,
+          listingId: tempListingId,
+          fileBytes: _imageBytes[i],
+          fileName: '${i}_${_pickedImages[i].name}',
+        );
+        imageUrls.add(url);
+      }
 
-      // For now we show a success message (backend table for quick_services
-      // could be added later - this demonstrates the full UX flow)
-      await Future.delayed(const Duration(milliseconds: 800));
+      if (_isOffer) {
+        // Persist as a real service listing
+        await SupabaseConfig.client.from('listings').insert({
+          'host_id': userId,
+          'type': 'service',
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim(),
+          'category': _selectedCategory,
+          'images': imageUrls,
+          'base_price': double.tryParse(_priceController.text.trim()) ?? 0,
+          'price_unit': 'hour',
+          'rental_mode': 'hours',
+          'cancellation_policy': 'flexible',
+          'instant_booking': false,
+          'status': 'published',
+          'tags': [_selectedCategory.toLowerCase()],
+        });
+      } else {
+        // Request: simulate (no quick_requests table yet)
+        await Future.delayed(const Duration(milliseconds: 600));
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -192,13 +326,13 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               const SizedBox(height: 24),
 
               // Title
-              _buildLabel(_isOffer ? 'Titulo del Servicio' : 'Que necesitas?'),
+              _buildLabel(_isOffer ? 'Título del servicio' : '¿Qué necesitas?'),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _titleController,
                 hint: _isOffer
-                    ? 'Ej: Ayuda con mudanza, armado de muebles...'
-                    : 'Ej: Necesito ayuda para mover un sofa...',
+                    ? 'Ej: Plomero express, Mudanza con camioneta, Armado de muebles IKEA...'
+                    : 'Ej: Necesito mover un sofá 3 cuerpos hoy a las 18:00...',
                 maxLength: 80,
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
@@ -206,19 +340,91 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               const SizedBox(height: 20),
 
               // Description
-              _buildLabel('Descripcion'),
+              _buildLabel('Descripción'),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _descriptionController,
                 hint: _isOffer
-                    ? 'Describe tu experiencia y lo que ofreces...'
-                    : 'Describe lo que necesitas con detalle...',
-                maxLines: 4,
+                    ? 'Cuenta tu experiencia, herramientas que tienes, zonas donde trabajas y por qué confiar en ti.\nEj: 5 años como electricista certificado, atiendo Santiago Centro, traigo herramientas propias.'
+                    : 'Describe lugar, hora, materiales, accesos y cualquier dato relevante.\nEj: Departamento piso 4 con ascensor, sofá 1.80m, necesito 2 personas.',
+                maxLines: 5,
                 maxLength: 500,
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
               ),
               const SizedBox(height: 20),
+
+              // Photos (offers only, max 3)
+              if (_isOffer) ...[
+                _buildLabel('Fotos (máx $_maxImages)'),
+                const SizedBox(height: 4),
+                Text(
+                  'Sube hasta $_maxImages fotos de trabajos previos para generar más confianza.',
+                  style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 90,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _pickedImages.length + (_pickedImages.length < _maxImages ? 1 : 0),
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    itemBuilder: (ctx, index) {
+                      if (index == _pickedImages.length) {
+                        return GestureDetector(
+                          onTap: _pickImages,
+                          child: Container(
+                            width: 90,
+                            decoration: BoxDecoration(
+                              color: AtrioColors.hostSurface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AtrioColors.neonLimeDark.withValues(alpha: 0.5),
+                                style: BorderStyle.solid,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.add_a_photo_outlined, color: AtrioColors.neonLimeDark, size: 26),
+                                const SizedBox(height: 4),
+                                Text('Agregar', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextSecondary, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.memory(
+                              _imageBytes[index],
+                              width: 90, height: 90, fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            top: 4, right: 4,
+                            child: GestureDetector(
+                              onTap: () => setState(() {
+                                _pickedImages.removeAt(index);
+                                _imageBytes.removeAt(index);
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(color: Colors.black87, shape: BoxShape.circle),
+                                child: const Icon(Icons.close, size: 14, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
 
               // Category
               _buildLabel('Categoria'),
@@ -277,7 +483,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                 keyboardType: TextInputType.number,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Campo requerido';
-                  if (double.tryParse(v) == null) return 'Ingresa un numero';
+                  if (double.tryParse(v) == null) return 'Ingresa un número';
                   return null;
                 },
               ),

@@ -5,6 +5,8 @@ import '../../config/supabase/supabase_config.dart';
 import '../services/database_service.dart';
 import '../utils/constants.dart';
 
+const _debounceDuration = Duration(milliseconds: 500);
+
 /// Real-time stream provider for host financial profile.
 final hostProfileProvider = StreamProvider<Map<String, dynamic>?>(
   (ref) {
@@ -12,6 +14,18 @@ final hostProfileProvider = StreamProvider<Map<String, dynamic>?>(
     if (user == null) return Stream.value(null);
 
     final controller = StreamController<Map<String, dynamic>?>();
+    Timer? debounceTimer;
+
+    void refetch() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(_debounceDuration, () {
+        DatabaseService.getHostProfile(user.id).then(
+          (data) {
+            if (!controller.isClosed) controller.add(data);
+          },
+        );
+      });
+    }
 
     // Initial fetch
     DatabaseService.getHostProfile(user.id).then(
@@ -35,17 +49,12 @@ final hostProfileProvider = StreamProvider<Map<String, dynamic>?>(
             column: 'id',
             value: user.id,
           ),
-          callback: (payload) {
-            DatabaseService.getHostProfile(user.id).then(
-              (data) {
-                if (!controller.isClosed) controller.add(data);
-              },
-            );
-          },
+          callback: (_) => refetch(),
         )
         .subscribe();
 
     ref.onDispose(() {
+      debounceTimer?.cancel();
       controller.close();
       SupabaseConfig.client.removeChannel(channel);
     });
@@ -61,6 +70,18 @@ final hostTransactionsProvider = StreamProvider<List<Map<String, dynamic>>>(
     if (user == null) return Stream.value([]);
 
     final controller = StreamController<List<Map<String, dynamic>>>();
+    Timer? debounceTimer;
+
+    void refetch() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(_debounceDuration, () {
+        DatabaseService.getHostTransactions(user.id).then(
+          (data) {
+            if (!controller.isClosed) controller.add(data);
+          },
+        );
+      });
+    }
 
     // Initial fetch
     DatabaseService.getHostTransactions(user.id).then(
@@ -84,17 +105,12 @@ final hostTransactionsProvider = StreamProvider<List<Map<String, dynamic>>>(
             column: 'host_id',
             value: user.id,
           ),
-          callback: (payload) {
-            DatabaseService.getHostTransactions(user.id).then(
-              (data) {
-                if (!controller.isClosed) controller.add(data);
-              },
-            );
-          },
+          callback: (_) => refetch(),
         )
         .subscribe();
 
     ref.onDispose(() {
+      debounceTimer?.cancel();
       controller.close();
       SupabaseConfig.client.removeChannel(channel);
     });

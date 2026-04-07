@@ -133,8 +133,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
-  /// Calculate service fee with dynamic rate and $99 cap
-  /// Uses 1% for promo hosts (< 5 bookings), 7% standard, capped at $99
+  /// Calculate service fee with dynamic rate and $90.000 CLP cap
+  /// Uses 1% for promo hosts (< 5 bookings), 7% standard, capped at $90.000 CLP
   double _calcServiceFee(double subtotal, double cleaningFee) {
     final rate = _feeRate;
     final raw = (subtotal + cleaningFee) * rate;
@@ -180,6 +180,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _confirm(Listing listing) async {
+    Haptics.medium();
     final mode = listing.rentalMode;
 
     if (mode == 'nights' && (_checkIn == null || _checkOut == null)) {

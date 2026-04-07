@@ -1,3 +1,4 @@
+import '../utils/constants.dart';
 import 'enums.dart';
 
 /// Aggregated host performance statistics
@@ -17,7 +18,7 @@ class HostStats {
     this.completedBookingsCount = 0,
     this.averageRating = 0,
     this.currentLevel = 'NEW_HOST',
-    this.currentCommissionRate = 0.09,
+    this.currentCommissionRate = AppConstants.standardCommissionRate,
     this.totalEarnings = 0,
     this.responseRate = 0,
     this.eliteEligible = false,
@@ -30,7 +31,7 @@ class HostStats {
       completedBookingsCount: (json['completed_bookings_count'] as num?)?.toInt() ?? 0,
       averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0,
       currentLevel: json['current_level'] as String? ?? 'NEW_HOST',
-      currentCommissionRate: (json['current_commission_rate'] as num?)?.toDouble() ?? 0.09,
+      currentCommissionRate: (json['current_commission_rate'] as num?)?.toDouble() ?? AppConstants.standardCommissionRate,
       totalEarnings: (json['total_earnings'] as num?)?.toDouble() ?? 0,
       responseRate: (json['response_rate'] as num?)?.toDouble() ?? 0,
       eliteEligible: json['elite_eligible'] as bool? ?? false,

@@ -5,6 +5,9 @@ import '../../config/supabase/supabase_config.dart';
 import '../services/database_service.dart';
 import '../utils/constants.dart';
 
+/// Debounce duration for realtime refetch to prevent query storms
+const _debounceDuration = Duration(milliseconds: 500);
+
 /// Real-time stream provider for guest bookings.
 /// Re-fetches when any booking for this guest is inserted or updated.
 final guestBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
@@ -13,8 +16,20 @@ final guestBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
     if (user == null) return Stream.value([]);
 
     final controller = StreamController<List<Map<String, dynamic>>>();
+    Timer? debounceTimer;
 
-    // Initial fetch
+    void refetch() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(_debounceDuration, () {
+        DatabaseService.getGuestBookings(user.id).then(
+          (data) {
+            if (!controller.isClosed) controller.add(data);
+          },
+        );
+      });
+    }
+
+    // Initial fetch (no debounce)
     DatabaseService.getGuestBookings(user.id).then(
       (data) {
         if (!controller.isClosed) controller.add(data);
@@ -36,17 +51,12 @@ final guestBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
             column: 'guest_id',
             value: user.id,
           ),
-          callback: (payload) {
-            DatabaseService.getGuestBookings(user.id).then(
-              (data) {
-                if (!controller.isClosed) controller.add(data);
-              },
-            );
-          },
+          callback: (_) => refetch(),
         )
         .subscribe();
 
     ref.onDispose(() {
+      debounceTimer?.cancel();
       controller.close();
       SupabaseConfig.client.removeChannel(channel);
     });
@@ -63,6 +73,18 @@ final hostBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
     if (user == null) return Stream.value([]);
 
     final controller = StreamController<List<Map<String, dynamic>>>();
+    Timer? debounceTimer;
+
+    void refetch() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(_debounceDuration, () {
+        DatabaseService.getHostBookings(user.id).then(
+          (data) {
+            if (!controller.isClosed) controller.add(data);
+          },
+        );
+      });
+    }
 
     // Initial fetch
     DatabaseService.getHostBookings(user.id).then(
@@ -86,17 +108,12 @@ final hostBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
             column: 'host_id',
             value: user.id,
           ),
-          callback: (payload) {
-            DatabaseService.getHostBookings(user.id).then(
-              (data) {
-                if (!controller.isClosed) controller.add(data);
-              },
-            );
-          },
+          callback: (_) => refetch(),
         )
         .subscribe();
 
     ref.onDispose(() {
+      debounceTimer?.cancel();
       controller.close();
       SupabaseConfig.client.removeChannel(channel);
     });
@@ -119,6 +136,18 @@ final pendingHostBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
     if (user == null) return Stream.value([]);
 
     final controller = StreamController<List<Map<String, dynamic>>>();
+    Timer? debounceTimer;
+
+    void refetch() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(_debounceDuration, () {
+        DatabaseService.getHostBookings(user.id, status: 'pending').then(
+          (data) {
+            if (!controller.isClosed) controller.add(data);
+          },
+        );
+      });
+    }
 
     // Initial fetch
     DatabaseService.getHostBookings(user.id, status: 'pending').then(
@@ -142,17 +171,12 @@ final pendingHostBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
             column: 'host_id',
             value: user.id,
           ),
-          callback: (payload) {
-            DatabaseService.getHostBookings(user.id, status: 'pending').then(
-              (data) {
-                if (!controller.isClosed) controller.add(data);
-              },
-            );
-          },
+          callback: (_) => refetch(),
         )
         .subscribe();
 
     ref.onDispose(() {
+      debounceTimer?.cancel();
       controller.close();
       SupabaseConfig.client.removeChannel(channel);
     });

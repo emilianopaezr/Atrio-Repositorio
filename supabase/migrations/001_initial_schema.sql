@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS listings (
   latitude DOUBLE PRECISION,
   longitude DOUBLE PRECISION,
   base_price DECIMAL(10,2),
-  currency TEXT DEFAULT 'USD',
+  currency TEXT DEFAULT 'CLP',
   price_unit TEXT DEFAULT 'night' CHECK (price_unit IN ('night', 'hour', 'session', 'person')),
   cleaning_fee DECIMAL(10,2) DEFAULT 0,
   capacity INTEGER,
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
   type TEXT NOT NULL CHECK (type IN ('earning', 'payout', 'refund', 'fee')),
   amount DECIMAL(10,2) NOT NULL,
-  currency TEXT DEFAULT 'USD',
+  currency TEXT DEFAULT 'CLP',
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
   description TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()

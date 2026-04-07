@@ -62,7 +62,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
             ? 'Sin Verificar'
             : 'Verificacion Parcial';
     final statusColor = completedSteps == 4
-        ? const Color(0xFF22C55E)
+        ? AtrioColors.neonLimeDark
         : completedSteps >= 2
             ? AtrioColors.vibrantOrange
             : const Color(0xFFF59E0B);
@@ -209,8 +209,8 @@ class _KycScreenState extends ConsumerState<KycScreen> {
             // Step 2: Phone
             _VerificationStep(
               step: 2,
-              title: 'Verificar Telefono',
-              subtitle: _phoneVerified ? 'Tu numero ha sido verificado' : 'Agrega y verifica tu numero',
+              title: 'Verificar Teléfono',
+              subtitle: _phoneVerified ? 'Tu número ha sido verificado' : 'Agrega y verifica tu número',
               icon: Icons.phone_outlined,
               status: _phoneVerified ? _StepStatus.completed : _StepStatus.pending,
               onTap: !_phoneVerified ? () => _showPhoneDialog(context) : null,
@@ -260,7 +260,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Tu informacion esta segura',
+                          'Tu información está segura',
                           style: AtrioTypography.labelMedium.copyWith(
                             color: AtrioColors.neonLimeDark,
                             fontWeight: FontWeight.w700,
@@ -268,7 +268,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Usamos cifrado de grado bancario para proteger tus datos. Solo verificamos tu identidad, nunca compartimos tu informacion.',
+                          'Usamos cifrado de grado bancario para proteger tus datos. Solo verificamos tu identidad, nunca compartimos tu información.',
                           style: AtrioTypography.caption.copyWith(
                             color: AtrioColors.guestTextSecondary,
                             height: 1.4,
@@ -329,7 +329,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Ingresa tu numero de celular para verificar tu cuenta.',
+                    'Ingresa tu número de celular para verificar tu cuenta.',
                     style: AtrioTypography.bodySmall.copyWith(
                       color: AtrioColors.guestTextSecondary,
                     ),
@@ -366,7 +366,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                               final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
                               if (digits.length < 9 || digits.length > 15) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Ingresa un numero valido (ej: +56 9 1234 5678)')),
+                                  const SnackBar(content: Text('Ingresa un número válido (ej: +56 9 1234 5678)')),
                                 );
                                 return;
                               }
@@ -376,27 +376,26 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                                 if (userId != null) {
                                   await DatabaseService.updateProfile(userId, {'phone': phone});
                                   ref.invalidate(userProfileStreamProvider);
-                                  if (mounted) {
-                                    Navigator.of(ctx).pop();
-                                    setState(() => _phoneVerified = true);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text('Telefono verificado correctamente'),
-                                        backgroundColor: const Color(0xFF22C55E),
-                                        behavior: SnackBarBehavior.floating,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                    );
-                                  }
+                                  if (!context.mounted) return;
+                                  Navigator.of(ctx).pop();
+                                  setState(() => _phoneVerified = true);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('Teléfono verificado correctamente'),
+                                      backgroundColor: AtrioColors.neonLimeDark,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                  );
                                 }
                               } catch (e) {
-                                if (mounted) {
+                                if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('Error: $e')),
                                   );
                                 }
                               } finally {
-                                if (mounted) setSheetState(() => _sendingPhone = false);
+                                if (context.mounted) setSheetState(() => _sendingPhone = false);
                               }
                             },
                       style: ElevatedButton.styleFrom(
@@ -445,7 +444,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Documento subido. En revision.'),
-            backgroundColor: const Color(0xFF22C55E),
+            backgroundColor: AtrioColors.neonLimeDark,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -487,7 +486,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Verificacion completada!'),
-            backgroundColor: const Color(0xFF22C55E),
+            backgroundColor: AtrioColors.neonLimeDark,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),

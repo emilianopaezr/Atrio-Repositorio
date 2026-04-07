@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 extension ContextExtensions on BuildContext {
@@ -52,7 +53,7 @@ extension StringExtensions on String {
 }
 
 extension DoubleExtensions on double {
-  String get asCurrency => NumberFormat.currency(symbol: '\$', decimalDigits: 0, locale: 'es_CL').format(this);
+  String get asCurrency => NumberFormat.currency(symbol: '\$', decimalDigits: 0, locale: 'es_CL', name: 'CLP').format(this);
   String get asCompactCurrency => NumberFormat.compactCurrency(symbol: '\$', decimalDigits: 0).format(this);
   String get asPercentage => '${(this * 100).toStringAsFixed(0)}%';
 }
@@ -61,4 +62,15 @@ extension DoubleExtensions on double {
 extension NumCLP on num {
   static final _fmt = NumberFormat('#,##0', 'es_CL');
   String get toCLP => '\$${_fmt.format(this)}';
+}
+
+/// Haptic feedback helpers
+class Haptics {
+  Haptics._();
+  static void light() => HapticFeedback.lightImpact();
+  static void medium() => HapticFeedback.mediumImpact();
+  static void heavy() => HapticFeedback.heavyImpact();
+  static void selection() => HapticFeedback.selectionClick();
+  static void success() => HapticFeedback.mediumImpact();
+  static void error() => HapticFeedback.heavyImpact();
 }

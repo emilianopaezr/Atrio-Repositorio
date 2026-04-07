@@ -33,7 +33,7 @@ INSERT INTO listings (
   ARRAY['loft', 'vista', 'industrial', 'premium'],
   ARRAY['WiFi', 'Cocina equipada', 'Terraza', 'Estacionamiento', 'A/C', 'TV Smart', 'Lavadora'],
   'Av. Providencia 1234', 'Santiago', 'Chile', -33.4292, -70.6066,
-  85.00, 'USD', 'night', 25.00, 4,
+  75000, 'CLP', 'night', 20000, 4,
   'nights', 2, 30, '15:00', '11:00',
   false, 'flexible', 'published', 4.8, 24
 );
@@ -60,7 +60,7 @@ INSERT INTO listings (
   ARRAY['rooftop', 'eventos', 'terraza', 'corporativo'],
   ARRAY['Sistema de Sonido', 'Bar', 'Mobiliario', 'Iluminación LED', 'Baños', 'WiFi', 'Estacionamiento'],
   'Isidora Goyenechea 3000', 'Santiago', 'Chile', -33.4167, -70.5989,
-  450.00, 'USD', 'session', 50.00, 80,
+  380000, 'CLP', 'session', 40000, 80,
   'full_day', true, 'strict', 'published', 4.9, 18
 );
 
@@ -87,7 +87,7 @@ INSERT INTO listings (
   ARRAY['estudio', 'fotografia', 'video', 'podcast'],
   ARRAY['Ciclorama', 'Iluminación Profoto', 'WiFi', 'Vestidor', 'Maquillaje', 'A/C', 'Estacionamiento'],
   'Av. Italia 1500', 'Santiago', 'Chile', -33.4470, -70.6310,
-  35.00, 'USD', 'hour', 0.00, 8,
+  30000, 'CLP', 'hour', 0, 8,
   'hours', '08:00', '22:00', 60, 2, 10,
   true, 'moderate', 'published', 4.7, 31
 );
@@ -115,7 +115,7 @@ INSERT INTO listings (
   ARRAY['gastronomia', 'tour', 'vinos', 'lastarria'],
   ARRAY['Degustación incluida', 'Vinos', 'Guía bilingüe', 'Seguro'],
   'Plaza Lastarria', 'Santiago', 'Chile', -33.4400, -70.6385,
-  65.00, 'USD', 'person', 10,
+  55000, 'CLP', 'person', 10,
   'hours', '11:00', '20:00', 180,
   false, 'flexible', 'published', 4.9, 42
 );
@@ -143,7 +143,7 @@ INSERT INTO listings (
   ARRAY['trekking', 'termas', 'naturaleza', 'outdoor'],
   ARRAY['Transporte incluido', 'Almuerzo', 'Guía certificado', 'Seguro', 'Bastones'],
   'Cajón del Maipo', 'Santiago', 'Chile', -33.6000, -70.1000,
-  120.00, 'USD', 'person', 12,
+  95000, 'CLP', 'person', 12,
   'full_day',
   false, 'moderate', 'published', 4.8, 19
 );
@@ -171,7 +171,7 @@ INSERT INTO listings (
   ARRAY['fotografia', 'eventos', 'profesional', 'corporativo'],
   ARRAY['Equipo profesional', 'Edición incluida', 'Entrega 48h', 'Iluminación portátil'],
   'A domicilio', 'Santiago', 'Chile', -33.4372, -70.6506,
-  45.00, 'USD', 'hour', 1,
+  35000, 'CLP', 'hour', 1,
   'hours', '08:00', '21:00', 60, 2, 8,
   true, 'moderate', 'published', 4.9, 56
 );
@@ -199,7 +199,7 @@ INSERT INTO listings (
   ARRAY['catering', 'eventos', 'comida', 'premium'],
   ARRAY['Menú personalizable', 'Vajilla incluida', 'Meseros', 'Opciones veganas', 'Montaje'],
   'A domicilio', 'Santiago', 'Chile', -33.4372, -70.6506,
-  800.00, 'USD', 'session', 50,
+  650000, 'CLP', 'session', 50,
   'full_day',
   false, 'strict', 'published', 4.7, 12
 );
@@ -227,7 +227,7 @@ INSERT INTO listings (
   ARRAY['ceramica', 'taller', 'arte', 'handmade'],
   ARRAY['Materiales incluidos', 'Pieza para llevar', 'Delantal', 'Café de cortesía'],
   'Av. Italia 1200', 'Santiago', 'Chile', -33.4470, -70.6310,
-  40.00, 'USD', 'person', 8,
+  35000, 'CLP', 'person', 8,
   'hours', '10:00', '19:00', 120,
   true, 'flexible', 'published', 4.8, 35
 );

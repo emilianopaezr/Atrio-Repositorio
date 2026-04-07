@@ -274,7 +274,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                               borderRadius: BorderRadius.circular(10),
                               child: img != null
                                   ? Image.network(img,
-                                      width: 50, height: 50, fit: BoxFit.cover)
+                                      width: 50, height: 50, fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => Container(
+                                        width: 50, height: 50,
+                                        color: surfaceV,
+                                        child: const Icon(Icons.broken_image, color: textT, size: 20),
+                                      ),
+                                    )
                                   : Container(
                                       width: 50,
                                       height: 50,

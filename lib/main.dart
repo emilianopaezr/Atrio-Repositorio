@@ -11,16 +11,46 @@ import 'app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: '.env');
-  await SupabaseConfig.initialize();
+  try {
+    // Load .env for development; in release builds with --dart-define this can fail safely
+    try {
+      await dotenv.load(fileName: '.env');
+    } catch (_) {
+      // .env not found is OK if using --dart-define
+      if (kDebugMode) debugPrint('.env not found, using --dart-define values');
+    }
+
+    await SupabaseConfig.initialize();
+  } catch (e) {
+    debugPrint('Fatal initialization error: $e');
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Text('Error de inicialización.\nVerifica tu conexión e intenta de nuevo.',
+              textAlign: TextAlign.center),
+        ),
+      ),
+    ));
+    return;
+  }
+
   await initializeDateFormatting('es');
 
   // Run security checks in release mode
   if (!kDebugMode) {
-    final securityResult = await SecurityService.runChecks();
-    if (!securityResult.passed) {
-      debugPrint('Security warnings: ${securityResult.issues}');
+    try {
+      final securityResult = await SecurityService.runChecks();
+      if (!securityResult.passed) {
+        debugPrint('Security warnings: ${securityResult.issues}');
+      }
+    } catch (e) {
+      debugPrint('Security check failed: $e');
     }
+  }
+
+  // Prevent screenshots and screen recording in release mode
+  if (!kDebugMode) {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   SystemChrome.setSystemUIOverlayStyle(

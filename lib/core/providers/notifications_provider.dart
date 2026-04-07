@@ -5,6 +5,8 @@ import '../../config/supabase/supabase_config.dart';
 import '../services/database_service.dart';
 import '../utils/constants.dart';
 
+const _debounceDuration = Duration(milliseconds: 500);
+
 /// Real-time stream provider for user notifications.
 /// Auto-updates when new notifications arrive or existing ones are updated/deleted.
 final notificationsProvider = StreamProvider<List<Map<String, dynamic>>>(
@@ -13,6 +15,18 @@ final notificationsProvider = StreamProvider<List<Map<String, dynamic>>>(
     if (user == null) return Stream.value([]);
 
     final controller = StreamController<List<Map<String, dynamic>>>();
+    Timer? debounceTimer;
+
+    void refetch() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(_debounceDuration, () {
+        DatabaseService.getNotifications(user.id).then(
+          (data) {
+            if (!controller.isClosed) controller.add(data);
+          },
+        );
+      });
+    }
 
     // Initial fetch
     DatabaseService.getNotifications(user.id).then(
@@ -36,17 +50,12 @@ final notificationsProvider = StreamProvider<List<Map<String, dynamic>>>(
             column: 'user_id',
             value: user.id,
           ),
-          callback: (payload) {
-            DatabaseService.getNotifications(user.id).then(
-              (data) {
-                if (!controller.isClosed) controller.add(data);
-              },
-            );
-          },
+          callback: (_) => refetch(),
         )
         .subscribe();
 
     ref.onDispose(() {
+      debounceTimer?.cancel();
       controller.close();
       SupabaseConfig.client.removeChannel(channel);
     });
@@ -62,6 +71,18 @@ final unreadNotificationCountProvider = StreamProvider<int>(
     if (user == null) return Stream.value(0);
 
     final controller = StreamController<int>();
+    Timer? debounceTimer;
+
+    void refetchCount() {
+      debounceTimer?.cancel();
+      debounceTimer = Timer(_debounceDuration, () {
+        DatabaseService.getUnreadNotificationCount(user.id).then(
+          (count) {
+            if (!controller.isClosed) controller.add(count);
+          },
+        );
+      });
+    }
 
     // Initial fetch
     DatabaseService.getUnreadNotificationCount(user.id).then(
@@ -85,17 +106,12 @@ final unreadNotificationCountProvider = StreamProvider<int>(
             column: 'user_id',
             value: user.id,
           ),
-          callback: (payload) {
-            DatabaseService.getUnreadNotificationCount(user.id).then(
-              (count) {
-                if (!controller.isClosed) controller.add(count);
-              },
-            );
-          },
+          callback: (_) => refetchCount(),
         )
         .subscribe();
 
     ref.onDispose(() {
+      debounceTimer?.cancel();
       controller.close();
       SupabaseConfig.client.removeChannel(channel);
     });

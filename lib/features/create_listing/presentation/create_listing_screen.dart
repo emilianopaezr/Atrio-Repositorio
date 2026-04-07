@@ -9,6 +9,7 @@ import '../../../config/supabase/supabase_config.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../shared/widgets/atrio_button.dart';
 import '../../../shared/widgets/atrio_text_field.dart';
+import '../../../shared/widgets/location_picker_widget.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final String? editId;
@@ -32,6 +33,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final List<XFile> _pickedImages = [];
   final List<Uint8List> _imageBytes = [];
   bool _isPublishing = false;
+  double? _latitude;
+  double? _longitude;
   String _priceUnit = 'night';
   String _rentalMode = 'nights';
   String _cancellationPolicy = 'flexible';
@@ -53,12 +56,83 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Future<void> _pickImages() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(
-      maxWidth: 1200,
-      maxHeight: 1200,
-      imageQuality: 85,
+    if (_pickedImages.length >= 8) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Máximo 8 imágenes', style: GoogleFonts.inter(color: Colors.white)),
+          backgroundColor: AtrioColors.error,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+      return;
+    }
+
+    // Show source picker (gallery or camera)
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AtrioColors.hostSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 16),
+              Text('Agregar imágenes', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.photo_library_rounded, color: AtrioColors.neonLimeDark),
+                ),
+                title: Text('Galería', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                subtitle: Text('Seleccionar varias fotos', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary)),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.camera_alt_rounded, color: AtrioColors.neonLimeDark),
+                ),
+                title: Text('Cámara', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                subtitle: Text('Tomar una foto ahora', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary)),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+
+    if (source == null) return;
+    final picker = ImagePicker();
+
+    List<XFile> picked;
+    if (source == ImageSource.gallery) {
+      picked = await picker.pickMultiImage(
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+    } else {
+      final photo = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+      picked = photo != null ? [photo] : [];
+    }
+
     if (picked.isNotEmpty) {
       for (final img in picked) {
         if (_pickedImages.length >= 8) break;
@@ -176,6 +250,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         'country': _countryController.text.trim().isNotEmpty
             ? _countryController.text.trim()
             : null,
+        if (_latitude != null) 'latitude': _latitude,
+        if (_longitude != null) 'longitude': _longitude,
         'base_price': double.tryParse(_priceController.text.trim()) ?? 0,
         'price_unit': _priceUnit,
         'rental_mode': _rentalMode,
@@ -648,6 +724,32 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
+  Future<void> _openLocationPicker() async {
+    final result = await Navigator.of(context).push<LocationPickerResult>(
+      MaterialPageRoute(
+        builder: (_) => LocationPickerScreen(
+          initialLatitude: _latitude,
+          initialLongitude: _longitude,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+        if (result.address != null && result.address!.isNotEmpty) {
+          _addressController.text = result.address!;
+        }
+        if (result.city != null && result.city!.isNotEmpty) {
+          _cityController.text = result.city!;
+        }
+        if (result.country != null && result.country!.isNotEmpty) {
+          _countryController.text = result.country!;
+        }
+      });
+    }
+  }
+
   Widget _buildLocationStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,18 +780,83 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        // Map placeholder
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: AtrioColors.hostSurface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AtrioColors.hostCardBorder),
-          ),
-          child: const Center(
-            child: Icon(Icons.map, size: 48, color: AtrioColors.hostTextTertiary),
+        // Map picker
+        GestureDetector(
+          onTap: _openLocationPicker,
+          child: Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: AtrioColors.hostSurface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AtrioColors.hostCardBorder),
+            ),
+            child: _latitude != null && _longitude != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(19),
+                    child: Stack(
+                      children: [
+                        IgnorePointer(
+                          child: Image.network(
+                            'https://maps.googleapis.com/maps/api/staticmap?center=$_latitude,$_longitude&zoom=15&size=600x300&markers=color:red%7C$_latitude,$_longitude&key=',
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: 200,
+                            errorBuilder: (_, _, _) => const Center(
+                              child: Icon(Icons.map, size: 48, color: AtrioColors.neonLimeDark),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 0, left: 0, right: 0, bottom: 0,
+                          child: Center(
+                            child: Icon(Icons.location_on, size: 40, color: AtrioColors.neonLimeDark),
+                          ),
+                        ),
+                        Positioned(
+                          right: 8, top: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AtrioColors.neonLimeDark,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text('Cambiar', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_location_alt_rounded, size: 40, color: AtrioColors.neonLimeDark),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Seleccionar en el mapa',
+                        style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Toca para abrir el mapa',
+                        style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary),
+                      ),
+                    ],
+                  ),
           ),
         ),
+        if (_latitude != null) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.check_circle, size: 14, color: AtrioColors.success),
+              const SizedBox(width: 6),
+              Text(
+                'Ubicación seleccionada',
+                style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.success, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -783,12 +950,18 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 if (t != null) setState(() => _availableFrom = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
               },
               child: Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AtrioColors.hostCardBorder)),
                 child: Row(children: [
                   const Icon(Icons.schedule, size: 18, color: AtrioColors.neonLimeDark),
-                  const SizedBox(width: 8),
-                  Text('Desde: $_availableFrom', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Desde: $_availableFrom',
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary),
+                    ),
+                  ),
                 ]),
               ),
             )),
@@ -799,12 +972,18 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 if (t != null) setState(() => _availableUntil = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
               },
               child: Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AtrioColors.hostCardBorder)),
                 child: Row(children: [
                   const Icon(Icons.schedule, size: 18, color: AtrioColors.neonLimeDark),
-                  const SizedBox(width: 8),
-                  Text('Hasta: $_availableUntil', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Hasta: $_availableUntil',
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary),
+                    ),
+                  ),
                 ]),
               ),
             )),

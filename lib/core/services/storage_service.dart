@@ -34,6 +34,20 @@ class StorageService {
   static const _allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
   static const _allowedKycExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
 
+  static const _mimeTypes = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'webp': 'image/webp',
+    'gif': 'image/gif',
+    'pdf': 'application/pdf',
+  };
+
+  static String _getMimeType(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    return _mimeTypes[ext] ?? 'image/jpeg';
+  }
+
   static String _validateImageExtension(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
     if (!_allowedImageExtensions.contains(ext)) {
@@ -58,8 +72,8 @@ class StorageService {
         .uploadBinary(
           path,
           fileBytes,
-          fileOptions: const FileOptions(
-            contentType: 'image/jpeg',
+          fileOptions: FileOptions(
+            contentType: _getMimeType(safeName),
             upsert: true,
           ),
         );
@@ -84,8 +98,8 @@ class StorageService {
         .uploadBinary(
           path,
           fileBytes,
-          fileOptions: const FileOptions(
-            contentType: 'image/jpeg',
+          fileOptions: FileOptions(
+            contentType: _getMimeType(safeName),
             upsert: true,
           ),
         );
@@ -110,8 +124,8 @@ class StorageService {
         .uploadBinary(
           path,
           fileBytes,
-          fileOptions: const FileOptions(
-            contentType: 'image/jpeg',
+          fileOptions: FileOptions(
+            contentType: _getMimeType(safeName),
             upsert: true,
           ),
         );
@@ -140,7 +154,10 @@ class StorageService {
         .uploadBinary(
           path,
           fileBytes,
-          fileOptions: const FileOptions(upsert: true),
+          fileOptions: FileOptions(
+            contentType: _getMimeType(safeName),
+            upsert: true,
+          ),
         );
 
     return _client.storage

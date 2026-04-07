@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../shared/widgets/location_map_widget.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/listings_provider.dart';
 import '../../../core/providers/availability_provider.dart';
@@ -437,6 +438,14 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                           const SizedBox(height: 18),
                           _divider(),
                           const SizedBox(height: 18),
+
+                          // ─── Map / Location ───
+                          if (listing.latitude != null && listing.longitude != null) ...[
+                            _locationSection(listing),
+                            const SizedBox(height: 18),
+                            _divider(),
+                            const SizedBox(height: 18),
+                          ],
 
                           // ─── Reviews ───
                           _reviewsSection(listing),
@@ -1068,6 +1077,37 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       ),
     ],
   );
+
+  // ══════════════════════════════════════════
+  // LOCATION MAP
+  // ══════════════════════════════════════════
+  Widget _locationSection(Listing listing) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.map_outlined, size: 20, color: _limeDark),
+            const SizedBox(width: 8),
+            Text('Ubicación', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: _text)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        if (listing.city != null)
+          Text(
+            '${listing.address != null ? '${listing.address}, ' : ''}${listing.city}${listing.country != null ? ', ${listing.country}' : ''}',
+            style: GoogleFonts.inter(fontSize: 13, color: _textSec),
+          ),
+        const SizedBox(height: 12),
+        LocationMapWidget(
+          latitude: listing.latitude!,
+          longitude: listing.longitude!,
+          title: listing.title,
+          height: 200,
+        ),
+      ],
+    );
+  }
 
   // ══════════════════════════════════════════
   // REVIEWS

@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/providers/listings_provider.dart';
+import '../../../core/utils/constants.dart';
 import '../../../core/utils/extensions.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
@@ -19,15 +21,14 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _searchController = TextEditingController();
-  final _categories = ['Todos', 'Espacios', 'Experiencias', 'Servicios'];
-  final _categoryTypes = [null, 'space', 'experience', 'service'];
   int _selectedCategory = 0;
   Timer? _debounce;
   String _searchQuery = '';
 
   // Price range filter
-  RangeValues _priceRange = const RangeValues(0, 500);
+  RangeValues _priceRange = const RangeValues(0, 500000);
   bool _showFilters = false;
+  bool _showMapView = false;
 
   @override
   void dispose() {
@@ -46,7 +47,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   ListingsFilter get _currentFilter {
     return ListingsFilter(
       search: _searchQuery.isNotEmpty ? _searchQuery : null,
-      type: _categoryTypes[_selectedCategory],
+      type: AppConstants.categoryTypes[_selectedCategory],
     );
   }
 
@@ -67,13 +68,43 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Text(
-                'Buscar',
-                style: GoogleFonts.inter(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: AtrioColors.guestTextPrimary,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Buscar',
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: AtrioColors.guestTextPrimary,
+                    ),
+                  ),
+                  if (_hasActiveSearch)
+                    GestureDetector(
+                      onTap: () => setState(() => _showMapView = !_showMapView),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _showMapView
+                              ? AtrioColors.neonLimeDark
+                              : AtrioColors.guestSurface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _showMapView
+                                ? AtrioColors.neonLimeDark
+                                : AtrioColors.guestCardBorder,
+                          ),
+                        ),
+                        child: Icon(
+                          _showMapView ? Icons.list_rounded : Icons.map_rounded,
+                          size: 22,
+                          color: _showMapView
+                              ? Colors.white
+                              : AtrioColors.guestTextSecondary,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -163,7 +194,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _categories.length,
+                itemCount: AppConstants.categoryLabels.length,
                 itemBuilder: (context, index) {
                   final isSelected = _selectedCategory == index;
                   return Padding(
@@ -186,7 +217,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           ),
                         ),
                         child: Text(
-                          _categories[index],
+                          AppConstants.categoryLabels[index],
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: isSelected
@@ -224,7 +255,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         if (listings.isEmpty) {
                           return _buildEmptyResults();
                         }
-                        return _buildSearchResults(listings);
+                        return _showMapView
+                            ? _buildMapView(listings)
+                            : _buildSearchResults(listings);
                       },
                       loading: () => const Center(
                         child: CircularProgressIndicator(
@@ -296,8 +329,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: RangeSlider(
                 values: _priceRange,
                 min: 0,
-                max: 1000,
-                divisions: 20,
+                max: 500000,
+                divisions: 50,
                 onChanged: (values) => setState(() => _priceRange = values),
               ),
             ),
@@ -305,7 +338,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
             // Quick filter tags
             Text(
-              'Filtros Rapidos',
+              'Filtros Rápidos',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -346,7 +379,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Busquedas Populares',
+              'Búsquedas Populares',
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -404,7 +437,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Explorar por Categoria',
+              'Explorar por Categoría',
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -458,7 +491,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   child: _CategoryCard(
                     icon: Icons.local_fire_department_rounded,
                     label: 'Tendencias',
-                    subtitle: 'Lo mas popular',
+                    subtitle: 'Lo más popular',
                     color: AtrioColors.neonLimeDark,
                     onTap: () {
                       _searchController.text = 'premium';
@@ -532,6 +565,119 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   // ──────────────────────────────────────────────
+  // MAP VIEW
+  // ──────────────────────────────────────────────
+  Widget _buildMapView(List<Listing> listings) {
+    final withLocation = listings
+        .where((l) => l.latitude != null && l.longitude != null)
+        .toList();
+
+    if (withLocation.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.map_outlined, size: 48, color: AtrioColors.guestTextTertiary),
+            const SizedBox(height: 12),
+            Text(
+              'Sin ubicaciones disponibles',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AtrioColors.guestTextPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Los listings no tienen coordenadas',
+              style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.guestTextTertiary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Calculate bounds to fit all markers
+    double minLat = withLocation.first.latitude!;
+    double maxLat = withLocation.first.latitude!;
+    double minLng = withLocation.first.longitude!;
+    double maxLng = withLocation.first.longitude!;
+    for (final l in withLocation) {
+      if (l.latitude! < minLat) minLat = l.latitude!;
+      if (l.latitude! > maxLat) maxLat = l.latitude!;
+      if (l.longitude! < minLng) minLng = l.longitude!;
+      if (l.longitude! > maxLng) maxLng = l.longitude!;
+    }
+
+    final markers = withLocation.map((l) {
+      return Marker(
+        markerId: MarkerId(l.id),
+        position: LatLng(l.latitude!, l.longitude!),
+        infoWindow: InfoWindow(
+          title: l.title,
+          snippet: l.basePrice?.toCLP ?? '',
+          onTap: () => context.push('/listing/${l.id}'),
+        ),
+      );
+    }).toSet();
+
+    final center = LatLng(
+      (minLat + maxLat) / 2,
+      (minLng + maxLng) / 2,
+    );
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      child: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: CameraPosition(target: center, zoom: 12),
+            markers: markers,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            onMapCreated: (controller) {
+              if (withLocation.length > 1) {
+                controller.animateCamera(
+                  CameraUpdate.newLatLngBounds(
+                    LatLngBounds(
+                      southwest: LatLng(minLat, minLng),
+                      northeast: LatLng(maxLat, maxLng),
+                    ),
+                    60,
+                  ),
+                );
+              }
+            },
+          ),
+          // Result count badge
+          Positioned(
+            top: 12,
+            left: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+              ),
+              child: Text(
+                '${withLocation.length} en el mapa',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AtrioColors.guestTextPrimary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────
   // SEARCH RESULTS
   // ──────────────────────────────────────────────
   Widget _buildSearchResults(List<Listing> listings) {
@@ -588,7 +734,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Intenta con otros terminos de busqueda',
+            'Intenta con otros términos de búsqueda',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: AtrioColors.guestTextTertiary,

@@ -86,7 +86,7 @@ class PricingEngineService {
       hostCommission = maxFeeCap;
     }
 
-    // Guest service fee: 7% capped at $99
+    // Guest service fee: 7% capped at $90.000 CLP
     final subtotalForFee = baseTotal + cleaningFee;
     final rawGuestFee = subtotalForFee * guestFeeRate;
     final guestFee = rawGuestFee > maxFeeCap ? maxFeeCap : rawGuestFee;

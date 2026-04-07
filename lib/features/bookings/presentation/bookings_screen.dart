@@ -108,8 +108,8 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                   if (list.isEmpty) {
                     return _EmptyBookings(
                       message: _selectedTab == 0
-                          ? 'No tienes reservas proximas'
-                          : 'Aun no has completado ninguna reserva',
+                          ? 'No tienes reservas próximas'
+                          : 'Aún no has completado ninguna reserva',
                     );
                   }
 
@@ -134,11 +134,25 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                   ),
                 ),
                 error: (_, _) => Center(
-                  child: Text(
-                    'Error al cargar reservas',
-                    style: AtrioTypography.bodyLarge.copyWith(
-                      color: AtrioColors.guestTextSecondary,
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_off_rounded, size: 48, color: AtrioColors.error.withValues(alpha: 0.6)),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error al cargar reservas',
+                        style: AtrioTypography.bodyLarge.copyWith(
+                          color: AtrioColors.guestTextSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: () => ref.invalidate(guestBookingsProvider),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('Reintentar'),
+                        style: TextButton.styleFrom(foregroundColor: AtrioColors.neonLimeDark),
+                      ),
+                    ],
                   ),
                 ),
               ),

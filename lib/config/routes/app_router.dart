@@ -224,14 +224,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/listing/:id',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            ListingDetailScreen(listingId: state.pathParameters['id']!),
+        builder: (context, state) {
+          final id = state.pathParameters['id'];
+          if (id == null || id.isEmpty) return const HomeScreen();
+          return ListingDetailScreen(listingId: id);
+        },
       ),
       GoRoute(
         path: '/checkout/:listingId',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            CheckoutScreen(listingId: state.pathParameters['listingId']!),
+        builder: (context, state) {
+          final id = state.pathParameters['listingId'];
+          if (id == null || id.isEmpty) return const HomeScreen();
+          return CheckoutScreen(listingId: id);
+        },
       ),
       GoRoute(
         path: '/booking-confirmed',
@@ -241,8 +247,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/chat/:conversationId',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) =>
-            ChatScreen(conversationId: state.pathParameters['conversationId']!),
+        builder: (context, state) {
+          final id = state.pathParameters['conversationId'];
+          if (id == null || id.isEmpty) return const ConversationsScreen();
+          return ChatScreen(conversationId: id);
+        },
       ),
       GoRoute(
         path: '/notifications',
@@ -302,9 +311,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/booking-detail/:bookingId',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => BookingDetailScreen(
-          bookingId: state.pathParameters['bookingId']!,
-        ),
+        builder: (context, state) {
+          final id = state.pathParameters['bookingId'];
+          if (id == null || id.isEmpty) return const BookingsScreen();
+          return BookingDetailScreen(bookingId: id);
+        },
       ),
       GoRoute(
         path: '/write-review',
@@ -340,9 +351,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dispute/:disputeId',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => DisputeDetailScreen(
-          disputeId: state.pathParameters['disputeId']!,
-        ),
+        builder: (context, state) {
+          final id = state.pathParameters['disputeId'];
+          if (id == null || id.isEmpty) return const DisputesScreen();
+          return DisputeDetailScreen(disputeId: id);
+        },
       ),
       GoRoute(
         path: '/settings',
@@ -352,9 +365,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/reviews/:listingId',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => ReviewsListScreen(
-          listingId: state.pathParameters['listingId']!,
-        ),
+        builder: (context, state) {
+          final id = state.pathParameters['listingId'];
+          if (id == null || id.isEmpty) return const HomeScreen();
+          return ReviewsListScreen(listingId: id);
+        },
       ),
       GoRoute(
         path: '/host/analytics',

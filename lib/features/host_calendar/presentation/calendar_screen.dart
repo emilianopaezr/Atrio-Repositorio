@@ -109,12 +109,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
 
     final isCurrentlyBlocked = _blockedDates.contains(key);
+    final newIsAvailable = isCurrentlyBlocked; // unblock -> available
 
     try {
       await DatabaseService.setDateAvailability(
         _selectedListingId!,
         date,
-        isCurrentlyBlocked,
+        newIsAvailable,
       );
       setState(() {
         if (isCurrentlyBlocked) {
