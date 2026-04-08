@@ -122,9 +122,10 @@ class StorageService {
     }
     final safeName = _validateImageExtension(_sanitizeFileName(fileName));
     final ts = DateTime.now().millisecondsSinceEpoch;
-    // Path includes conversationId and userId (matches RLS policies) and a
-    // unique timestamp prefix to prevent collisions across messages.
-    final path = '$conversationId/$userId/${ts}_$safeName';
+    // IMPORTANT: First folder MUST be auth.uid() — Supabase default storage
+    // RLS policy enforces (storage.foldername(name))[1] = auth.uid()::text.
+    // Path layout: {userId}/{conversationId}/{timestamp}_{filename}
+    final path = '$userId/$conversationId/${ts}_$safeName';
 
     await _client.storage
         .from(AppConstants.bucketChat)
