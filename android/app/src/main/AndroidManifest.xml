@@ -1,12 +1,16 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- NOTE: CAMERA permission intentionally NOT declared.
+         image_picker uses ACTION_IMAGE_CAPTURE intent which delegates to
+         the system camera app (handles its own permissions).
+         Declaring CAMERA would require a public privacy policy URL on Play Store. -->
+
     <!-- Android 13+ scoped media permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
     <!-- Legacy storage permission for Android 12 and below -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
@@ -14,7 +18,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
 
+    <!-- Explicitly remove CAMERA permission that any merged manifest may add -->
+    <uses-permission android:name="android.permission.CAMERA" tools:node="remove"/>
+
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.any" android:required="false"/>
     <uses-feature android:name="android.hardware.location" android:required="false"/>
     <application
         android:label="Atrio"

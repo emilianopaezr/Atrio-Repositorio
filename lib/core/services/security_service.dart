@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -8,10 +11,115 @@ import 'package:flutter/services.dart';
 /// - Debugger attachment
 /// - Emulator detection (production only)
 /// - Screenshot/screen recording prevention
-/// - Input sanitization & validation
-/// - Rate limiting
+/// - Input sanitization & injection (SQL, XSS, NoSQL, command)
+/// - Path traversal
+/// - Rate limiting (in-memory + persistent)
+/// - Brute-force protection (exponential backoff)
+/// - Session timeout & idle detection
+/// - HMAC/timing-safe comparisons
+/// - Tamper detection (signature verification ready)
+/// - Frida/Xposed detection
 class SecurityService {
   SecurityService._();
+
+  /// Session tracking
+  static DateTime? _lastActivity;
+  static Duration _sessionTimeout = const Duration(minutes: 30);
+  static Timer? _sessionTimer;
+  static VoidCallback? _onSessionExpired;
+
+  /// Brute-force protection state
+  static final Map<String, _AttemptState> _failedAttempts = {};
+
+  /// Start session tracking with idle timeout
+  static void startSession({
+    Duration timeout = const Duration(minutes: 30),
+    VoidCallback? onExpired,
+  }) {
+    _sessionTimeout = timeout;
+    _onSessionExpired = onExpired;
+    _lastActivity = DateTime.now();
+    _sessionTimer?.cancel();
+    _sessionTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!isSessionValid()) {
+        expireSession();
+      }
+    });
+  }
+
+  /// Record user activity to reset idle timer
+  static void recordActivity() {
+    _lastActivity = DateTime.now();
+  }
+
+  /// Check if session is still valid (not idle-expired)
+  static bool isSessionValid() {
+    if (_lastActivity == null) return false;
+    return DateTime.now().difference(_lastActivity!) < _sessionTimeout;
+  }
+
+  /// Force-expire current session
+  static void expireSession() {
+    _sessionTimer?.cancel();
+    _sessionTimer = null;
+    _lastActivity = null;
+    final cb = _onSessionExpired;
+    _onSessionExpired = null;
+    cb?.call();
+  }
+
+  /// Brute-force protection: register a failed attempt and return required wait
+  /// Uses exponential backoff: 0s, 1s, 2s, 4s, 8s, 16s, 32s, 60s (capped)
+  static Duration registerFailedAttempt(String key) {
+    final state = _failedAttempts[key] ?? _AttemptState();
+    state.count++;
+    state.lastAttempt = DateTime.now();
+    _failedAttempts[key] = state;
+    final exp = state.count <= 1 ? 0 : (1 << (state.count - 2));
+    final secs = exp > 60 ? 60 : exp;
+    return Duration(seconds: secs);
+  }
+
+  /// Returns remaining backoff for a key, or Duration.zero if allowed
+  static Duration getBackoff(String key) {
+    final state = _failedAttempts[key];
+    if (state == null || state.count <= 1) return Duration.zero;
+    final exp = 1 << (state.count - 2);
+    final secs = exp > 60 ? 60 : exp;
+    final elapsed = DateTime.now().difference(state.lastAttempt);
+    final remaining = Duration(seconds: secs) - elapsed;
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  /// Reset brute-force counter on successful auth
+  static void resetFailedAttempts(String key) {
+    _failedAttempts.remove(key);
+  }
+
+  /// Timing-safe string comparison to prevent timing attacks
+  static bool timingSafeEquals(String a, String b) {
+    if (a.length != b.length) {
+      // Still walk one of them to keep timing roughly stable
+      var sink = 0;
+      for (var i = 0; i < a.length; i++) {
+        sink ^= a.codeUnitAt(i);
+      }
+      if (sink == -1) return false; // never true; prevents dead-code elimination
+      return false;
+    }
+    var result = 0;
+    for (var i = 0; i < a.length; i++) {
+      result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    }
+    return result == 0;
+  }
+
+  /// Generate a cryptographically-strong random nonce (base64)
+  static String generateNonce([int bytes = 32]) {
+    final rnd = Random.secure();
+    final values = List<int>.generate(bytes, (_) => rnd.nextInt(256));
+    return base64Url.encode(values);
+  }
 
   /// Run all security checks on app startup
   static Future<SecurityCheckResult> runChecks() async {
@@ -88,8 +196,14 @@ class SecurityService {
       }
 
       // Check for Magisk
-      if (await File('/sbin/.magisk').exists()) {
-        return true;
+      final magiskPaths = [
+        '/sbin/.magisk',
+        '/cache/.disable_magisk',
+        '/dev/.magisk.unblock',
+        '/cache/magisk.log',
+      ];
+      for (final mp in magiskPaths) {
+        if (await File(mp).exists()) return true;
       }
 
       // Check for common root management apps
@@ -98,11 +212,25 @@ class SecurityService {
         '/data/data/eu.chainfire.supersu',
         '/data/data/com.koushikdutta.superuser',
         '/data/data/com.topjohnwu.magisk',
+        '/data/data/com.thirdparty.superuser',
+        '/data/data/com.yellowes.su',
       ];
       for (final app in rootApps) {
         if (await Directory(app).exists()) {
           return true;
         }
+      }
+
+      // Frida / Xposed indicators
+      final hookPaths = [
+        '/data/local/tmp/frida-server',
+        '/data/local/tmp/re.frida.server',
+        '/system/lib/libxposed_art.so',
+        '/system/lib64/libxposed_art.so',
+        '/system/framework/XposedBridge.jar',
+      ];
+      for (final hp in hookPaths) {
+        if (await File(hp).exists()) return true;
       }
 
       return false;
@@ -257,3 +385,8 @@ class SecurityCheckResult {
 }
 
 enum PasswordStrength { weak, fair, good, strong }
+
+class _AttemptState {
+  int count = 0;
+  DateTime lastAttempt = DateTime.now();
+}
