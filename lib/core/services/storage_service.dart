@@ -180,6 +180,26 @@ class StorageService {
     await _client.storage.from(bucket).remove([path]);
   }
 
+  /// Best-effort delete of a chat image given its public OR signed URL.
+  /// Extracts the storage path after '/object/(public|sign)/chat/' and
+  /// removes that object. Errors are swallowed (the message row is the
+  /// source of truth — orphan files are tolerable).
+  static Future<void> deleteChatImageByUrl(String url) async {
+    try {
+      final marker = RegExp(r'/object/(?:public|sign|authenticated)/chat/');
+      final m = marker.firstMatch(url);
+      if (m == null) return;
+      var path = url.substring(m.end);
+      // Strip query string (signed URLs have ?token=...)
+      final q = path.indexOf('?');
+      if (q >= 0) path = path.substring(0, q);
+      if (path.isEmpty) return;
+      await _client.storage.from(AppConstants.bucketChat).remove([path]);
+    } catch (e) {
+      // Intentionally ignored — keep the user-facing delete flow snappy.
+    }
+  }
+
   /// Delete multiple listing images
   static Future<void> deleteListingImages(String hostId, String listingId) async {
     final files = await _client.storage

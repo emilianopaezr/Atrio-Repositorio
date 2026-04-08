@@ -31,7 +31,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   bool _isLoading = false;
   final List<XFile> _pickedImages = [];
   final List<Uint8List> _imageBytes = [];
-  static const int _maxImages = 3;
+  static const int _maxImages = 6;
 
   final _categories = [
     'Mudanza',
@@ -354,7 +354,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Photos (offers only, max 3)
+              // Photos (offers only, max 6)
               if (_isOffer) ...[
                 _buildLabel('Fotos (máx $_maxImages)'),
                 const SizedBox(height: 4),

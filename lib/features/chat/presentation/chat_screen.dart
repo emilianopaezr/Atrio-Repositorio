@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
@@ -238,6 +240,448 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  // ─── Edit / Delete message actions ────────────────────────────────────
+
+  Future<void> _showMessageActions(Map<String, dynamic> msg) async {
+    final isMe = msg['sender_id'] == _currentUserId;
+    final isImage = msg['type'] == 'image';
+    final isDeleted = msg['is_deleted'] == true;
+    if (isDeleted) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    HapticFeedback.mediumImpact();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 12),
+            if (!isImage)
+              ListTile(
+                leading: const Icon(Icons.copy_rounded, color: AtrioColors.neonLimeDark),
+                title: const Text('Copiar texto'),
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: msg['text'] as String? ?? ''));
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Texto copiado'), duration: Duration(seconds: 1)),
+                  );
+                },
+              ),
+            if (isMe && !isImage)
+              ListTile(
+                leading: const Icon(Icons.edit_rounded, color: AtrioColors.neonLimeDark),
+                title: const Text('Editar mensaje'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _editMessage(msg);
+                },
+              ),
+            if (isMe)
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded, color: AtrioColors.error),
+                title: Text(
+                  isImage ? 'Eliminar imagen' : 'Eliminar mensaje',
+                  style: const TextStyle(color: AtrioColors.error),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmDelete(msg);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editMessage(Map<String, dynamic> msg) async {
+    final controller = TextEditingController(text: msg['text'] as String? ?? '');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final newText = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
+        title: const Text('Editar mensaje'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 5,
+          minLines: 1,
+          maxLength: 5000,
+          decoration: const InputDecoration(
+            hintText: 'Escribe tu mensaje...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Guardar', style: TextStyle(color: AtrioColors.neonLimeDark)),
+          ),
+        ],
+      ),
+    );
+
+    if (newText == null || newText.isEmpty) return;
+    if (newText == (msg['text'] as String? ?? '')) return;
+
+    try {
+      await SupabaseConfig.client
+          .from('messages')
+          .update({
+            'text': newText,
+            'edited_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', msg['id']);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al editar: $e'),
+            backgroundColor: AtrioColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _confirmDelete(Map<String, dynamic> msg) async {
+    final isImage = msg['type'] == 'image';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
+        title: Text(isImage ? 'Eliminar imagen' : 'Eliminar mensaje'),
+        content: Text(
+          isImage
+              ? '¿Eliminar esta imagen para todos? Esta acción no se puede deshacer.'
+              : '¿Eliminar este mensaje para todos? Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Eliminar', style: TextStyle(color: AtrioColors.error)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Soft-delete: clear text/image_url and flag is_deleted so the bubble
+      // shows a placeholder for both participants in real time.
+      await SupabaseConfig.client
+          .from('messages')
+          .update({
+            'text': '',
+            'image_url': null,
+            'is_deleted': true,
+          })
+          .eq('id', msg['id']);
+
+      // Best-effort delete the actual file from storage
+      if (isImage) {
+        final url = msg['image_url'] as String?;
+        if (url != null && url.isNotEmpty) {
+          await StorageService.deleteChatImageByUrl(url);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar: $e'),
+            backgroundColor: AtrioColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  // ─── Conversation-level menu (3-dot in app bar) ───────────────────────
+
+  Future<void> _showConversationMenu() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final listingId = _conversation?['listing_id'] as String?;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 12),
+            if (listingId != null && listingId.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.storefront_rounded, color: AtrioColors.neonLimeDark),
+                title: const Text('Ver publicación'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/listing/$listingId');
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.cleaning_services_rounded, color: AtrioColors.neonLimeDark),
+              title: const Text('Borrar mis mensajes'),
+              subtitle: const Text('Elimina todos los mensajes que enviaste en esta conversación'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmClearMyMessages();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag_outlined, color: AtrioColors.error),
+              title: const Text(
+                'Reportar conversación',
+                style: TextStyle(color: AtrioColors.error),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showReportSheet();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmClearMyMessages() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
+        title: const Text('Borrar mis mensajes'),
+        content: const Text(
+          '¿Eliminar todos los mensajes que enviaste en esta conversación? Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Borrar todo', style: TextStyle(color: AtrioColors.error)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // Soft-delete all of the current user's non-deleted messages.
+      // Best-effort: also delete image files for image messages.
+      final myMessages = _messages.where(
+        (m) => m['sender_id'] == _currentUserId && m['is_deleted'] != true,
+      );
+      for (final m in myMessages) {
+        if (m['type'] == 'image') {
+          final url = m['image_url'] as String?;
+          if (url != null && url.isNotEmpty) {
+            await StorageService.deleteChatImageByUrl(url);
+          }
+        }
+      }
+      await SupabaseConfig.client
+          .from('messages')
+          .update({'text': '', 'image_url': null, 'is_deleted': true})
+          .eq('conversation_id', widget.conversationId)
+          .eq('sender_id', _currentUserId)
+          .eq('is_deleted', false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mensajes eliminados')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al borrar: $e'),
+            backgroundColor: AtrioColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showReportSheet() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final reasons = [
+      'Spam o publicidad',
+      'Estafa o fraude',
+      'Acoso o lenguaje ofensivo',
+      'Contenido inapropiado',
+      'Suplantación de identidad',
+      'Otro',
+    ];
+    String? selected;
+    final detailsCtrl = TextEditingController();
+
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => Padding(
+          padding: EdgeInsets.only(
+            left: 20, right: 20, top: 20,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Reportar conversación',
+                style: AtrioTypography.headingSmall.copyWith(
+                  color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tu reporte es anónimo. Lo revisaremos en menos de 48h.',
+                style: AtrioTypography.caption.copyWith(
+                  color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...reasons.map(
+                (r) => InkWell(
+                  onTap: () => setSt(() => selected = r),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          selected == r
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                          color: selected == r
+                              ? AtrioColors.neonLimeDark
+                              : Colors.grey,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text(r)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: detailsCtrl,
+                maxLines: 3,
+                maxLength: 500,
+                decoration: const InputDecoration(
+                  hintText: 'Detalles adicionales (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AtrioColors.neonLimeDark,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: selected == null
+                      ? null
+                      : () => Navigator.pop(ctx, true),
+                  child: const Text('Enviar reporte'),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (submitted != true || selected == null) return;
+
+    try {
+      await SupabaseConfig.client.from('reports').insert({
+        'reporter_id': _currentUserId,
+        'target_type': 'conversation',
+        'target_id': widget.conversationId,
+        'reason': selected,
+        'details': detailsCtrl.text.trim().isEmpty ? null : detailsCtrl.text.trim(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reporte enviado. Gracias por avisarnos.'),
+            backgroundColor: AtrioColors.neonLimeDark,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al reportar: $e'),
+            backgroundColor: AtrioColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -284,15 +728,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(
             icon: Icon(Icons.more_vert,
                 color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: const Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
-                backgroundColor: AtrioColors.neonLime,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                duration: Duration(seconds: 1),
-              ));
-            },
+            onPressed: _showConversationMenu,
           ),
         ],
       ),
@@ -361,12 +797,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           return Column(
                             children: [
                               ?dateSeparator,
-                              _MessageBubble(
-                                text: text,
-                                time: timeStr,
-                                isMe: isMe,
-                                isDark: isDark,
-                                imageUrl: msg['type'] == 'image' ? msg['image_url'] as String? : null,
+                              GestureDetector(
+                                onLongPress: () => _showMessageActions(msg),
+                                child: _MessageBubble(
+                                  text: text,
+                                  time: timeStr,
+                                  isMe: isMe,
+                                  isDark: isDark,
+                                  imageUrl: msg['type'] == 'image' ? msg['image_url'] as String? : null,
+                                  isEdited: msg['edited_at'] != null,
+                                  isDeleted: msg['is_deleted'] == true,
+                                ),
                               ),
                             ],
                           );
@@ -471,6 +912,8 @@ class _MessageBubble extends StatelessWidget {
   final bool isMe;
   final bool isDark;
   final String? imageUrl;
+  final bool isEdited;
+  final bool isDeleted;
 
   const _MessageBubble({
     required this.text,
@@ -478,11 +921,13 @@ class _MessageBubble extends StatelessWidget {
     required this.isMe,
     required this.isDark,
     this.imageUrl,
+    this.isEdited = false,
+    this.isDeleted = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isImage = imageUrl != null && imageUrl!.isNotEmpty;
+    final isImage = !isDeleted && imageUrl != null && imageUrl!.isNotEmpty;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -535,27 +980,48 @@ class _MessageBubble extends StatelessWidget {
               ),
             if (!isImage)
               Text(
-                text,
+                isDeleted ? 'Mensaje eliminado' : text,
                 style: AtrioTypography.bodyMedium.copyWith(
                   color: isMe
                       ? Colors.white
                       : isDark
                           ? AtrioColors.hostTextPrimary
                           : AtrioColors.guestTextPrimary,
+                  fontStyle: isDeleted ? FontStyle.italic : FontStyle.normal,
                 ),
               ),
             Padding(
               padding: isImage ? const EdgeInsets.only(top: 4, right: 8, bottom: 2) : EdgeInsets.zero,
-              child: Text(
-                time,
-                style: AtrioTypography.caption.copyWith(
-                  color: isMe
-                      ? Colors.white.withValues(alpha: 0.7)
-                      : isDark
-                          ? AtrioColors.hostTextTertiary
-                          : AtrioColors.guestTextTertiary,
-                  fontSize: 10,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isEdited && !isDeleted) ...[
+                    Text(
+                      'editado',
+                      style: AtrioTypography.caption.copyWith(
+                        color: isMe
+                            ? Colors.white.withValues(alpha: 0.7)
+                            : isDark
+                                ? AtrioColors.hostTextTertiary
+                                : AtrioColors.guestTextTertiary,
+                        fontSize: 10,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    time,
+                    style: AtrioTypography.caption.copyWith(
+                      color: isMe
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : isDark
+                              ? AtrioColors.hostTextTertiary
+                              : AtrioColors.guestTextTertiary,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
