@@ -109,15 +109,22 @@ class StorageService {
         .getPublicUrl(path);
   }
 
-  /// Upload chat image
+  /// Upload chat image (private bucket → returns long-lived signed URL)
   static Future<String> uploadChatImage({
     required String conversationId,
     required Uint8List fileBytes,
     required String fileName,
   }) async {
     _validateFileSize(fileBytes, maxFileSizeBytes);
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('Sesión expirada. Inicia sesión nuevamente.');
+    }
     final safeName = _validateImageExtension(_sanitizeFileName(fileName));
-    final path = '$conversationId/$safeName';
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    // Path includes conversationId and userId (matches RLS policies) and a
+    // unique timestamp prefix to prevent collisions across messages.
+    final path = '$conversationId/$userId/${ts}_$safeName';
 
     await _client.storage
         .from(AppConstants.bucketChat)
@@ -126,13 +133,15 @@ class StorageService {
           fileBytes,
           fileOptions: FileOptions(
             contentType: _getMimeType(safeName),
-            upsert: true,
+            upsert: false,
           ),
         );
 
-    return _client.storage
+    // chat bucket is private → public URL would 403. Use a signed URL with
+    // 1-year expiry so the receiver can render it directly.
+    return await _client.storage
         .from(AppConstants.bucketChat)
-        .getPublicUrl(path);
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
   }
 
   /// Upload KYC document (only JPG, PNG, PDF allowed)

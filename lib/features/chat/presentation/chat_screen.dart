@@ -227,7 +227,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al enviar imagen'), backgroundColor: AtrioColors.error),
+          SnackBar(
+            content: Text('Error al enviar imagen: $e'),
+            backgroundColor: AtrioColors.error,
+          ),
         );
       }
     } finally {
