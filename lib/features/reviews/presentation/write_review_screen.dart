@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../l10n/app_localizations.dart';
 
 class WriteReviewScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -35,10 +37,11 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
   }
 
   Future<void> _submitReview() async {
+    final l = AppLocalizations.of(context);
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Selecciona una calificación',
+          content: Text(l.writeReviewSelectRating,
               style: GoogleFonts.inter(color: Colors.white)),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
@@ -52,7 +55,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
 
     try {
       final userId = SupabaseConfig.auth.currentUser?.id;
-      if (userId == null) throw Exception('No autenticado');
+      if (userId == null) throw Exception(l.writeReviewNotAuthenticated);
 
       // Validate rating range
       final safeRating = _rating.clamp(1, 5);
@@ -74,7 +77,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Reseña enviada!',
+            content: Text(l.writeReviewSentSuccess,
                 style: GoogleFonts.inter(color: Colors.black)),
             backgroundColor: AtrioColors.neonLime,
             behavior: SnackBarBehavior.floating,
@@ -85,15 +88,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
         context.pop(true);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No se pudo enviar la reseña. Intenta de nuevo.'),
-            backgroundColor: AtrioColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -101,13 +96,14 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
       appBar: AppBar(
         backgroundColor: AtrioColors.guestBackground,
         elevation: 0,
         title: Text(
-          'Escribir Reseña',
+          l.writeReviewTitle,
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -134,7 +130,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
               ),
             const SizedBox(height: 8),
             Text(
-              'Como fue tu experiencia?',
+              l.writeReviewHowWasIt,
               style: GoogleFonts.inter(
                 fontSize: 15,
                 color: AtrioColors.guestTextSecondary,
@@ -169,14 +165,14 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
             const SizedBox(height: 8),
             Text(
               _rating == 0
-                  ? 'Toca para calificar'
+                  ? l.writeReviewTapToRate
                   : _rating <= 2
-                      ? 'Podria mejorar'
+                      ? l.writeReviewRatingPoor
                       : _rating <= 3
-                          ? 'Buena'
+                          ? l.writeReviewRatingGood
                           : _rating == 4
-                              ? 'Muy buena!'
-                              : 'Excelente!',
+                              ? l.writeReviewRatingVeryGood
+                              : l.writeReviewRatingExcellent,
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -201,7 +197,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
                   color: AtrioColors.guestTextPrimary,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Cuentanos mas sobre tu experiencia (opcional)',
+                  hintText: l.writeReviewCommentHint,
                   hintStyle: GoogleFonts.inter(
                     fontSize: 14,
                     color: AtrioColors.guestTextTertiary,
@@ -242,7 +238,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
                         ),
                       )
                     : Text(
-                        'Enviar Reseña',
+                        l.writeReviewSubmitButton,
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
+import '../../../l10n/app_localizations.dart';
 
 class HostBenefitsScreen extends StatelessWidget {
   const HostBenefitsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Beneficios Atrio', style: AtrioTypography.headingSmall),
+        title: Text(l.hostBenefitsAppBarTitle, style: AtrioTypography.headingSmall),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -17,26 +19,26 @@ class HostBenefitsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Las comisiones más bajas del mercado',
+              l.hostBenefitsHeadline,
               style: AtrioTypography.headingLarge,
             ),
             const SizedBox(height: 24),
             _BenefitCard(
               icon: Icons.percent,
-              title: '7% de comisión estándar',
-              description: 'Comisión transparente del 7% sobre cada reserva completada.',
+              title: l.hostBenefitsCommissionTitle,
+              description: l.hostBenefitsCommissionDesc,
               color: AtrioColors.neonLime,
             ),
             _BenefitCard(
               icon: Icons.money,
-              title: 'Tope máximo de \$90.000 CLP',
-              description: 'Si el 7% supera \$90.000, solo se cobra \$90.000. Ejemplo: en una reserva de \$5.000.000, pagas \$90.000 en vez de \$350.000.',
+              title: l.hostBenefitsCapTitle,
+              description: l.hostBenefitsCapDesc,
               color: AtrioColors.neonLimeDark,
             ),
             _BenefitCard(
               icon: Icons.star,
-              title: 'Gamificación por calidad',
-              description: 'Mantén 4.5+ estrellas y accede a beneficios exclusivos y mayor visibilidad.',
+              title: l.hostBenefitsGamificationTitle,
+              description: l.hostBenefitsGamificationDesc,
               color: AtrioColors.vibrantOrange,
             ),
           ],

@@ -8,6 +8,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Apply Firebase google-services plugin only when google-services.json is present.
+// This keeps the app buildable without Firebase credentials.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -28,6 +34,8 @@ android {
     ndkVersion = "28.2.13676358"
 
     compileOptions {
+        // Required by flutter_local_notifications (needs Java 8+ APIs on older Android).
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -81,4 +89,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Required by flutter_local_notifications desugaring.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

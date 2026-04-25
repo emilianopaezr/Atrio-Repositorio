@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../core/widgets/offline_banner.dart';
 
 class GuestShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -9,8 +12,14 @@ class GuestShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       extendBody: true,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -32,35 +41,35 @@ class GuestShell extends StatelessWidget {
                 _NavItem(
                   icon: Icons.home_outlined,
                   activeIcon: Icons.home,
-                  label: 'Inicio',
+                  label: l.navHome,
                   isSelected: navigationShell.currentIndex == 0,
                   onTap: () => navigationShell.goBranch(0),
                 ),
                 _NavItem(
                   icon: Icons.search_outlined,
                   activeIcon: Icons.search,
-                  label: 'Buscar',
+                  label: l.navSearch,
                   isSelected: navigationShell.currentIndex == 1,
                   onTap: () => navigationShell.goBranch(1),
                 ),
                 _NavItem(
                   icon: Icons.calendar_today_outlined,
                   activeIcon: Icons.calendar_today,
-                  label: 'Reservas',
+                  label: l.navBookings,
                   isSelected: navigationShell.currentIndex == 2,
                   onTap: () => navigationShell.goBranch(2),
                 ),
                 _NavItem(
                   icon: Icons.chat_bubble_outline,
                   activeIcon: Icons.chat_bubble,
-                  label: 'Chat',
+                  label: l.navChat,
                   isSelected: navigationShell.currentIndex == 3,
                   onTap: () => navigationShell.goBranch(3),
                 ),
                 _NavItem(
                   icon: Icons.person_outline,
                   activeIcon: Icons.person,
-                  label: 'Perfil',
+                  label: l.navProfile,
                   isSelected: navigationShell.currentIndex == 4,
                   onTap: () => navigationShell.goBranch(4),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase/supabase_config.dart';
+import '../services/push_service.dart';
 
 /// Stream-based auth state for reactive UI
 final authStateProvider = StreamProvider<AuthState>((ref) {
@@ -30,7 +31,20 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
 /// Converts the Supabase auth stream into a ChangeNotifier.
 class AuthChangeNotifier extends ChangeNotifier {
   AuthChangeNotifier() {
-    _subscription = SupabaseConfig.auth.onAuthStateChange.listen((_) {
+    _subscription = SupabaseConfig.auth.onAuthStateChange.listen((state) {
+      // Register / unregister FCM token so pushes follow the sign-in state.
+      switch (state.event) {
+        case AuthChangeEvent.signedIn:
+        case AuthChangeEvent.tokenRefreshed:
+          // Fire and forget; PushService swallows errors internally.
+          PushService.registerCurrentUser();
+          break;
+        case AuthChangeEvent.signedOut:
+          PushService.unregisterCurrentDevice();
+          break;
+        default:
+          break;
+      }
       notifyListeners();
     });
   }

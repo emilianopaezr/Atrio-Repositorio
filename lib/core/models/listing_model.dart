@@ -50,6 +50,8 @@ abstract class Listing with _$Listing {
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
     // Joined data
     @JsonKey(name: 'host') Map<String, dynamic>? hostData,
+    // Geo search extras (populated only by search_listings_nearby RPC)
+    @JsonKey(name: 'distance_m') double? distanceM,
   }) = _Listing;
 
   factory Listing.fromJson(Map<String, dynamic> json) =>

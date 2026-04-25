@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,6 +9,8 @@ import '../../../config/theme/app_typography.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/atrio_button.dart';
 import '../../../shared/widgets/atrio_text_field.dart';
 
@@ -114,7 +117,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const Icon(Icons.check_circle, color: Colors.black, size: 18),
                 const SizedBox(width: 8),
                 Text(
-                  'Foto actualizada',
+                  AppLocalizations.of(context).editProfilePhotoUpdated,
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
@@ -130,19 +133,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       debugPrint('_pickAndUploadAvatar error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'No se pudo subir la foto. Intenta de nuevo.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-            ),
-            backgroundColor: AtrioColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -172,7 +163,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Perfil actualizado correctamente'),
+            content: Text(AppLocalizations.of(context).editProfileUpdatedOk),
             backgroundColor: AtrioColors.neonLimeDark,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -184,19 +175,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       debugPrint('_saveProfile error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'No se pudo guardar el perfil. Intenta de nuevo.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-            ),
-            backgroundColor: AtrioColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -205,11 +184,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Editar Perfil',
+          l.editProfileTitle,
           style: AtrioTypography.headingSmall.copyWith(
             color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
           ),
@@ -236,7 +216,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             backgroundColor:
                                 AtrioColors.neonLimeDark.withValues(alpha: 0.15),
                             backgroundImage: _avatarUrl != null
-                                ? NetworkImage(_avatarUrl!)
+                                ? CachedNetworkImageProvider(_avatarUrl!)
                                 : null,
                             child: _avatarUrl == null
                                 ? const Icon(Icons.person,
@@ -270,7 +250,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Cambiar foto',
+                      l.editProfileChangePhoto,
                       style: AtrioTypography.labelMedium.copyWith(
                         color: AtrioColors.neonLimeDark,
                       ),
@@ -280,12 +260,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     // Name
                     AtrioTextField(
                       controller: _nameController,
-                      label: 'Nombre completo',
-                      hint: 'Tu nombre',
+                      label: l.editProfileFullName,
+                      hint: l.editProfileNameHint,
                       prefixIcon: const Icon(Icons.person_outline, size: 20),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Ingresa tu nombre';
+                          return l.editProfileNameRequired;
                         }
                         return null;
                       },
@@ -294,7 +274,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
                     // Email (read only)
                     AtrioTextField(
-                      label: 'Email',
+                      label: l.editProfileEmailLabel,
                       hint: AuthService.currentUser?.email ?? '',
                       prefixIcon: const Icon(Icons.email_outlined, size: 20),
                       readOnly: true,
@@ -304,8 +284,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     // Phone
                     AtrioTextField(
                       controller: _phoneController,
-                      label: 'Teléfono',
-                      hint: '+52 55 1234 5678',
+                      label: l.editProfilePhone,
+                      hint: l.editProfilePhoneHint,
                       keyboardType: TextInputType.phone,
                       prefixIcon: const Icon(Icons.phone_outlined, size: 20),
                     ),
@@ -314,15 +294,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     // Bio
                     AtrioTextField(
                       controller: _bioController,
-                      label: 'Acerca de ti',
-                      hint: 'Cuéntanos algo sobre ti...',
+                      label: l.editProfileAboutYou,
+                      hint: l.editProfileAboutHint,
                       maxLines: 4,
                       maxLength: 200,
                     ),
                     const SizedBox(height: 32),
 
                     AtrioButton(
-                      label: 'Guardar Cambios',
+                      label: l.editProfileSaveChanges,
                       onTap: _saveProfile,
                       isLoading: _isSaving,
                     ),

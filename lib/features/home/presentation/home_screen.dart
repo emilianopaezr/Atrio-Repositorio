@@ -10,6 +10,7 @@ import '../../../core/providers/listings_provider.dart';
 import '../../../core/providers/app_mode_provider.dart';
 import '../../../core/utils/constants.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final listingsAsync = ref.watch(listingsProvider(_currentFilter));
 
     return Scaffold(
@@ -119,7 +121,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Buscar espacios, experiencias...',
+                          l.homeSearchHint,
                           style: AtrioTypography.bodyMedium.copyWith(
                             color: AtrioColors.guestTextTertiary,
                           ),
@@ -142,6 +144,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: AppConstants.categoryLabels.length,
                     itemBuilder: (context, index) {
+                      final labels = <String>[
+                        l.bookingsAll,
+                        l.searchCategorySpaces,
+                        l.searchCategoryExperiences,
+                        l.searchCategoryServices,
+                      ];
                       final isSelected = _selectedCategory == index;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
@@ -162,7 +170,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                             ),
                             child: Text(
-                              AppConstants.categoryLabels[index],
+                              labels[index],
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight:
@@ -207,7 +215,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Servicios Rapidos',
+                              l.homeQuickServicesTitle,
                               style: GoogleFonts.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
@@ -216,7 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Mudanza, limpieza, armado y mas',
+                              l.homeQuickServicesSubtitle,
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: Colors.white60,
@@ -278,7 +286,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Sé anfitrión en Atrio',
+                                  l.homeBecomeHostTitle,
                                   style: GoogleFonts.inter(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
@@ -287,7 +295,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Publica tu espacio y genera ingresos',
+                                  l.homeBecomeHostSubtitle,
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
                                     color: Colors.white60,
@@ -320,7 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           icon: const Icon(Icons.rocket_launch_rounded, size: 18),
                           label: Text(
-                            'Sé anfitrión',
+                            l.homeBecomeHostCta,
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -344,9 +352,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   return SliverToBoxAdapter(
                     child: _EmptyState(
                       icon: Icons.explore_outlined,
-                      title: 'No hay anuncios disponibles',
-                      subtitle:
-                          'Intenta con otra categoria o vuelve mas tarde',
+                      title: l.homeNoListings,
+                      subtitle: l.homeNoListingsSubtitle,
                     ),
                   );
                 }
@@ -391,7 +398,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             size: 48, color: AtrioColors.error),
                         const SizedBox(height: 16),
                         Text(
-                          'Error al cargar anuncios',
+                          l.homeLoadError,
                           style: AtrioTypography.headingSmall.copyWith(
                             color: AtrioColors.guestTextSecondary,
                           ),
@@ -401,7 +408,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           onTap: () => ref
                               .invalidate(listingsProvider(_currentFilter)),
                           child: Text(
-                            'Reintentar',
+                            l.btnRetry,
                             style: GoogleFonts.inter(
                               color: AtrioColors.neonLimeDark,
                               fontWeight: FontWeight.w600,
@@ -480,7 +487,7 @@ class _ListingCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${listing.basePrice?.toCLP ?? '\$0'}/${_unitShort(listing.priceUnit)}',
+                        '${listing.basePrice?.toCLP ?? '\$0'}/${_unitShort(context, listing.priceUnit)}',
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
@@ -572,7 +579,7 @@ class _ListingCard extends StatelessWidget {
                             radius: 10,
                             backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.3),
                             backgroundImage: listing.hostData!['photo_url'] != null
-                                ? NetworkImage(listing.hostData!['photo_url'] as String)
+                                ? CachedNetworkImageProvider(listing.hostData!['photo_url'] as String)
                                 : null,
                             child: listing.hostData!['photo_url'] == null
                                 ? const Icon(Icons.person, size: 12, color: AtrioColors.guestTextTertiary)
@@ -599,12 +606,13 @@ class _ListingCard extends StatelessWidget {
     );
   }
 
-  String _unitShort(String unit) {
+  String _unitShort(BuildContext context, String unit) {
+    final l = AppLocalizations.of(context);
     switch (unit) {
-      case 'night': return 'noche';
-      case 'hour': return 'hr';
-      case 'session': return 'sesion';
-      case 'person': return 'persona';
+      case 'night': return l.homeUnitNight;
+      case 'hour': return l.homeUnitHour;
+      case 'session': return l.homeUnitSession;
+      case 'person': return l.homeUnitPerson;
       default: return unit;
     }
   }

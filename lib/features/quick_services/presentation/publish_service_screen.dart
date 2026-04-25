@@ -8,6 +8,8 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../l10n/app_localizations.dart';
 
 
 class PublishServiceScreen extends ConsumerStatefulWidget {
@@ -26,55 +28,71 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
 
-  String _selectedCategory = 'Mudanza';
-  String _selectedUrgency = 'Flexible';
+  // Internal category key (stable, used as UI state). DB stores Spanish value.
+  String _selectedCategory = 'moving';
+  // Internal urgency key. Only used for UI state.
+  String _selectedUrgency = 'flexible';
   bool _isLoading = false;
   final List<XFile> _pickedImages = [];
   final List<Uint8List> _imageBytes = [];
   static const int _maxImages = 6;
 
-  final _categories = [
-    'Mudanza',
-    'Limpieza',
-    'Armado',
-    'Eventos',
-    'Jardinería',
-    'Reparaciones',
-    'Pintura',
-    'Plomería',
-    'Electricidad',
-    'Tecnología',
-    'Mascotas',
-    'Belleza',
-    'Clases',
-    'Cocina',
-    'Otro',
+  // (internalKey, dbValue, icon)
+  static const _categories = <(String, String, IconData)>[
+    ('moving', 'Mudanza', Icons.local_shipping_rounded),
+    ('cleaning', 'Limpieza', Icons.cleaning_services_rounded),
+    ('assembly', 'Armado', Icons.handyman_rounded),
+    ('events', 'Eventos', Icons.celebration_rounded),
+    ('gardening', 'Jardinería', Icons.grass_rounded),
+    ('repairs', 'Reparaciones', Icons.build_rounded),
+    ('painting', 'Pintura', Icons.format_paint_rounded),
+    ('plumbing', 'Plomería', Icons.plumbing_rounded),
+    ('electrical', 'Electricidad', Icons.electrical_services_rounded),
+    ('tech', 'Tecnología', Icons.computer_rounded),
+    ('pets', 'Mascotas', Icons.pets_rounded),
+    ('beauty', 'Belleza', Icons.face_retouching_natural_rounded),
+    ('classes', 'Clases', Icons.school_rounded),
+    ('cooking', 'Cocina', Icons.restaurant_rounded),
+    ('other', 'Otro', Icons.more_horiz_rounded),
   ];
 
-  final _urgencies = [
-    {'label': 'Hoy', 'icon': Icons.bolt_rounded},
-    {'label': 'Mañana', 'icon': Icons.wb_sunny_rounded},
-    {'label': 'Semana', 'icon': Icons.date_range_rounded},
-    {'label': 'Flexible', 'icon': Icons.all_inclusive_rounded},
+  static const _urgencies = <(String, IconData)>[
+    ('today', Icons.bolt_rounded),
+    ('tomorrow', Icons.wb_sunny_rounded),
+    ('week', Icons.date_range_rounded),
+    ('flexible', Icons.all_inclusive_rounded),
   ];
 
-  final _categoryIcons = {
-    'Mudanza': Icons.local_shipping_rounded,
-    'Limpieza': Icons.cleaning_services_rounded,
-    'Armado': Icons.handyman_rounded,
-    'Eventos': Icons.celebration_rounded,
-    'Jardinería': Icons.grass_rounded,
-    'Reparaciones': Icons.build_rounded,
-    'Pintura': Icons.format_paint_rounded,
-    'Plomería': Icons.plumbing_rounded,
-    'Electricidad': Icons.electrical_services_rounded,
-    'Tecnología': Icons.computer_rounded,
-    'Mascotas': Icons.pets_rounded,
-    'Belleza': Icons.face_retouching_natural_rounded,
-    'Clases': Icons.school_rounded,
-    'Cocina': Icons.restaurant_rounded,
-    'Otro': Icons.more_horiz_rounded,
-  };
+  String _categoryLabel(AppLocalizations l, String key) {
+    switch (key) {
+      case 'moving': return l.psCatMoving;
+      case 'cleaning': return l.psCatCleaning;
+      case 'assembly': return l.psCatAssembly;
+      case 'events': return l.psCatEvents;
+      case 'gardening': return l.psCatGardening;
+      case 'repairs': return l.psCatRepairs;
+      case 'painting': return l.psCatPainting;
+      case 'plumbing': return l.psCatPlumbing;
+      case 'electrical': return l.psCatElectrical;
+      case 'tech': return l.psCatTech;
+      case 'pets': return l.psCatPets;
+      case 'beauty': return l.psCatBeauty;
+      case 'classes': return l.psCatClasses;
+      case 'cooking': return l.psCatCooking;
+      case 'other': return l.psCatOther;
+      default: return key;
+    }
+  }
+
+  String _urgencyLabel(AppLocalizations l, String key) {
+    switch (key) {
+      case 'today': return l.psUrgencyToday;
+      case 'tomorrow': return l.psUrgencyTomorrow;
+      case 'week': return l.psUrgencyWeek;
+      case 'flexible': return l.psUrgencyFlexible;
+      default: return key;
+    }
+  }
 
   bool get _isOffer => widget.mode == 'offer';
 
@@ -87,10 +105,11 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   }
 
   Future<void> _pickImages() async {
+    final l = AppLocalizations.of(context);
     if (_pickedImages.length >= _maxImages) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Máximo $_maxImages fotos', style: GoogleFonts.inter(color: Colors.white)),
+          content: Text(l.psMaxPhotos(_maxImages), style: GoogleFonts.inter(color: Colors.white)),
           backgroundColor: AtrioColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -114,7 +133,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 16),
-            Text('Agregar foto', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+            Text(l.psAddPhoto, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
             const SizedBox(height: 16),
             ListTile(
               leading: Container(
@@ -122,7 +141,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                 decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.photo_library_rounded, color: AtrioColors.neonLimeDark),
               ),
-              title: Text('Galería', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+              title: Text(l.psGallery, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             ListTile(
@@ -131,7 +150,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                 decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.camera_alt_rounded, color: AtrioColors.neonLimeDark),
               ),
-              title: Text('Cámara', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+              title: Text(l.psCamera, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
           ]),
@@ -157,7 +176,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
       if (bytes.lengthInBytes > 5 * 1024 * 1024) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Una imagen es demasiado grande (máx 5 MB)', style: GoogleFonts.inter(color: Colors.white)),
+            content: Text(l.psImageTooLarge, style: GoogleFonts.inter(color: Colors.white)),
             backgroundColor: AtrioColors.error,
             behavior: SnackBarBehavior.floating,
           ));
@@ -175,13 +194,14 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
 
   Future<void> _publish() async {
     if (!_formKey.currentState!.validate()) return;
+    final l = AppLocalizations.of(context);
 
     Haptics.medium();
     setState(() => _isLoading = true);
 
     try {
       final userId = SupabaseConfig.auth.currentUser?.id;
-      if (userId == null) throw Exception('No autenticado');
+      if (userId == null) throw Exception(l.psNotAuthenticated);
 
       // Upload images first
       final imageUrls = <String>[];
@@ -228,8 +248,8 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                 Expanded(
                   child: Text(
                     _isOffer
-                        ? 'Servicio publicado exitosamente'
-                        : 'Solicitud publicada exitosamente',
+                        ? l.psServicePublished
+                        : l.psRequestPublished,
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
@@ -248,14 +268,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
         context.pop();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No se pudo publicar. Intenta de nuevo.'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -263,6 +276,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AtrioColors.hostBackground,
       appBar: AppBar(
@@ -273,7 +287,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          _isOffer ? 'Ofrecer Servicio' : 'Solicitar Servicio',
+          _isOffer ? l.psTitleOffer : l.psTitleRequest,
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -299,7 +313,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                 child: Row(
                   children: [
                     _ModeTab(
-                      label: 'Ofrecer',
+                      label: l.psModeOffer,
                       icon: Icons.volunteer_activism_rounded,
                       isSelected: _isOffer,
                       onTap: () {
@@ -310,7 +324,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                       },
                     ),
                     _ModeTab(
-                      label: 'Solicitar',
+                      label: l.psModeRequest,
                       icon: Icons.front_hand_rounded,
                       isSelected: !_isOffer,
                       onTap: () {
@@ -326,40 +340,36 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               const SizedBox(height: 24),
 
               // Title
-              _buildLabel(_isOffer ? 'Título del servicio' : '¿Qué necesitas?'),
+              _buildLabel(_isOffer ? l.psLabelServiceTitle : l.psLabelWhatYouNeed),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _titleController,
-                hint: _isOffer
-                    ? 'Ej: Plomero express, Mudanza con camioneta, Armado de muebles IKEA...'
-                    : 'Ej: Necesito mover un sofá 3 cuerpos hoy a las 18:00...',
+                hint: _isOffer ? l.psHintOfferTitle : l.psHintRequestTitle,
                 maxLength: 80,
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                    (v == null || v.trim().isEmpty) ? l.psRequired : null,
               ),
               const SizedBox(height: 20),
 
               // Description
-              _buildLabel('Descripción'),
+              _buildLabel(l.psLabelDescription),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _descriptionController,
-                hint: _isOffer
-                    ? 'Cuenta tu experiencia, herramientas que tienes, zonas donde trabajas y por qué confiar en ti.\nEj: 5 años como electricista certificado, atiendo Santiago Centro, traigo herramientas propias.'
-                    : 'Describe lugar, hora, materiales, accesos y cualquier dato relevante.\nEj: Departamento piso 4 con ascensor, sofá 1.80m, necesito 2 personas.',
+                hint: _isOffer ? l.psHintOfferDescription : l.psHintRequestDescription,
                 maxLines: 5,
                 maxLength: 500,
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                    (v == null || v.trim().isEmpty) ? l.psRequired : null,
               ),
               const SizedBox(height: 20),
 
               // Photos (offers only, max 6)
               if (_isOffer) ...[
-                _buildLabel('Fotos (máx $_maxImages)'),
+                _buildLabel(l.psPhotosLabel(_maxImages)),
                 const SizedBox(height: 4),
                 Text(
-                  'Sube hasta $_maxImages fotos de trabajos previos para generar más confianza.',
+                  l.psPhotosHint(_maxImages),
                   style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary),
                 ),
                 const SizedBox(height: 10),
@@ -389,7 +399,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                               children: [
                                 const Icon(Icons.add_a_photo_outlined, color: AtrioColors.neonLimeDark, size: 26),
                                 const SizedBox(height: 4),
-                                Text('Agregar', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextSecondary, fontWeight: FontWeight.w600)),
+                                Text(l.psAdd, style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextSecondary, fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),
@@ -427,15 +437,17 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               ],
 
               // Category
-              _buildLabel('Categoria'),
+              _buildLabel(l.psCategory),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: _categories.map((cat) {
-                  final isSelected = cat == _selectedCategory;
+                  final key = cat.$1;
+                  final icon = cat.$3;
+                  final isSelected = key == _selectedCategory;
                   return GestureDetector(
-                    onTap: () => setState(() => _selectedCategory = cat),
+                    onTap: () => setState(() => _selectedCategory = key),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(
@@ -451,13 +463,13 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _categoryIcons[cat] ?? Icons.category,
+                            icon,
                             size: 16,
                             color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            cat,
+                            _categoryLabel(l, key),
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: isSelected
@@ -475,15 +487,15 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
               const SizedBox(height: 20),
 
               // Price
-              _buildLabel(_isOffer ? 'Precio por hora (\$)' : 'Presupuesto (\$)'),
+              _buildLabel(_isOffer ? l.psPricePerHour : l.psBudget),
               const SizedBox(height: 8),
               _buildTextField(
                 controller: _priceController,
-                hint: _isOffer ? 'Ej: 25' : 'Ej: 50',
+                hint: _isOffer ? l.psHintPrice25 : l.psHintBudget50,
                 keyboardType: TextInputType.number,
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Campo requerido';
-                  if (double.tryParse(v) == null) return 'Ingresa un número';
+                  if (v == null || v.trim().isEmpty) return l.psRequired;
+                  if (double.tryParse(v) == null) return l.psNotANumber;
                   return null;
                 },
               ),
@@ -491,17 +503,16 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
 
               // Urgency (only for requests)
               if (!_isOffer) ...[
-                _buildLabel('Urgencia'),
+                _buildLabel(l.psUrgency),
                 const SizedBox(height: 10),
                 Row(
                   children: _urgencies.map((u) {
-                    final label = u['label'] as String;
-                    final icon = u['icon'] as IconData;
-                    final compareLabel = label.replaceAll('\n', ' ');
-                    final isSelected = compareLabel == _selectedUrgency;
+                    final key = u.$1;
+                    final icon = u.$2;
+                    final isSelected = key == _selectedUrgency;
                     return Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _selectedUrgency = compareLabel),
+                        onTap: () => setState(() => _selectedUrgency = key),
                         child: Container(
                           margin: const EdgeInsets.only(right: 6),
                           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -522,7 +533,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                label,
+                                _urgencyLabel(l, key),
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
@@ -561,7 +572,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Consejo',
+                            l.psTip,
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -570,9 +581,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _isOffer
-                                ? 'Incluye fotos de trabajos anteriores y se especifico sobre tus habilidades para recibir mas solicitudes.'
-                                : 'Se detallado sobre lo que necesitas. Incluye medidas, piso, y si tienes herramientas disponibles.',
+                            _isOffer ? l.psTipOffer : l.psTipRequest,
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AtrioColors.hostTextSecondary,
@@ -612,7 +621,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
                           ),
                         )
                       : Text(
-                          _isOffer ? 'Publicar Servicio' : 'Publicar Solicitud',
+                          _isOffer ? l.psPublishService : l.psPublishRequest,
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,

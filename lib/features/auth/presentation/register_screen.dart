@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -20,6 +21,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
   late AnimationController _fadeController;
@@ -69,7 +71,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
       // If we got a session back (auto-confirm), send to verification
       if (response.session != null) {
-        _showSuccess('Cuenta creada. Te enviamos un código de verificación.');
+        _showSuccess(AppLocalizations.of(context).authAccountCreated);
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) context.go('/auth/verify-email');
         return;
@@ -78,7 +80,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       // If no session but user exists, email confirmation may be needed
       if (response.user != null && response.session == null) {
         _showSuccess(
-          'Cuenta creada. Revisa tu email para confirmar tu cuenta.',
+          AppLocalizations.of(context).authAccountCreatedConfirm,
         );
       }
     } on AuthException catch (e) {
@@ -89,7 +91,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       if (e.code == 'email_exists') {
         _showErrorWithAction(
           e.message,
-          actionLabel: 'Ir a Login',
+          actionLabel: AppLocalizations.of(context).authGoToLogin,
           onAction: () => context.go('/auth/login'),
         );
       } else {
@@ -98,9 +100,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     } catch (e) {
       AuthService.emailVerified = null; // Reset on failure
       if (!mounted) return;
-      _showError('Ocurrió un error inesperado. Intenta de nuevo.');
+      _showError(AppLocalizations.of(context).commonUnexpectedError);
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    if (_isGoogleLoading) return;
+
+    setState(() => _isGoogleLoading = true);
+    try {
+      await AuthService.signInWithGoogle();
+      // OAuth flow opens browser, deep link callback handles redirect
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _showError(e.message);
+    } catch (e) {
+      if (!mounted) return;
+      _showError(AppLocalizations.of(context).authGoogleFailRegister);
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -190,7 +210,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     if (RegExp(r'[0-9]').hasMatch(password)) strength++;
     if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) strength++;
 
-    final labels = ['Débil', 'Regular', 'Buena', 'Fuerte'];
+    final l = AppLocalizations.of(context);
+    final labels = [l.authStrengthWeak, l.authStrengthRegular, l.authStrengthGood, l.authStrengthStrong];
     final colors = [
       AtrioColors.error,
       Colors.orange,
@@ -235,6 +256,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
@@ -271,7 +293,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                   // Heading
                   Center(
                     child: Text(
-                      'Crear Cuenta',
+                      l.authCreateAccount,
                       style: GoogleFonts.inter(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
@@ -292,7 +314,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           height: 1.5,
                         ),
                         children: [
-                          const TextSpan(text: 'Únete a '),
+                          TextSpan(text: l.authJoinAtrio),
                           TextSpan(
                             text: 'Atrio',
                             style: GoogleFonts.inter(
@@ -301,7 +323,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const TextSpan(text: ' y comienza hoy'),
+                          TextSpan(text: l.authStartToday),
                         ],
                       ),
                     ),
@@ -310,16 +332,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                   // Name
                   _LightTextField(
                     controller: _nameController,
-                    hint: 'Nombre completo',
+                    hint: l.authFullName,
                     icon: Icons.person_outline,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.name],
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Ingresa tu nombre';
+                        return l.authEnterName;
                       }
                       if (value.trim().length < 2) {
-                        return 'El nombre debe tener al menos 2 caracteres';
+                        return l.authNameMinChars;
                       }
                       return null;
                     },
@@ -328,19 +350,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                   // Email
                   _LightTextField(
                     controller: _emailController,
-                    hint: 'Email',
+                    hint: l.authEmail,
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.email],
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Ingresa tu email';
+                        return l.authEnterEmail;
                       }
                       final emailRegex =
                           RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
                       if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Email no válido';
+                        return l.authInvalidEmail;
                       }
                       return null;
                     },
@@ -349,7 +371,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                   // Password
                   _LightTextField(
                     controller: _passwordController,
-                    hint: 'Contraseña',
+                    hint: l.authPassword,
                     icon: Icons.lock_outline,
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.next,
@@ -368,16 +390,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Ingresa una contraseña';
+                        return l.authCreatePassword;
                       }
                       if (value.length < 8) {
-                        return 'Mínimo 8 caracteres';
+                        return l.authMinChars;
                       }
                       if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                        return 'Incluye al menos una mayúscula';
+                        return l.authIncludeUpper;
                       }
                       if (!RegExp(r'[0-9]').hasMatch(value)) {
-                        return 'Incluye al menos un número';
+                        return l.authIncludeNumber;
                       }
                       return null;
                     },
@@ -387,7 +409,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                   // Confirm
                   _LightTextField(
                     controller: _confirmPasswordController,
-                    hint: 'Confirmar contraseña',
+                    hint: l.authConfirmPassword,
                     icon: Icons.lock_outline,
                     obscureText: _obscureConfirm,
                     textInputAction: TextInputAction.done,
@@ -405,10 +427,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Confirma tu contraseña';
+                        return l.authConfirmPwd;
                       }
                       if (value != _passwordController.text) {
-                        return 'Las contraseñas no coinciden';
+                        return l.authPwdMismatch;
                       }
                       return null;
                     },
@@ -443,7 +465,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Crear cuenta',
+                                  l.authCreateAccountBtn,
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -452,6 +474,73 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                                 ),
                                 const SizedBox(width: 8),
                                 const Icon(Icons.arrow_forward, size: 20),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Divider
+                  Row(
+                    children: [
+                      Expanded(
+                          child:
+                              Divider(color: AtrioColors.guestCardBorder)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'o continúa con',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AtrioColors.guestTextTertiary,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                          child:
+                              Divider(color: AtrioColors.guestCardBorder)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  // Google sign in
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: OutlinedButton(
+                      onPressed:
+                          (_isLoading || _isGoogleLoading) ? null : _signInWithGoogle,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AtrioColors.guestTextPrimary,
+                        side: const BorderSide(
+                            color: AtrioColors.guestCardBorder),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        backgroundColor: AtrioColors.guestSurface,
+                        disabledForegroundColor:
+                            AtrioColors.guestTextTertiary,
+                      ),
+                      child: _isGoogleLoading
+                          ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: AtrioColors.guestTextSecondary,
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.g_mobiledata, size: 24),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Continuar con Google',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: AtrioColors.guestTextPrimary,
+                                  ),
+                                ),
                               ],
                             ),
                     ),

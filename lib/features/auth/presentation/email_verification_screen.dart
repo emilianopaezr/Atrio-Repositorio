@@ -10,6 +10,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   const EmailVerificationScreen({super.key});
@@ -117,16 +118,17 @@ class _EmailVerificationScreenState
   }
 
   Future<void> _verifyCode() async {
+    final l = AppLocalizations.of(context);
     final code = _otpCode;
     if (code.length != 6) {
-      _showError('Ingresa el código completo de 6 dígitos.');
+      _showError(l.verifyEnterFullCode);
       return;
     }
     if (_isLoading) return;
 
     final userId = SupabaseConfig.auth.currentUser?.id;
     if (userId == null) {
-      _showError('No se encontró la sesión. Intenta iniciar sesión de nuevo.');
+      _showError(l.verifyNoSession);
       return;
     }
 
@@ -142,17 +144,17 @@ class _EmailVerificationScreenState
 
       if (result == true) {
         AuthService.emailVerified = true; // Unblock router
-        _showSuccess('Email verificado correctamente.');
+        _showSuccess(l.verifyEmailVerified);
         await Future.delayed(const Duration(milliseconds: 600));
         if (mounted) context.go('/guest/home');
       } else {
         _triggerShake();
-        _showError('Código incorrecto o expirado.');
+        _showError(l.verifyIncorrect);
       }
     } catch (e) {
       if (!mounted) return;
       _triggerShake();
-      _showError('Error al verificar el código. Intenta de nuevo.');
+      _showError(l.verifyErrorCheck);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -160,6 +162,7 @@ class _EmailVerificationScreenState
 
   Future<void> _requestVerificationCode({bool showSnackbar = true}) async {
     if (_isResending || _resendCooldown > 0) return;
+    final l = AppLocalizations.of(context);
 
     setState(() => _isResending = true);
 
@@ -169,13 +172,13 @@ class _EmailVerificationScreenState
       if (!mounted) return;
 
       if (showSnackbar) {
-        _showSuccess('Código reenviado a tu email.');
+        _showSuccess(l.verifyResent);
       }
       _startCooldown();
     } catch (e) {
       if (!mounted) return;
       if (showSnackbar) {
-        _showError('No se pudo enviar el código. Intenta de nuevo.');
+        _showError(l.verifySendFail);
       }
     } finally {
       if (mounted) setState(() => _isResending = false);
@@ -249,6 +252,7 @@ class _EmailVerificationScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
@@ -288,7 +292,7 @@ class _EmailVerificationScreenState
                 const SizedBox(height: 32),
                 // Title
                 Text(
-                  'Verifica tu email',
+                  l.verifyTitle,
                   style: GoogleFonts.inter(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,
@@ -300,7 +304,7 @@ class _EmailVerificationScreenState
                 const SizedBox(height: 10),
                 // Subtitle
                 Text(
-                  'Enviamos un código de 6 dígitos a',
+                  l.verifySubtitle,
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     color: AtrioColors.guestTextSecondary,
@@ -378,7 +382,7 @@ class _EmailVerificationScreenState
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Verificar',
+                                l.verifyButton,
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
@@ -409,8 +413,8 @@ class _EmailVerificationScreenState
                         )
                       : Text(
                           _resendCooldown > 0
-                              ? 'Reenviar código ($_resendCooldown s)'
-                              : 'Reenviar código',
+                              ? l.verifyResendCooldown(_resendCooldown)
+                              : l.verifyResend,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -423,7 +427,7 @@ class _EmailVerificationScreenState
                 const SizedBox(height: 12),
                 // Expiry notice
                 Text(
-                  'El código expira en 15 minutos',
+                  l.verifyExpire,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: AtrioColors.guestTextTertiary,

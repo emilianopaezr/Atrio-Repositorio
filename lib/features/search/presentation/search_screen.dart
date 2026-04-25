@@ -9,8 +9,10 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/providers/listings_provider.dart';
+import '../../../core/services/geo_service.dart';
 import '../../../core/utils/constants.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -30,10 +32,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   bool _showFilters = false;
   bool _showMapView = false;
 
+  // Near-me (PostGIS) filter state
+  bool _nearbyMode = false;
+  double _radiusKm = 5; // 1..50 km — shown on UI
+  double _radiusKmApplied = 5; // debounced value actually sent to RPC
+  Timer? _radiusDebounce;
+  GeoPoint? _nearbyCenter; // resolved device pos (or fallback) when nearbyMode
+
   @override
   void dispose() {
     _searchController.dispose();
     _debounce?.cancel();
+    _radiusDebounce?.cancel();
     super.dispose();
   }
 
@@ -51,13 +61,64 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  NearbyFilter? get _currentNearbyFilter {
+    if (!_nearbyMode || _nearbyCenter == null) return null;
+    return NearbyFilter(
+      center: _nearbyCenter!,
+      radiusMeters: _radiusKmApplied * 1000,
+      type: AppConstants.categoryTypes[_selectedCategory],
+    );
+  }
+
+  void _onRadiusChanged(double v) {
+    setState(() => _radiusKm = v);
+    _radiusDebounce?.cancel();
+    _radiusDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      setState(() => _radiusKmApplied = v);
+    });
+  }
+
   bool get _hasActiveSearch =>
-      _searchQuery.isNotEmpty || _selectedCategory > 0;
+      _searchQuery.isNotEmpty || _selectedCategory > 0 || _nearbyMode;
+
+  Future<void> _toggleNearby() async {
+    if (_nearbyMode) {
+      setState(() {
+        _nearbyMode = false;
+        _nearbyCenter = null;
+      });
+      return;
+    }
+    // Resolve device position on the fly
+    setState(() => _nearbyMode = true);
+    final pos = await ref.read(devicePositionProvider.future);
+    if (!mounted) return;
+    setState(() {
+      _nearbyCenter = pos ?? GeoService.defaultCenter;
+    });
+    if (pos == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              AppLocalizations.of(context).searchLocationFailed),
+          backgroundColor: AtrioColors.guestTextSecondary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final nearbyFilter = _currentNearbyFilter;
+    final nearbyAsync =
+        nearbyFilter != null ? ref.watch(nearbyListingsProvider(nearbyFilter)) : null;
     final searchResultsAsync =
-        _hasActiveSearch ? ref.watch(listingsProvider(_currentFilter)) : null;
+        _hasActiveSearch && nearbyFilter == null
+            ? ref.watch(listingsProvider(_currentFilter))
+            : null;
 
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
@@ -72,7 +133,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Buscar',
+                    l.searchTitle,
                     style: GoogleFonts.inter(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
@@ -137,7 +198,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           color: AtrioColors.guestTextPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Espacios, experiencias, servicios...',
+                          hintText: l.searchHint,
                           hintStyle: GoogleFonts.inter(
                             fontSize: 15,
                             color: AtrioColors.guestTextTertiary,
@@ -188,52 +249,158 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Category chips (lime green)
+            // Category chips (lime green) + Near-me toggle
             SizedBox(
               height: 36,
-              child: ListView.builder(
+              child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: AppConstants.categoryLabels.length,
-                itemBuilder: (context, index) {
-                  final isSelected = _selectedCategory == index;
-                  return Padding(
+                children: [
+                  // Near-me chip (always first, distinct style)
+                  Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: GestureDetector(
-                      onTap: () => setState(() => _selectedCategory = index),
+                      onTap: _toggleNearby,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 8),
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? AtrioColors.neonLime
+                          color: _nearbyMode
+                              ? AtrioColors.neonLimeDark
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isSelected
+                            color: _nearbyMode
                                 ? AtrioColors.neonLimeDark
                                 : AtrioColors.guestCardBorder,
                           ),
                         ),
-                        child: Text(
-                          AppConstants.categoryLabels[index],
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: isSelected
-                                ? Colors.black
-                                : AtrioColors.guestTextTertiary,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _nearbyMode
+                                  ? Icons.my_location_rounded
+                                  : Icons.location_on_outlined,
+                              size: 15,
+                              color: _nearbyMode
+                                  ? Colors.white
+                                  : AtrioColors.guestTextSecondary,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _nearbyMode
+                                  ? l.searchNearbyOn(_radiusKm.round())
+                                  : l.searchNearMe,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: _nearbyMode
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: _nearbyMode
+                                    ? Colors.white
+                                    : AtrioColors.guestTextTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Category chips
+                  for (int index = 0;
+                      index < AppConstants.categoryLabels.length;
+                      index++)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedCategory = index),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _selectedCategory == index
+                                ? AtrioColors.neonLime
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: _selectedCategory == index
+                                  ? AtrioColors.neonLimeDark
+                                  : AtrioColors.guestCardBorder,
+                            ),
+                          ),
+                          child: Text(
+                            <String>[
+                              l.bookingsAll,
+                              l.searchCategorySpaces,
+                              l.searchCategoryExperiences,
+                              l.searchCategoryServices,
+                            ][index],
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: _selectedCategory == index
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: _selectedCategory == index
+                                  ? Colors.black
+                                  : AtrioColors.guestTextTertiary,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  );
-                },
+                ],
               ),
             ),
+
+            // Radius slider (only when nearby mode)
+            if (_nearbyMode) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Icon(Icons.radar_rounded,
+                        size: 16, color: AtrioColors.neonLimeDark),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: AtrioColors.neonLimeDark,
+                          inactiveTrackColor:
+                              AtrioColors.guestCardBorder,
+                          thumbColor: AtrioColors.neonLimeDark,
+                          trackHeight: 2,
+                          overlayColor:
+                              AtrioColors.neonLime.withValues(alpha: 0.15),
+                        ),
+                        child: Slider(
+                          value: _radiusKm,
+                          min: 1,
+                          max: 50,
+                          divisions: 49,
+                          onChanged: _onRadiusChanged,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 52,
+                      child: Text(
+                        '${_radiusKm.round()} km',
+                        textAlign: TextAlign.end,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AtrioColors.guestTextPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             // Advanced filters panel
             if (_showFilters) ...[
@@ -247,33 +414,40 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             Expanded(
               child: !_hasActiveSearch
                   ? _buildExploreSection()
-                  : searchResultsAsync!.when(
-                      data: (data) {
-                        final listings = data
-                            .map((json) => Listing.fromJson(json))
-                            .toList();
-                        if (listings.isEmpty) {
-                          return _buildEmptyResults();
-                        }
-                        return _showMapView
-                            ? _buildMapView(listings)
-                            : _buildSearchResults(listings);
-                      },
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(
-                          color: AtrioColors.neonLimeDark,
-                          strokeWidth: 2.5,
-                        ),
-                      ),
-                      error: (_, _) => Center(
-                        child: Text(
-                          'Error al buscar. Intenta de nuevo.',
-                          style: AtrioTypography.bodyMedium.copyWith(
-                            color: AtrioColors.error,
+                  : (_nearbyMode && _nearbyCenter == null)
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: AtrioColors.neonLimeDark,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : (nearbyAsync ?? searchResultsAsync!).when(
+                          data: (data) {
+                            final listings = data
+                                .map((json) => Listing.fromJson(json))
+                                .toList();
+                            if (listings.isEmpty) {
+                              return _buildEmptyResults();
+                            }
+                            return _showMapView
+                                ? _buildMapView(listings)
+                                : _buildSearchResults(listings);
+                          },
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(
+                              color: AtrioColors.neonLimeDark,
+                              strokeWidth: 2.5,
+                            ),
+                          ),
+                          error: (_, _) => Center(
+                            child: Text(
+                              l.searchError,
+                              style: AtrioTypography.bodyMedium.copyWith(
+                                color: AtrioColors.error,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
             ),
           ],
         ),
@@ -285,6 +459,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   // FILTERS PANEL
   // ──────────────────────────────────────────────
   Widget _buildFiltersPanel() {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -302,7 +477,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Rango de Precio',
+                  l.searchPriceRange,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -338,7 +513,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
             // Quick filter tags
             Text(
-              'Filtros Rápidos',
+              l.searchQuickFilters,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -350,11 +525,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _QuickFilterChip(label: 'Superhost', icon: Icons.star_rounded),
+                _QuickFilterChip(label: l.searchFilterSuperhost, icon: Icons.star_rounded),
                 _QuickFilterChip(label: 'WiFi', icon: Icons.wifi_rounded),
                 _QuickFilterChip(label: 'Parking', icon: Icons.local_parking_rounded),
-                _QuickFilterChip(label: 'Piscina', icon: Icons.pool_rounded),
-                _QuickFilterChip(label: 'Cocina', icon: Icons.kitchen_rounded),
+                _QuickFilterChip(label: l.searchFilterPool, icon: Icons.pool_rounded),
+                _QuickFilterChip(label: l.searchFilterKitchen, icon: Icons.kitchen_rounded),
                 _QuickFilterChip(label: 'A/C', icon: Icons.ac_unit_rounded),
               ],
             ),
@@ -368,6 +543,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   // EXPLORE SECTION (before search)
   // ──────────────────────────────────────────────
   Widget _buildExploreSection() {
+    final l = AppLocalizations.of(context);
     final allListingsAsync = ref.watch(listingsProvider(const ListingsFilter()));
 
     return SingleChildScrollView(
@@ -379,7 +555,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Búsquedas Populares',
+              l.searchPopular,
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -395,7 +571,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
                 _PopularSearchChip(
-                  label: 'Estudios Foto',
+                  label: l.searchPopularStudios,
                   icon: Icons.camera_alt_outlined,
                   onTap: () {
                     _searchController.text = 'estudio';
@@ -404,7 +580,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 const SizedBox(width: 8),
                 _PopularSearchChip(
-                  label: 'Villas Premium',
+                  label: l.searchPopularVillas,
                   icon: Icons.villa_outlined,
                   onTap: () {
                     _searchController.text = 'villa';
@@ -413,7 +589,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 const SizedBox(width: 8),
                 _PopularSearchChip(
-                  label: 'Loft Creativo',
+                  label: l.searchPopularLoft,
                   icon: Icons.apartment_outlined,
                   onTap: () {
                     _searchController.text = 'loft';
@@ -422,7 +598,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 const SizedBox(width: 8),
                 _PopularSearchChip(
-                  label: 'Experiencias',
+                  label: l.searchPopularExperiences,
                   icon: Icons.explore_outlined,
                   onTap: () {
                     setState(() => _selectedCategory = 2);
@@ -437,7 +613,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              'Explorar por Categoría',
+              l.searchBrowseByCategory,
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -453,8 +629,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 Expanded(
                   child: _CategoryCard(
                     icon: Icons.business_rounded,
-                    label: 'Espacios',
-                    subtitle: 'Studios, lofts, villas',
+                    label: l.searchCategorySpaces,
+                    subtitle: l.searchCategorySpacesDesc,
                     color: AtrioColors.neonLime,
                     onTap: () => setState(() => _selectedCategory = 1),
                   ),
@@ -463,8 +639,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 Expanded(
                   child: _CategoryCard(
                     icon: Icons.auto_awesome_rounded,
-                    label: 'Experiencias',
-                    subtitle: 'Tours, talleres',
+                    label: l.searchCategoryExperiences,
+                    subtitle: l.searchCategoryExperiencesDesc,
                     color: AtrioColors.neonLimeDark,
                     onTap: () => setState(() => _selectedCategory = 2),
                   ),
@@ -480,8 +656,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 Expanded(
                   child: _CategoryCard(
                     icon: Icons.handyman_rounded,
-                    label: 'Servicios',
-                    subtitle: 'Profesionales',
+                    label: l.searchCategoryServices,
+                    subtitle: l.searchCategoryServicesDesc,
                     color: AtrioColors.vibrantOrange,
                     onTap: () => setState(() => _selectedCategory = 3),
                   ),
@@ -490,8 +666,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 Expanded(
                   child: _CategoryCard(
                     icon: Icons.local_fire_department_rounded,
-                    label: 'Tendencias',
-                    subtitle: 'Lo más popular',
+                    label: l.searchCategoryTrending,
+                    subtitle: l.searchCategoryTrendingDesc,
                     color: AtrioColors.neonLimeDark,
                     onTap: () {
                       _searchController.text = 'premium';
@@ -511,7 +687,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Cerca de Ti',
+                  l.searchNearYou,
                   style: GoogleFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -568,6 +744,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   // MAP VIEW
   // ──────────────────────────────────────────────
   Widget _buildMapView(List<Listing> listings) {
+    final l = AppLocalizations.of(context);
     final withLocation = listings
         .where((l) => l.latitude != null && l.longitude != null)
         .toList();
@@ -580,7 +757,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             Icon(Icons.map_outlined, size: 48, color: AtrioColors.guestTextTertiary),
             const SizedBox(height: 12),
             Text(
-              'Sin ubicaciones disponibles',
+              l.searchNoLocations,
               style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -589,7 +766,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Los listings no tienen coordenadas',
+              l.searchNoCoords,
               style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.guestTextTertiary),
             ),
           ],
@@ -626,6 +803,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       (minLng + maxLng) / 2,
     );
 
+    // Draw search radius circle when in nearby mode with a resolved center.
+    final circles = <Circle>{};
+    if (_nearbyMode && _nearbyCenter != null) {
+      circles.add(
+        Circle(
+          circleId: const CircleId('search_radius'),
+          center: LatLng(
+            _nearbyCenter!.latitude,
+            _nearbyCenter!.longitude,
+          ),
+          radius: _radiusKmApplied * 1000,
+          fillColor: AtrioColors.neonLime.withValues(alpha: 0.18),
+          strokeColor: AtrioColors.neonLimeDark,
+          strokeWidth: 2,
+        ),
+      );
+    }
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       child: Stack(
@@ -633,6 +828,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           GoogleMap(
             initialCameraPosition: CameraPosition(target: center, zoom: 12),
             markers: markers,
+            circles: circles,
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
@@ -663,7 +859,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
               ),
               child: Text(
-                '${withLocation.length} en el mapa',
+                l.searchInMap(withLocation.length),
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -681,6 +877,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   // SEARCH RESULTS
   // ──────────────────────────────────────────────
   Widget _buildSearchResults(List<Listing> listings) {
+    final l = AppLocalizations.of(context);
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: listings.length + 1,
@@ -689,7 +886,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: Text(
-              '${listings.length} resultado${listings.length != 1 ? 's' : ''}',
+              l.searchResults(listings.length),
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color: AtrioColors.guestTextTertiary,
@@ -710,6 +907,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _buildEmptyResults() {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -725,7 +923,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Sin resultados',
+            l.searchNoResults,
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -734,7 +932,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Intenta con otros términos de búsqueda',
+            l.searchTryOther,
             style: GoogleFonts.inter(
               fontSize: 14,
               color: AtrioColors.guestTextTertiary,
@@ -744,6 +942,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
     );
   }
+}
+
+// ══════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════
+
+String _formatDistance(double meters) {
+  if (meters < 1000) return '${meters.round()} m';
+  final km = meters / 1000;
+  return km < 10
+      ? '${km.toStringAsFixed(1)} km'
+      : '${km.round()} km';
 }
 
 // ══════════════════════════════════════════════════
@@ -1050,9 +1260,9 @@ class _SearchResultCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    if (listing.city != null)
-                      Row(
-                        children: [
+                    Row(
+                      children: [
+                        if (listing.city != null) ...[
                           Icon(Icons.location_on_outlined,
                               size: 13,
                               color: AtrioColors.guestTextTertiary),
@@ -1065,7 +1275,28 @@ class _SearchResultCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                      ),
+                        if (listing.distanceM != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AtrioColors.neonLime
+                                  .withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              _formatDistance(listing.distanceM!),
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AtrioColors.guestTextPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                     const SizedBox(height: 6),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

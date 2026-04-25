@@ -7,6 +7,8 @@ import '../../../config/theme/app_colors.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Quick Services - casual gig marketplace
 /// Flow:
@@ -25,28 +27,50 @@ class QuickServicesScreen extends ConsumerStatefulWidget {
 class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _selectedCategory = 'Todos';
+  String _selectedCategory = 'all';
   List<Map<String, dynamic>> _realServices = [];
   bool _isLoading = true;
   String? _error;
 
-  final _categories = [
-    'Todos',
-    'Mudanza',
-    'Limpieza',
-    'Armado',
-    'Eventos',
-    'Jardinería',
-    'Reparaciones',
-    'Pintura',
-    'Plomería',
-    'Electricidad',
-    'Tecnología',
-    'Mascotas',
-    'Belleza',
-    'Clases',
-    'Cocina',
+  // (value, DB match term). value 'all' means no filter.
+  final _categories = const <(String, String)>[
+    ('all', ''),
+    ('moving', 'mudanza'),
+    ('cleaning', 'limpieza'),
+    ('assembly', 'armado'),
+    ('events', 'eventos'),
+    ('gardening', 'jardinería'),
+    ('repairs', 'reparaciones'),
+    ('painting', 'pintura'),
+    ('plumbing', 'plomería'),
+    ('electrical', 'electricidad'),
+    ('tech', 'tecnología'),
+    ('pets', 'mascotas'),
+    ('beauty', 'belleza'),
+    ('classes', 'clases'),
+    ('cooking', 'cocina'),
   ];
+
+  String _categoryLabel(AppLocalizations l, String value) {
+    switch (value) {
+      case 'all': return l.qsCatAll;
+      case 'moving': return l.qsCatMoving;
+      case 'cleaning': return l.qsCatCleaning;
+      case 'assembly': return l.qsCatAssembly;
+      case 'events': return l.qsCatEvents;
+      case 'gardening': return l.qsCatGardening;
+      case 'repairs': return l.qsCatRepairs;
+      case 'painting': return l.qsCatPainting;
+      case 'plumbing': return l.qsCatPlumbing;
+      case 'electrical': return l.qsCatElectrical;
+      case 'tech': return l.qsCatTech;
+      case 'pets': return l.qsCatPets;
+      case 'beauty': return l.qsCatBeauty;
+      case 'classes': return l.qsCatClasses;
+      case 'cooking': return l.qsCatCooking;
+      default: return value;
+    }
+  }
 
   @override
   void initState() {
@@ -67,13 +91,17 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
       final data = await DatabaseService.getPublishedListings(type: 'service', limit: 50);
       if (mounted) setState(() { _realServices = data; _isLoading = false; });
     } catch (e) {
-      if (mounted) setState(() { _error = 'Error al cargar servicios'; _isLoading = false; });
+      if (mounted) {
+        final l = AppLocalizations.of(context);
+        setState(() { _error = l.qsLoadError; _isLoading = false; });
+      }
     }
   }
 
   List<Map<String, dynamic>> get _filteredServices {
-    if (_selectedCategory == 'Todos') return _realServices;
-    final cat = _selectedCategory.toLowerCase();
+    if (_selectedCategory == 'all') return _realServices;
+    final cat = _categories.firstWhere((c) => c.$1 == _selectedCategory).$2;
+    if (cat.isEmpty) return _realServices;
     return _realServices.where((s) {
       final category = (s['category'] as String? ?? '').toLowerCase();
       final tags = List<String>.from(s['tags'] ?? []);
@@ -83,6 +111,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AtrioColors.hostBackground,
       appBar: AppBar(
@@ -92,7 +121,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           icon: const Icon(Icons.arrow_back, color: AtrioColors.hostTextPrimary),
           onPressed: () => context.pop(),
         ),
-        title: Text('Servicios Rapidos', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
+        title: Text(l.qsTitle, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
         actions: [
           GestureDetector(
             onTap: () => context.push('/publish-service', extra: 'offer'),
@@ -103,7 +132,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.add, size: 16, color: AtrioColors.neonLime),
                 const SizedBox(width: 4),
-                Text('Publicar', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime)),
+                Text(l.qsPublish, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime)),
               ]),
             ),
           ),
@@ -125,7 +154,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
               unselectedLabelColor: AtrioColors.hostTextSecondary,
               labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
               unselectedLabelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              tabs: const [Tab(text: 'Disponibles'), Tab(text: 'Solicitudes')],
+              tabs: [Tab(text: l.qsTabAvailable), Tab(text: l.qsTabRequests)],
             ),
           ),
           // Categories
@@ -137,9 +166,9 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
               itemCount: _categories.length,
               itemBuilder: (context, index) {
                 final cat = _categories[index];
-                final isSelected = cat == _selectedCategory;
+                final isSelected = cat.$1 == _selectedCategory;
                 return GestureDetector(
-                  onTap: () => setState(() => _selectedCategory = cat),
+                  onTap: () => setState(() => _selectedCategory = cat.$1),
                   child: Container(
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -148,7 +177,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: isSelected ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder),
                     ),
-                    child: Text(cat, style: GoogleFonts.inter(fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, color: isSelected ? Colors.black : AtrioColors.hostTextSecondary)),
+                    child: Text(_categoryLabel(l, cat.$1), style: GoogleFonts.inter(fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, color: isSelected ? Colors.black : AtrioColors.hostTextSecondary)),
                   ),
                 );
               },
@@ -166,15 +195,15 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                     ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                         Text(_error!, style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
                         const SizedBox(height: 12),
-                        TextButton(onPressed: _loadServices, child: Text('Reintentar', style: GoogleFonts.inter(color: AtrioColors.neonLime))),
+                        TextButton(onPressed: _loadServices, child: Text(l.btnRetry, style: GoogleFonts.inter(color: AtrioColors.neonLime))),
                       ]))
                     : _filteredServices.isEmpty
                       ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                           Icon(Icons.handyman_rounded, size: 48, color: AtrioColors.hostTextTertiary),
                           const SizedBox(height: 12),
-                          Text('No hay servicios disponibles', style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextSecondary)),
+                          Text(l.qsEmptyTitle, style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextSecondary)),
                           const SizedBox(height: 4),
-                          Text('Publica el tuyo con el botón +', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
+                          Text(l.qsEmptySubtitle, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
                         ]))
                       : ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -188,9 +217,9 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                 Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.campaign_rounded, size: 48, color: AtrioColors.hostTextTertiary),
                   const SizedBox(height: 12),
-                  Text('Solicitudes próximamente', style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextSecondary)),
+                  Text(l.qsRequestsSoonTitle, style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextSecondary)),
                   const SizedBox(height: 4),
-                  Text('Pronto podrás publicar lo que necesitas', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
+                  Text(l.qsRequestsSoonSubtitle, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
                 ])),
               ],
             ),
@@ -201,7 +230,8 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   }
 
   void _showRealServiceDetail(Map<String, dynamic> service) {
-    final title = service['title'] ?? 'Servicio';
+    final l = AppLocalizations.of(context);
+    final title = service['title'] ?? l.qsServiceDefault;
     final description = service['description'] ?? '';
     final price = (service['base_price'] as num?)?.toDouble() ?? 0;
     final priceUnit = service['price_unit'] ?? 'session';
@@ -209,7 +239,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     final reviewCount = (service['review_count'] as num?)?.toInt() ?? 0;
     final hostId = service['host_id'] as String;
     final host = service['host'] as Map<String, dynamic>?;
-    final hostName = host?['display_name'] ?? 'Proveedor';
+    final hostName = host?['display_name'] ?? l.qsProviderDefault;
     final hostVerified = host?['is_verified'] == true;
     final category = service['category'] ?? service['type'] ?? '';
 
@@ -257,7 +287,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                     Row(children: [
                       const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3),
                       Text(rating.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-                      Text(' · $reviewCount reseñas', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
+                      Text(l.qsDotReviewsCount(reviewCount), style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
                     ]),
                   ])),
                   GestureDetector(
@@ -267,19 +297,19 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                 ]),
               ),
               const SizedBox(height: 20),
-              Text('Como funciona', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+              Text(l.qsHowItWorks, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
               const SizedBox(height: 14),
-              _StepItem(step: '1', title: 'Contratas el servicio', subtitle: 'Acuerdan fecha, hora y detalles por chat'),
-              _StepItem(step: '2', title: 'Se realiza el trabajo', subtitle: 'El proveedor marca avances en tiempo real'),
-              _StepItem(step: '3', title: 'Confirmas y pagas', subtitle: 'Solo pagas cuando estas satisfecho'),
+              _StepItem(step: '1', title: l.qsStep1Title, subtitle: l.qsStep1Subtitle),
+              _StepItem(step: '2', title: l.qsStep2Title, subtitle: l.qsStep2Subtitle),
+              _StepItem(step: '3', title: l.qsStep3Title, subtitle: l.qsStep3Subtitle),
               const SizedBox(height: 24),
               SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
                 onPressed: () { Navigator.pop(ctx); _showRealHireConfirmation(service); },
                 style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-                child: Text('Contratar por ${price.toCLP}/$priceUnit', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                child: Text(l.qsHireFor(price.toCLP, priceUnit), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
               )),
               const SizedBox(height: 12),
-              Center(child: Text('Pago seguro · Garantía Atrio', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary))),
+              Center(child: Text(l.qsSecurePayment, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary))),
               const SizedBox(height: 20),
             ],
           ),
@@ -289,12 +319,13 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   }
 
   void _showRealHireConfirmation(Map<String, dynamic> service) {
-    final title = service['title'] ?? 'Servicio';
+    final l = AppLocalizations.of(context);
+    final title = service['title'] ?? l.qsServiceDefault;
     final price = (service['base_price'] as num?)?.toDouble() ?? 0;
     final priceUnit = service['price_unit'] ?? 'session';
     final hostId = service['host_id'] as String;
     final host = service['host'] as Map<String, dynamic>?;
-    final hostName = host?['display_name'] ?? 'Proveedor';
+    final hostName = host?['display_name'] ?? l.qsProviderDefault;
     final listingId = service['id'] as String;
     const serviceFeeRate = 0.07;
     final serviceFee = price * serviceFeeRate;
@@ -312,25 +343,25 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           const SizedBox(height: 24),
           Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.check_circle_outline, size: 48, color: AtrioColors.neonLime)),
           const SizedBox(height: 20),
-          Text('Confirmar contratación', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
+          Text(l.qsConfirmHire, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
           const SizedBox(height: 8),
-          Text('$hostName realizará "$title" por ${price.toCLP}/$priceUnit', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
+          Text(l.qsHireMessage(hostName, title, price.toCLP, priceUnit), style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
           const SizedBox(height: 20),
           // Price breakdown
           Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
             child: Column(children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Precio del servicio', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
+                Text(l.qsServicePrice, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
                 Text(price.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
               ]),
               const SizedBox(height: 8),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Tarifa Atrio (7%)', style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
+                Text(l.qsAtrioFee, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
                 Text(serviceFee.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
               ]),
               const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(color: AtrioColors.hostCardBorder, height: 1)),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Total', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+                Text(l.qsTotal, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
                 Text(total.toCLP, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
               ]),
             ]),
@@ -339,12 +370,12 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
           // Milestones
           Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Avances del servicio', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+              Text(l.qsMilestonesTitle, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
               const SizedBox(height: 12),
-              _MilestonePreview(label: 'Acordar detalles', status: 'pending'),
-              _MilestonePreview(label: 'En camino / Inicio', status: 'pending'),
-              _MilestonePreview(label: 'Trabajo en progreso', status: 'pending'),
-              _MilestonePreview(label: 'Finalizado y pagado', status: 'pending'),
+              _MilestonePreview(label: l.qsMilestoneDetails, status: 'pending'),
+              _MilestonePreview(label: l.qsMilestoneStart, status: 'pending'),
+              _MilestonePreview(label: l.qsMilestoneProgress, status: 'pending'),
+              _MilestonePreview(label: l.qsMilestoneDone, status: 'pending'),
             ]),
           ),
           const SizedBox(height: 20),
@@ -355,12 +386,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                 await _hireRealService(hostId, listingId, title, price, serviceFee, total);
                 if (ctx.mounted) Navigator.pop(ctx);
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Error: $e'), backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ));
-                }
+                if (mounted) ErrorHandler.showError(context, e);
               } finally {
                 if (ctx.mounted) setSheetState(() => hiring = false);
               }
@@ -368,10 +394,10 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
             style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
             child: hiring
                 ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
-                : Text('Confirmar ${total.toCLP}', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                : Text(l.qsConfirmAmount(total.toCLP), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
           )),
           const SizedBox(height: 10),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Volver', style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.qsGoBack, style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
           const SizedBox(height: 8),
         ]),
       ),
@@ -383,6 +409,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   Future<void> _hireRealService(String hostId, String listingId, String title, double price, double fee, double total) async {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
+    final l = AppLocalizations.of(context);
 
     final now = DateTime.now();
     await DatabaseService.createBooking({
@@ -399,7 +426,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
       'status': 'pending',
       'payment_status': 'pending',
       'rental_mode': 'hours',
-      'notes': 'Servicio Rápido: $title',
+      'notes': l.qsQuickServicePrefix(title),
     });
 
     final convo = await DatabaseService.getOrCreateConversation(
@@ -410,12 +437,12 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     await DatabaseService.sendMessage(
       conversationId: convo['id'],
       senderId: currentUser.id,
-      text: 'Hola! Acabo de solicitar "$title" por ${price.toCLP}. Coordinemos los detalles.',
+      text: l.qsChatHi(title, price.toCLP),
     );
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Row(children: [Icon(Icons.check_circle, color: Colors.black, size: 20), SizedBox(width: 10), Expanded(child: Text('Servicio solicitado!', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
+        content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), Expanded(child: Text(l.qsRequested, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
         backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ));
       context.push('/chat/${convo['id']}');
@@ -436,13 +463,7 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
         context.push('/chat/${convo['id']}');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error al abrir chat: $e'),
-          backgroundColor: Colors.red, behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     }
   }
 }
@@ -454,13 +475,14 @@ class _RealServiceCard extends StatelessWidget {
   const _RealServiceCard({required this.service, required this.onTap});
   @override
   Widget build(BuildContext context) {
-    final title = service['title'] ?? 'Servicio';
+    final l = AppLocalizations.of(context);
+    final title = service['title'] ?? l.qsServiceDefault;
     final price = (service['base_price'] as num?)?.toDouble() ?? 0;
     final priceUnit = service['price_unit'] ?? 'session';
     final rating = (service['rating'] as num?)?.toDouble() ?? 0;
     final reviewCount = (service['review_count'] as num?)?.toInt() ?? 0;
     final host = service['host'] as Map<String, dynamic>?;
-    final hostName = host?['display_name'] ?? 'Proveedor';
+    final hostName = host?['display_name'] ?? l.qsProviderDefault;
     final hostVerified = host?['is_verified'] == true;
 
     return GestureDetector(
@@ -472,7 +494,7 @@ class _RealServiceCard extends StatelessWidget {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [Expanded(child: Text(title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)), if (hostVerified) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark))]),
             const SizedBox(height: 2),
-            Text('$hostName · $reviewCount reseñas', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(l.qsProviderReviewsLine(hostName, reviewCount), style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 6),
             Row(children: [const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3), Text(rating.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary))]),
           ])),

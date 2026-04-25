@@ -6,12 +6,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/conversations_provider.dart';
+import '../../../l10n/app_localizations.dart';
 
 class ConversationsScreen extends ConsumerWidget {
   const ConversationsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final conversationsAsync = ref.watch(conversationsProvider);
     final currentUserId = SupabaseConfig.auth.currentUser?.id;
 
@@ -27,7 +29,7 @@ class ConversationsScreen extends ConsumerWidget {
               child: Row(
                 children: [
                   Text(
-                    'Mensajes',
+                    l.chatTitle,
                     style: GoogleFonts.inter(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
@@ -69,7 +71,7 @@ class ConversationsScreen extends ConsumerWidget {
                     Icon(Icons.search_rounded, size: 20, color: AtrioColors.neonLimeDark),
                     const SizedBox(width: 10),
                     Text(
-                      'Buscar conversaciones...',
+                      l.chatSearchHint,
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: AtrioColors.guestTextTertiary,
@@ -121,7 +123,7 @@ class ConversationsScreen extends ConsumerWidget {
                                 : null;
 
                         return _ConversationCard(
-                          title: listing?['title'] ?? 'Conversación',
+                          title: listing?['title'] ?? l.chatDefault,
                           imageUrl: images.isNotEmpty ? images.first : null,
                           lastMessage: lastMessage,
                           isMe: isMe,
@@ -148,7 +150,7 @@ class ConversationsScreen extends ConsumerWidget {
                       Icon(Icons.error_outline, size: 48, color: AtrioColors.guestTextTertiary),
                       const SizedBox(height: 12),
                       Text(
-                        'Error al cargar mensajes',
+                        l.chatLoadError,
                         style: GoogleFonts.inter(
                           fontSize: 15,
                           color: AtrioColors.guestTextSecondary,
@@ -158,7 +160,7 @@ class ConversationsScreen extends ConsumerWidget {
                       GestureDetector(
                         onTap: () => ref.invalidate(conversationsProvider),
                         child: Text(
-                          'Reintentar',
+                          l.btnRetry,
                           style: GoogleFonts.inter(
                             color: AtrioColors.neonLimeDark,
                             fontWeight: FontWeight.w600,
@@ -205,6 +207,7 @@ class _ConversationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -287,7 +290,7 @@ class _ConversationCard extends StatelessWidget {
                         ),
                       Expanded(
                         child: Text(
-                          '${isMe ? "Tú: " : ""}$lastMessage',
+                          '${isMe ? l.chatYou : ""}$lastMessage',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             color: AtrioColors.guestTextSecondary,
@@ -318,6 +321,7 @@ class _ConversationCard extends StatelessWidget {
 class _EmptyConversations extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -335,7 +339,7 @@ class _EmptyConversations extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Sin mensajes aún',
+              l.chatEmptyTitle,
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -344,7 +348,7 @@ class _EmptyConversations extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Cuando reserves un espacio, podrás\ncomunicarte con el anfitrión aquí',
+              l.chatEmptySubtitle,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 color: AtrioColors.guestTextTertiary,
@@ -362,7 +366,7 @@ class _EmptyConversations extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Text(
-                  'Explorar Espacios',
+                  l.chatExplore,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,

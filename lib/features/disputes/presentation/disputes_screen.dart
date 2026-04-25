@@ -7,12 +7,15 @@ import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/disputes_provider.dart';
 import '../../../core/models/dispute_model.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../core/widgets/empty_state_widget.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DisputesScreen extends ConsumerWidget {
   const DisputesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final filter = ref.watch(disputeFilterProvider);
     final disputesAsync = ref.watch(filteredDisputesProvider);
 
@@ -38,7 +41,7 @@ class DisputesScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Text('Disputas', style: AtrioTypography.headingLarge.copyWith(color: AtrioColors.hostTextPrimary)),
+                  Text(l.disputesTitle, style: AtrioTypography.headingLarge.copyWith(color: AtrioColors.hostTextPrimary)),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -59,13 +62,13 @@ class DisputesScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  _FilterChip(label: 'Todas', value: 'todas', current: filter, ref: ref),
+                  _FilterChip(label: l.disputesFilterAll, value: 'todas', current: filter, ref: ref),
                   const SizedBox(width: 8),
-                  _FilterChip(label: 'Abiertas', value: 'abiertas', current: filter, ref: ref),
+                  _FilterChip(label: l.disputesFilterOpen, value: 'abiertas', current: filter, ref: ref),
                   const SizedBox(width: 8),
-                  _FilterChip(label: 'En Revisión', value: 'en_revision', current: filter, ref: ref),
+                  _FilterChip(label: l.disputesFilterReview, value: 'en_revision', current: filter, ref: ref),
                   const SizedBox(width: 8),
-                  _FilterChip(label: 'Cerradas', value: 'cerradas', current: filter, ref: ref),
+                  _FilterChip(label: l.disputesFilterClosed, value: 'cerradas', current: filter, ref: ref),
                 ],
               ),
             ),
@@ -76,8 +79,10 @@ class DisputesScreen extends ConsumerWidget {
               child: disputesAsync.when(
                 data: (disputes) {
                   if (disputes.isEmpty) {
-                    return Center(
-                      child: Text('No hay disputas', style: AtrioTypography.bodyLarge.copyWith(color: AtrioColors.hostTextSecondary)),
+                    return EmptyStateWidget(
+                      icon: Icons.gavel_outlined,
+                      title: l.disputesEmptyTitle,
+                      subtitle: l.disputesEmptySubtitle,
                     );
                   }
                   return RefreshIndicator(
@@ -98,12 +103,12 @@ class DisputesScreen extends ConsumerWidget {
                     children: [
                       Icon(Icons.cloud_off_rounded, size: 48, color: AtrioColors.error.withValues(alpha: 0.6)),
                       const SizedBox(height: 16),
-                      Text('Error al cargar disputas', style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.hostTextSecondary)),
+                      Text(l.disputesLoadError, style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.hostTextSecondary)),
                       const SizedBox(height: 12),
                       TextButton.icon(
                         onPressed: () => ref.invalidate(filteredDisputesProvider),
                         icon: const Icon(Icons.refresh, size: 18),
-                        label: const Text('Reintentar'),
+                        label: Text(l.btnRetry),
                         style: TextButton.styleFrom(foregroundColor: AtrioColors.neonLimeDark),
                       ),
                     ],
@@ -118,7 +123,7 @@ class DisputesScreen extends ConsumerWidget {
         backgroundColor: AtrioColors.neonLime,
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Próximamente: Crear nueva disputa')),
+            SnackBar(content: Text(l.disputesComingSoon)),
           );
         },
         child: const Icon(Icons.add, color: Colors.black),
@@ -173,12 +178,12 @@ class _DisputeCard extends StatelessWidget {
     }
   }
 
-  String get _statusLabel {
+  String _statusLabel(AppLocalizations l) {
     switch (dispute.status) {
-      case 'abierta': return 'Abierta';
-      case 'en_revision': return 'En Revisión';
-      case 'resuelta': return 'Resuelta';
-      case 'cerrada': return 'Cerrada';
+      case 'abierta': return l.disputesStatusOpen;
+      case 'en_revision': return l.disputesStatusReview;
+      case 'resuelta': return l.disputesStatusResolved;
+      case 'cerrada': return l.disputesStatusClosed;
       default: return dispute.status;
     }
   }
@@ -195,6 +200,7 @@ class _DisputeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return GestureDetector(
       onTap: () => context.push('/dispute/${dispute.id}'),
       child: Container(
@@ -249,7 +255,7 @@ class _DisputeCard extends StatelessWidget {
                   decoration: BoxDecoration(color: _statusColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 6),
-                Text(_statusLabel, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: _statusColor)),
+                Text(_statusLabel(l), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: _statusColor)),
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -262,7 +268,7 @@ class _DisputeCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    dispute.priority == 'alta' ? 'Alta' : dispute.priority == 'media' ? 'Media' : 'Baja',
+                    dispute.priority == 'alta' ? l.disputesPriorityHigh : dispute.priority == 'media' ? l.disputesPriorityMedium : l.disputesPriorityLow,
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,

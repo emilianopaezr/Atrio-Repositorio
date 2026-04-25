@@ -5,6 +5,7 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/notifications_provider.dart';
+import '../../../l10n/app_localizations.dart';
 
 enum _DateGroup { hoy, ayer, estaSemana, anteriores }
 
@@ -24,16 +25,16 @@ class NotificationsScreen extends ConsumerWidget {
     return _DateGroup.anteriores;
   }
 
-  static String _groupLabel(_DateGroup group) {
+  static String _groupLabel(AppLocalizations l, _DateGroup group) {
     switch (group) {
       case _DateGroup.hoy:
-        return 'HOY';
+        return l.notificationsGroupToday;
       case _DateGroup.ayer:
-        return 'AYER';
+        return l.notificationsGroupYesterday;
       case _DateGroup.estaSemana:
-        return 'ESTA SEMANA';
+        return l.notificationsGroupThisWeek;
       case _DateGroup.anteriores:
-        return 'ANTERIORES';
+        return l.notificationsGroupEarlier;
     }
   }
 
@@ -65,13 +66,14 @@ class NotificationsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final notificationsAsync = ref.watch(notificationsProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Notificaciones',
+          l.notificationsTitle,
           style: AtrioTypography.headingSmall.copyWith(
             color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
           ),
@@ -94,7 +96,7 @@ class NotificationsScreen extends ConsumerWidget {
               }
             },
             child: Text(
-              'Marcar todo como leído',
+              l.notificationsMarkAllRead,
               style: AtrioTypography.labelMedium.copyWith(
                 color: AtrioColors.neonLimeDark,
               ),
@@ -125,7 +127,7 @@ class NotificationsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Sin notificaciones',
+                    l.notificationsEmpty,
                     style: AtrioTypography.headingSmall.copyWith(
                       color: isDark
                           ? AtrioColors.hostTextSecondary
@@ -134,7 +136,7 @@ class NotificationsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Te avisaremos cuando haya algo nuevo',
+                    l.notificationsEmptyDesc,
                     style: AtrioTypography.bodyMedium.copyWith(
                       color: isDark
                           ? AtrioColors.hostTextTertiary
@@ -165,7 +167,7 @@ class NotificationsScreen extends ConsumerWidget {
                       bottom: 12,
                     ),
                     child: Text(
-                      _groupLabel(item.group!),
+                      _groupLabel(l, item.group!),
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -183,7 +185,7 @@ class NotificationsScreen extends ConsumerWidget {
                 final notif = item.data!;
                 final notifId = notif['id'];
                 final isRead = notif['is_read'] == true;
-                final title = notif['title'] as String? ?? 'Notificación';
+                final title = notif['title'] as String? ?? l.notificationsDefaultTitle;
                 final body = notif['body'] as String? ?? '';
                 final type = notif['type'] as String? ?? 'general';
                 final createdAt = DateTime.tryParse(notif['created_at'] ?? '');
@@ -255,12 +257,12 @@ class NotificationsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: AtrioColors.error),
               const SizedBox(height: 16),
-              Text('Error al cargar notificaciones',
+              Text(l.notificationsLoadError,
                   style: AtrioTypography.bodyLarge),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => ref.invalidate(notificationsProvider),
-                child: const Text('Reintentar'),
+                child: Text(l.btnRetry),
               ),
             ],
           ),
@@ -342,17 +344,18 @@ class _NotificationTile extends StatelessWidget {
     }
   }
 
-  String _timeAgo(DateTime? dt) {
+  String _timeAgo(AppLocalizations l, DateTime? dt) {
     if (dt == null) return '';
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return 'hace ${diff.inMinutes}m';
-    if (diff.inHours < 24) return 'hace ${diff.inHours}h';
-    if (diff.inDays < 7) return 'hace ${diff.inDays}d';
+    if (diff.inMinutes < 60) return l.notificationsTimeMin(diff.inMinutes);
+    if (diff.inHours < 24) return l.notificationsTimeHour(diff.inHours);
+    if (diff.inDays < 7) return l.notificationsTimeDay(diff.inDays);
     return '${dt.day}/${dt.month}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final iconColor = _colorForType(type);
 
@@ -424,7 +427,7 @@ class _NotificationTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _timeAgo(createdAt),
+                    _timeAgo(l, createdAt),
                     style: AtrioTypography.caption.copyWith(
                       color: isDark
                           ? AtrioColors.hostTextTertiary

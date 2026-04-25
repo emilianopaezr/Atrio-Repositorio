@@ -12,12 +12,14 @@ import '../../../core/services/database_service.dart';
 import '../../../shared/widgets/atrio_button.dart';
 import '../../../shared/widgets/level_badge.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 class HostListingsScreen extends ConsumerWidget {
   const HostListingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final userId = SupabaseConfig.auth.currentUser?.id ?? '';
     final listingsAsync = ref.watch(hostListingsProvider(userId));
     final hostStatsAsync = ref.watch(hostStatsProvider);
@@ -33,7 +35,7 @@ class HostListingsScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Mis Espacios',
+                    l.hostListingsHeader,
                     style: AtrioTypography.displayMedium.copyWith(
                       color: AtrioColors.hostTextPrimary,
                     ),
@@ -75,7 +77,7 @@ class HostListingsScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Tu recibes el $keepRate% de tus ingresos',
+                            l.hostListingsKeepRate(keepRate),
                             style: AtrioTypography.bodySmall.copyWith(
                               color: AtrioColors.neonLimeDark,
                               fontWeight: FontWeight.w600,
@@ -108,14 +110,14 @@ class HostListingsScreen extends ConsumerWidget {
                               size: 64, color: AtrioColors.hostTextTertiary),
                           const SizedBox(height: 16),
                           Text(
-                            'Sin publicaciones aún',
+                            l.hostListingsNoListingsTitle,
                             style: AtrioTypography.headingSmall.copyWith(
                               color: AtrioColors.hostTextSecondary,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Crea tu primer anuncio y comienza\na generar ingresos',
+                            l.hostListingsNoListingsSubtitle,
                             style: AtrioTypography.bodyMedium.copyWith(
                               color: AtrioColors.hostTextTertiary,
                             ),
@@ -125,7 +127,7 @@ class HostListingsScreen extends ConsumerWidget {
                           SizedBox(
                             width: 200,
                             child: AtrioButton(
-                              label: 'Crear Anuncio',
+                              label: l.hostListingsCreateListingBtn,
                               icon: Icons.add,
                               onTap: () =>
                                   context.push('/host/create-listing'),
@@ -236,7 +238,7 @@ class HostListingsScreen extends ConsumerWidget {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            listing['title'] ?? 'Sin título',
+                                            listing['title'] ?? l.hostListingsNoTitle,
                                             style: AtrioTypography.labelLarge
                                                 .copyWith(
                                               color:
@@ -274,7 +276,7 @@ class HostListingsScreen extends ConsumerWidget {
                                                 AtrioColors.hostTextSecondary),
                                         const SizedBox(width: 4),
                                         Text(
-                                          '$viewCount vistas',
+                                          l.hostListingsViewsCount(viewCount is int ? viewCount : (viewCount as num).toInt()),
                                           style:
                                               AtrioTypography.caption.copyWith(
                                             color:
@@ -298,8 +300,8 @@ class HostListingsScreen extends ConsumerWidget {
                   child: CircularProgressIndicator(
                       color: AtrioColors.neonLimeDark),
                 ),
-                error: (_, _) => const Center(
-                  child: Text('Error al cargar anuncios'),
+                error: (_, _) => Center(
+                  child: Text(l.hostListingsLoadError),
                 ),
               ),
             ),
@@ -315,9 +317,10 @@ class HostListingsScreen extends ConsumerWidget {
     Map<String, dynamic> listing,
     String userId,
   ) {
+    final l = AppLocalizations.of(context);
     final listingId = listing['id'] as String;
     final status = listing['status'] as String? ?? 'draft';
-    final title = listing['title'] as String? ?? 'Sin título';
+    final title = listing['title'] as String? ?? l.hostListingsNoTitle;
 
     showModalBottomSheet(
       context: context,
@@ -354,7 +357,7 @@ class HostListingsScreen extends ConsumerWidget {
             // View listing
             _OptionTile(
               icon: Icons.visibility_outlined,
-              label: 'Ver anuncio',
+              label: l.hostListingsViewListing,
               color: AtrioColors.hostTextPrimary,
               onTap: () {
                 Navigator.pop(ctx);
@@ -365,7 +368,7 @@ class HostListingsScreen extends ConsumerWidget {
             if (status == 'published')
               _OptionTile(
                 icon: Icons.pause_circle_outline,
-                label: 'Pausar anuncio',
+                label: l.hostListingsPauseListing,
                 color: AtrioColors.vibrantOrange,
                 onTap: () async {
                   Navigator.pop(ctx);
@@ -376,7 +379,7 @@ class HostListingsScreen extends ConsumerWidget {
             else
               _OptionTile(
                 icon: Icons.play_circle_outline,
-                label: 'Publicar anuncio',
+                label: l.hostListingsPublishListing,
                 color: AtrioColors.neonLimeDark,
                 onTap: () async {
                   Navigator.pop(ctx);
@@ -387,7 +390,7 @@ class HostListingsScreen extends ConsumerWidget {
             // Delete
             _OptionTile(
               icon: Icons.delete_outline,
-              label: 'Eliminar anuncio',
+              label: l.hostListingsDeleteListing,
               color: AtrioColors.error,
               onTap: () async {
                 Navigator.pop(ctx);
@@ -397,24 +400,24 @@ class HostListingsScreen extends ConsumerWidget {
                     backgroundColor: AtrioColors.hostBackground,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     title: Text(
-                      'Eliminar anuncio',
+                      l.hostListingsDeleteListing,
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w700,
                         color: AtrioColors.hostTextPrimary,
                       ),
                     ),
                     content: Text(
-                      'Se eliminará "$title" permanentemente. Esta acción no se puede deshacer.',
+                      l.hostListingsDeleteConfirm(title),
                       style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(dialogCtx, false),
-                        child: Text('Cancelar', style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
+                        child: Text(l.btnCancel, style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(dialogCtx, true),
-                        child: Text('Eliminar', style: GoogleFonts.inter(color: AtrioColors.error, fontWeight: FontWeight.w700)),
+                        child: Text(l.btnDelete, style: GoogleFonts.inter(color: AtrioColors.error, fontWeight: FontWeight.w700)),
                       ),
                     ],
                   ),
@@ -425,7 +428,7 @@ class HostListingsScreen extends ConsumerWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Anuncio eliminado'),
+                        content: Text(l.hostListingsDeletedSnack),
                         backgroundColor: AtrioColors.hostTextPrimary,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -495,18 +498,19 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     Color color;
     String label;
     switch (status) {
       case 'published':
         color = AtrioColors.neonLimeDark;
-        label = 'Publicado';
+        label = l.hostListingsStatusPublished;
       case 'draft':
         color = AtrioColors.hostTextSecondary;
-        label = 'Borrador';
+        label = l.hostListingsStatusDraft;
       case 'paused':
         color = AtrioColors.vibrantOrange;
-        label = 'Pausado';
+        label = l.hostListingsStatusPaused;
       default:
         color = AtrioColors.hostTextSecondary;
         label = status;

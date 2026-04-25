@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase/supabase_config.dart';
+import '../services/cache_service.dart';
 import '../services/database_service.dart';
 import '../utils/constants.dart';
 
@@ -15,6 +16,7 @@ final guestBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
     final user = SupabaseConfig.auth.currentUser;
     if (user == null) return Stream.value([]);
 
+    final cacheKey = '${CacheService.keyGuestBookingsPrefix}${user.id}';
     final controller = StreamController<List<Map<String, dynamic>>>();
     Timer? debounceTimer;
 
@@ -23,19 +25,26 @@ final guestBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
       debounceTimer = Timer(_debounceDuration, () {
         DatabaseService.getGuestBookings(user.id).then(
           (data) {
+            CacheService.putBookingsList(cacheKey, data);
             if (!controller.isClosed) controller.add(data);
           },
         );
       });
     }
 
+    // Hydrate from cache while network request runs.
+    final cached = CacheService.getBookingsList(cacheKey);
+    if (cached != null && !controller.isClosed) controller.add(cached);
+
     // Initial fetch (no debounce)
     DatabaseService.getGuestBookings(user.id).then(
       (data) {
+        CacheService.putBookingsList(cacheKey, data);
         if (!controller.isClosed) controller.add(data);
       },
       onError: (e) {
-        if (!controller.isClosed) controller.addError(e);
+        // If we already emitted cached data, swallow the error; otherwise surface it.
+        if (cached == null && !controller.isClosed) controller.addError(e);
       },
     );
 
@@ -72,6 +81,7 @@ final hostBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
     final user = SupabaseConfig.auth.currentUser;
     if (user == null) return Stream.value([]);
 
+    final cacheKey = '${CacheService.keyHostBookingsPrefix}${user.id}';
     final controller = StreamController<List<Map<String, dynamic>>>();
     Timer? debounceTimer;
 
@@ -80,19 +90,24 @@ final hostBookingsProvider = StreamProvider<List<Map<String, dynamic>>>(
       debounceTimer = Timer(_debounceDuration, () {
         DatabaseService.getHostBookings(user.id).then(
           (data) {
+            CacheService.putBookingsList(cacheKey, data);
             if (!controller.isClosed) controller.add(data);
           },
         );
       });
     }
 
+    final cached = CacheService.getBookingsList(cacheKey);
+    if (cached != null && !controller.isClosed) controller.add(cached);
+
     // Initial fetch
     DatabaseService.getHostBookings(user.id).then(
       (data) {
+        CacheService.putBookingsList(cacheKey, data);
         if (!controller.isClosed) controller.add(data);
       },
       onError: (e) {
-        if (!controller.isClosed) controller.addError(e);
+        if (cached == null && !controller.isClosed) controller.addError(e);
       },
     );
 

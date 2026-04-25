@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../core/widgets/offline_banner.dart';
 
 const _lime = Color(0xFFD4FF00);
 
@@ -11,8 +14,14 @@ class HostShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: navigationShell),
+        ],
+      ),
       extendBody: true,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
@@ -31,35 +40,35 @@ class HostShell extends StatelessWidget {
                 _NavItem(
                   icon: Icons.dashboard_outlined,
                   activeIcon: Icons.dashboard,
-                  label: 'Resumen',
+                  label: l.navDashboard,
                   isSelected: navigationShell.currentIndex == 0,
                   onTap: () => navigationShell.goBranch(0),
                 ),
                 _NavItem(
                   icon: Icons.calendar_month_outlined,
                   activeIcon: Icons.calendar_month,
-                  label: 'Calendario',
+                  label: l.navCalendar,
                   isSelected: navigationShell.currentIndex == 1,
                   onTap: () => navigationShell.goBranch(1),
                 ),
                 _NavItem(
                   icon: Icons.home_work_outlined,
                   activeIcon: Icons.home_work,
-                  label: 'Listados',
+                  label: l.navListings,
                   isSelected: navigationShell.currentIndex == 2,
                   onTap: () => navigationShell.goBranch(2),
                 ),
                 _NavItem(
                   icon: Icons.account_balance_wallet_outlined,
                   activeIcon: Icons.account_balance_wallet,
-                  label: 'Finanzas',
+                  label: l.navFinance,
                   isSelected: navigationShell.currentIndex == 3,
                   onTap: () => navigationShell.goBranch(3),
                 ),
                 _NavItem(
                   icon: Icons.person_outline,
                   activeIcon: Icons.person,
-                  label: 'Perfil',
+                  label: l.navProfile,
                   isSelected: navigationShell.currentIndex == 4,
                   onTap: () => navigationShell.goBranch(4),
                 ),

@@ -57,10 +57,14 @@ CREATE TABLE app_secrets (
 -- Solo SECURITY DEFINER functions pueden acceder
 ALTER TABLE app_secrets ENABLE ROW LEVEL SECURITY;
 
--- Insertar la API key de Brevo
-DELETE FROM app_secrets WHERE key = 'brevo_api_key';
+-- La API key de Brevo se inyecta manualmente via SQL directo en producción.
+-- NO commitear claves reales al repo.
+-- Ejemplo (ejecutar fuera de este archivo):
+--   INSERT INTO app_secrets (key, value) VALUES ('brevo_api_key', '<TU_KEY>')
+--   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 INSERT INTO app_secrets (key, value)
-VALUES ('brevo_api_key', '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');
+VALUES ('brevo_api_key', 'PLACEHOLDER_SET_VIA_ADMIN')
+ON CONFLICT (key) DO NOTHING;
 
 -- =============================================
 -- PASO 5: Función request_verification()

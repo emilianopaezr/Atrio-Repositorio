@@ -8,6 +8,8 @@ import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../l10n/app_localizations.dart';
 
 class KycScreen extends ConsumerStatefulWidget {
   const KycScreen({super.key});
@@ -43,6 +45,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   }
 
   Widget _buildScaffold(BuildContext context, dynamic profile) {
+    final l = AppLocalizations.of(context);
     // Determine step statuses from real data
     final emailVerified = true; // If they're logged in, email is verified
     _phoneVerified = profile?.phone != null && (profile.phone as String).isNotEmpty;
@@ -57,10 +60,10 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     if (_selfieUploaded) completedSteps++;
 
     final statusLabel = completedSteps == 4
-        ? 'Verificacion Completa'
+        ? l.kycStatusComplete
         : completedSteps == 0
-            ? 'Sin Verificar'
-            : 'Verificacion Parcial';
+            ? l.kycStatusUnverified
+            : l.kycStatusPartial;
     final statusColor = completedSteps == 4
         ? AtrioColors.neonLimeDark
         : completedSteps >= 2
@@ -77,7 +80,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Verificacion de Identidad',
+          l.kycTitle,
           style: AtrioTypography.headingSmall.copyWith(
             color: AtrioColors.guestTextPrimary,
             fontWeight: FontWeight.w700,
@@ -130,7 +133,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '$completedSteps de 4 pasos completados',
+                          l.kycStepsProgress(completedSteps),
                           style: AtrioTypography.bodySmall.copyWith(
                             color: Colors.white.withValues(alpha: 0.8),
                           ),
@@ -171,17 +174,17 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Por que verificarte?',
+                    l.kycWhyVerify,
                     style: AtrioTypography.labelLarge.copyWith(
                       color: AtrioColors.guestTextPrimary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 14),
-                  _BenefitRow(icon: Icons.verified_user_outlined, text: 'Mayor confianza de anfitriones y usuarios'),
-                  _BenefitRow(icon: Icons.speed_outlined, text: 'Reservas aprobadas mas rapido'),
-                  _BenefitRow(icon: Icons.workspace_premium_outlined, text: 'Acceso a espacios exclusivos'),
-                  _BenefitRow(icon: Icons.security_outlined, text: 'Proteccion de tu identidad'),
+                  _BenefitRow(icon: Icons.verified_user_outlined, text: l.kycBenefit1),
+                  _BenefitRow(icon: Icons.speed_outlined, text: l.kycBenefit2),
+                  _BenefitRow(icon: Icons.workspace_premium_outlined, text: l.kycBenefit3),
+                  _BenefitRow(icon: Icons.security_outlined, text: l.kycBenefit4),
                 ],
               ),
             ),
@@ -189,7 +192,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
 
             // === VERIFICATION STEPS ===
             Text(
-              'Pasos de Verificacion',
+              l.kycStepsTitle,
               style: AtrioTypography.labelLarge.copyWith(
                 color: AtrioColors.guestTextPrimary,
                 fontWeight: FontWeight.w700,
@@ -198,46 +201,50 @@ class _KycScreenState extends ConsumerState<KycScreen> {
             const SizedBox(height: 14),
 
             // Step 1: Email (always completed if user is logged in)
-            const _VerificationStep(
+            _VerificationStep(
               step: 1,
-              title: 'Verificar Email',
-              subtitle: 'Tu email ha sido confirmado',
+              title: l.kycStep1Title,
+              subtitle: l.kycStep1Subtitle,
               icon: Icons.email_outlined,
               status: _StepStatus.completed,
+              doneLabel: l.kycDone,
             ),
 
             // Step 2: Phone
             _VerificationStep(
               step: 2,
-              title: 'Verificar Teléfono',
-              subtitle: _phoneVerified ? 'Tu número ha sido verificado' : 'Agrega y verifica tu número',
+              title: l.kycStep2Title,
+              subtitle: _phoneVerified ? l.kycStep2SubtitleVerified : l.kycStep2SubtitlePending,
               icon: Icons.phone_outlined,
               status: _phoneVerified ? _StepStatus.completed : _StepStatus.pending,
               onTap: !_phoneVerified ? () => _showPhoneDialog(context) : null,
+              doneLabel: l.kycDone,
             ),
 
             // Step 3: Document
             _VerificationStep(
               step: 3,
-              title: 'Documento de Identidad',
-              subtitle: _docUploaded ? 'Documento enviado' : 'Sube tu INE, pasaporte o licencia',
+              title: l.kycStep3Title,
+              subtitle: _docUploaded ? l.kycStep3SubtitleSent : l.kycStep3SubtitlePending,
               icon: Icons.badge_outlined,
               status: _docUploaded
                   ? _StepStatus.completed
                   : (_phoneVerified ? _StepStatus.pending : _StepStatus.locked),
               onTap: !_docUploaded && _phoneVerified ? _pickDocument : null,
+              doneLabel: l.kycDone,
             ),
 
             // Step 4: Selfie
             _VerificationStep(
               step: 4,
-              title: 'Selfie de Verificacion',
-              subtitle: _selfieUploaded ? 'Selfie verificado' : 'Toma una foto de tu rostro',
+              title: l.kycStep4Title,
+              subtitle: _selfieUploaded ? l.kycStep4SubtitleVerified : l.kycStep4SubtitlePending,
               icon: Icons.face_outlined,
               status: _selfieUploaded
                   ? _StepStatus.completed
                   : (_docUploaded ? _StepStatus.pending : _StepStatus.locked),
               onTap: !_selfieUploaded && _docUploaded ? _pickSelfie : null,
+              doneLabel: l.kycDone,
             ),
             const SizedBox(height: 28),
 
@@ -260,7 +267,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Tu información está segura',
+                          l.kycSecureInfo,
                           style: AtrioTypography.labelMedium.copyWith(
                             color: AtrioColors.neonLimeDark,
                             fontWeight: FontWeight.w700,
@@ -268,7 +275,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Usamos cifrado de grado bancario para proteger tus datos. Solo verificamos tu identidad, nunca compartimos tu información.',
+                          l.kycSecureInfoDesc,
                           style: AtrioTypography.caption.copyWith(
                             color: AtrioColors.guestTextSecondary,
                             height: 1.4,
@@ -290,6 +297,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   // === PHONE VERIFICATION DIALOG ===
   void _showPhoneDialog(BuildContext context) {
     _phoneController.clear();
+    final l = AppLocalizations.of(context);
 
     showModalBottomSheet(
       context: context,
@@ -321,7 +329,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Verificar Telefono',
+                    l.kycPhoneDialogTitle,
                     style: AtrioTypography.headingSmall.copyWith(
                       color: AtrioColors.guestTextPrimary,
                       fontWeight: FontWeight.w800,
@@ -329,7 +337,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Ingresa tu número de celular para verificar tu cuenta.',
+                    l.kycPhoneDialogSubtitle,
                     style: AtrioTypography.bodySmall.copyWith(
                       color: AtrioColors.guestTextSecondary,
                     ),
@@ -342,8 +350,8 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s()]')),
                     ],
                     decoration: InputDecoration(
-                      labelText: 'Numero de celular',
-                      hintText: '+56 9 1234 5678',
+                      labelText: l.kycPhoneLabel,
+                      hintText: l.kycPhoneHint,
                       prefixIcon: const Icon(Icons.phone_outlined),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -366,7 +374,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                               final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
                               if (digits.length < 9 || digits.length > 15) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Ingresa un número válido (ej: +56 9 1234 5678)')),
+                                  SnackBar(content: Text(l.kycInvalidPhone)),
                                 );
                                 return;
                               }
@@ -381,7 +389,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                                   setState(() => _phoneVerified = true);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: const Text('Teléfono verificado correctamente'),
+                                      content: Text(l.kycPhoneVerified),
                                       backgroundColor: AtrioColors.neonLimeDark,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -389,11 +397,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                                   );
                                 }
                               } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: $e')),
-                                  );
-                                }
+                                if (context.mounted) ErrorHandler.showError(context, e);
                               } finally {
                                 if (context.mounted) setSheetState(() => _sendingPhone = false);
                               }
@@ -405,7 +409,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                       ),
                       child: _sendingPhone
                           ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Verificar Telefono', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                          : Text(l.kycVerifyPhoneBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -441,9 +445,10 @@ class _KycScreenState extends ConsumerState<KycScreen> {
       });
 
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Documento subido. En revision.'),
+            content: Text(l.kycDocUploaded),
             backgroundColor: AtrioColors.neonLimeDark,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -452,11 +457,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
       }
     } catch (e) {
       setState(() {});
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al subir documento: $e')),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     }
   }
 
@@ -483,9 +484,10 @@ class _KycScreenState extends ConsumerState<KycScreen> {
       });
 
       if (mounted) {
+        final l = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Verificacion completada!'),
+            content: Text(l.kycCompleted),
             backgroundColor: AtrioColors.neonLimeDark,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -494,11 +496,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
       }
     } catch (e) {
       setState(() {});
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al subir selfie: $e')),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     }
   }
 }
@@ -539,6 +537,7 @@ class _VerificationStep extends StatelessWidget {
   final IconData icon;
   final _StepStatus status;
   final VoidCallback? onTap;
+  final String doneLabel;
 
   const _VerificationStep({
     required this.step,
@@ -547,6 +546,7 @@ class _VerificationStep extends StatelessWidget {
     required this.icon,
     required this.status,
     this.onTap,
+    required this.doneLabel,
   });
 
   @override
@@ -629,7 +629,7 @@ class _VerificationStep extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  'Listo',
+                  doneLabel,
                   style: AtrioTypography.caption.copyWith(
                     color: AtrioColors.neonLimeDark,
                     fontWeight: FontWeight.w700,

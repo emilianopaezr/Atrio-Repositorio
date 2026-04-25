@@ -7,8 +7,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../l10n/app_localizations.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -25,7 +28,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Map<String, dynamic>? _conversation;
   bool _isLoading = true;
   bool _isSending = false;
+  bool _otherIsTyping = false;
   StreamSubscription? _subscription;
+  Timer? _typingTimer;
+  RealtimeChannel? _presenceChannel;
 
   String get _currentUserId =>
       SupabaseConfig.auth.currentUser?.id ?? '';
@@ -36,6 +42,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _loadConversation();
     _loadMessages();
     _subscribeToMessages();
+    _subscribeToPresence();
   }
 
   @override
@@ -43,7 +50,42 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     _subscription?.cancel();
+    _typingTimer?.cancel();
+    _presenceChannel?.unsubscribe();
     super.dispose();
+  }
+
+  void _subscribeToPresence() {
+    _presenceChannel = SupabaseConfig.client.channel('chat:${widget.conversationId}');
+    _presenceChannel!
+        .onPresenceSync((payload) {
+          final presences = _presenceChannel!.presenceState();
+          bool typing = false;
+          for (final state in presences) {
+            for (final p in state.presences) {
+              if (p.payload['user_id'] != _currentUserId &&
+                  p.payload['typing'] == true) {
+                typing = true;
+              }
+            }
+          }
+          if (mounted && typing != _otherIsTyping) {
+            setState(() => _otherIsTyping = typing);
+          }
+        })
+        .subscribe((status, [_]) async {
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            await _presenceChannel!.track({'user_id': _currentUserId, 'typing': false});
+          }
+        });
+  }
+
+  void _onTyping() {
+    _typingTimer?.cancel();
+    _presenceChannel?.track({'user_id': _currentUserId, 'typing': true});
+    _typingTimer = Timer(const Duration(seconds: 2), () {
+      _presenceChannel?.track({'user_id': _currentUserId, 'typing': false});
+    });
   }
 
   Future<void> _loadConversation() async {
@@ -108,8 +150,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     // Limit message length
     if (text.length > 5000) {
+      final l = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El mensaje es demasiado largo (máx 5000 caracteres)')),
+        SnackBar(content: Text(l.chatTooLong)),
       );
       return;
     }
@@ -136,20 +179,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           })
           .eq('id', widget.conversationId);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al enviar: $e'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
   }
 
   Future<void> _pickAndSendImage() async {
+    final l = AppLocalizations.of(context);
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
@@ -167,12 +204,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.photo_library_rounded, color: AtrioColors.neonLimeDark),
-              title: const Text('Galería'),
+              title: Text(l.chatGallery),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded, color: AtrioColors.neonLimeDark),
-              title: const Text('Cámara'),
+              title: Text(l.chatCamera),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             const SizedBox(height: 8),
@@ -196,7 +233,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (bytes.lengthInBytes > 5 * 1024 * 1024) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('La imagen es demasiado grande (máx 5 MB)')),
+          SnackBar(content: Text(l.chatImageTooLarge)),
         );
       }
       return;
@@ -221,20 +258,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       await SupabaseConfig.client
           .from('conversations')
           .update({
-            'last_message_text': '📷 Imagen',
+            'last_message_text': l.chatImageLabel,
             'last_message_sender': _currentUserId,
             'last_message_at': DateTime.now().toIso8601String(),
           })
           .eq('id', widget.conversationId);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al enviar imagen: $e'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -243,6 +273,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   // ─── Edit / Delete message actions ────────────────────────────────────
 
   Future<void> _showMessageActions(Map<String, dynamic> msg) async {
+    final l = AppLocalizations.of(context);
     final isMe = msg['sender_id'] == _currentUserId;
     final isImage = msg['type'] == 'image';
     final isDeleted = msg['is_deleted'] == true;
@@ -270,19 +301,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             if (!isImage)
               ListTile(
                 leading: const Icon(Icons.copy_rounded, color: AtrioColors.neonLimeDark),
-                title: const Text('Copiar texto'),
+                title: Text(l.chatCopyText),
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: msg['text'] as String? ?? ''));
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Texto copiado'), duration: Duration(seconds: 1)),
+                    SnackBar(content: Text(l.chatTextCopied), duration: const Duration(seconds: 1)),
                   );
                 },
               ),
             if (isMe && !isImage)
               ListTile(
                 leading: const Icon(Icons.edit_rounded, color: AtrioColors.neonLimeDark),
-                title: const Text('Editar mensaje'),
+                title: Text(l.chatEditMessage),
                 onTap: () {
                   Navigator.pop(ctx);
                   _editMessage(msg);
@@ -292,7 +323,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ListTile(
                 leading: const Icon(Icons.delete_outline_rounded, color: AtrioColors.error),
                 title: Text(
-                  isImage ? 'Eliminar imagen' : 'Eliminar mensaje',
+                  isImage ? l.chatDeleteImage : l.chatDeleteMessage,
                   style: const TextStyle(color: AtrioColors.error),
                 ),
                 onTap: () {
@@ -308,6 +339,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _editMessage(Map<String, dynamic> msg) async {
+    final l = AppLocalizations.of(context);
     final controller = TextEditingController(text: msg['text'] as String? ?? '');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -315,26 +347,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
-        title: const Text('Editar mensaje'),
+        title: Text(l.chatEditMessage),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLines: 5,
           minLines: 1,
           maxLength: 5000,
-          decoration: const InputDecoration(
-            hintText: 'Escribe tu mensaje...',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: l.chatMsgHint,
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+            child: Text(l.btnCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Guardar', style: TextStyle(color: AtrioColors.neonLimeDark)),
+            child: Text(l.btnSave, style: const TextStyle(color: AtrioColors.neonLimeDark)),
           ),
         ],
       ),
@@ -352,18 +384,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           })
           .eq('id', msg['id']);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al editar: $e'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     }
   }
 
   Future<void> _confirmDelete(Map<String, dynamic> msg) async {
+    final l = AppLocalizations.of(context);
     final isImage = msg['type'] == 'image';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -371,20 +397,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
-        title: Text(isImage ? 'Eliminar imagen' : 'Eliminar mensaje'),
+        title: Text(isImage ? l.chatDeleteImage : l.chatDeleteMessage),
         content: Text(
           isImage
-              ? '¿Eliminar esta imagen para todos? Esta acción no se puede deshacer.'
-              : '¿Eliminar este mensaje para todos? Esta acción no se puede deshacer.',
+              ? l.chatDeleteImageConfirm
+              : l.chatDeleteMessageConfirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(l.btnCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Eliminar', style: TextStyle(color: AtrioColors.error)),
+            child: Text(l.btnDelete, style: const TextStyle(color: AtrioColors.error)),
           ),
         ],
       ),
@@ -412,20 +438,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al eliminar: $e'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     }
   }
 
   // ─── Conversation-level menu (3-dot in app bar) ───────────────────────
 
   Future<void> _showConversationMenu() async {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final listingId = _conversation?['listing_id'] as String?;
 
@@ -448,7 +468,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             if (listingId != null && listingId.isNotEmpty)
               ListTile(
                 leading: const Icon(Icons.storefront_rounded, color: AtrioColors.neonLimeDark),
-                title: const Text('Ver publicación'),
+                title: Text(l.chatViewListing),
                 onTap: () {
                   Navigator.pop(ctx);
                   context.push('/listing/$listingId');
@@ -456,8 +476,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ListTile(
               leading: const Icon(Icons.cleaning_services_rounded, color: AtrioColors.neonLimeDark),
-              title: const Text('Borrar mis mensajes'),
-              subtitle: const Text('Elimina todos los mensajes que enviaste en esta conversación'),
+              title: Text(l.chatClearMyMessages),
+              subtitle: Text(l.chatClearMyMessagesDesc),
               onTap: () {
                 Navigator.pop(ctx);
                 _confirmClearMyMessages();
@@ -465,9 +485,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.flag_outlined, color: AtrioColors.error),
-              title: const Text(
-                'Reportar conversación',
-                style: TextStyle(color: AtrioColors.error),
+              title: Text(
+                l.chatReport,
+                style: const TextStyle(color: AtrioColors.error),
               ),
               onTap: () {
                 Navigator.pop(ctx);
@@ -482,23 +502,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _confirmClearMyMessages() async {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface,
-        title: const Text('Borrar mis mensajes'),
-        content: const Text(
-          '¿Eliminar todos los mensajes que enviaste en esta conversación? Esta acción no se puede deshacer.',
+        title: Text(l.chatClearMyMessages),
+        content: Text(
+          l.chatClearConfirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(l.btnCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Borrar todo', style: TextStyle(color: AtrioColors.error)),
+            child: Text(l.chatClearAll, style: const TextStyle(color: AtrioColors.error)),
           ),
         ],
       ),
@@ -529,30 +550,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mensajes eliminados')),
+          SnackBar(content: Text(l.chatMessagesCleared)),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al borrar: $e'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     }
   }
 
   Future<void> _showReportSheet() async {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final reasons = [
-      'Spam o publicidad',
-      'Estafa o fraude',
-      'Acoso o lenguaje ofensivo',
-      'Contenido inapropiado',
-      'Suplantación de identidad',
-      'Otro',
+      l.chatReportReasonSpam,
+      l.chatReportReasonScam,
+      l.chatReportReasonHarass,
+      l.chatReportReasonInappropriate,
+      l.chatReportReasonImpersonation,
+      l.chatReportReasonOther,
     ];
     String? selected;
     final detailsCtrl = TextEditingController();
@@ -582,14 +597,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Reportar conversación',
+                l.chatReport,
                 style: AtrioTypography.headingSmall.copyWith(
                   color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Tu reporte es anónimo. Lo revisaremos en menos de 48h.',
+                l.chatReportAnon,
                 style: AtrioTypography.caption.copyWith(
                   color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary,
                 ),
@@ -624,9 +639,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 controller: detailsCtrl,
                 maxLines: 3,
                 maxLength: 500,
-                decoration: const InputDecoration(
-                  hintText: 'Detalles adicionales (opcional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: l.chatReportDetailsHint,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 8),
@@ -642,7 +657,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   onPressed: selected == null
                       ? null
                       : () => Navigator.pop(ctx, true),
-                  child: const Text('Enviar reporte'),
+                  child: Text(l.chatSendReport),
                 ),
               ),
               const SizedBox(height: 8),
@@ -664,30 +679,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Reporte enviado. Gracias por avisarnos.'),
+          SnackBar(
+            content: Text(l.chatReportSent),
             backgroundColor: AtrioColors.neonLimeDark,
           ),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al reportar: $e'),
-            backgroundColor: AtrioColors.error,
-          ),
-        );
-      }
+      if (mounted) ErrorHandler.showError(context, e);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final listingTitle =
         (_conversation?['listing'] as Map<String, dynamic>?)?['title'] as String? ??
-            'Conversación';
+            l.chatDefault;
 
     return Scaffold(
       appBar: AppBar(
@@ -714,7 +723,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    'En línea',
+                    AppLocalizations.of(context).chatOnline,
                     style: AtrioTypography.caption.copyWith(
                       color: AtrioColors.neonLimeDark,
                     ),
@@ -752,7 +761,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     : AtrioColors.guestTextTertiary),
                             const SizedBox(height: 12),
                             Text(
-                              'Inicia la conversación',
+                              l.chatStartConversation,
                               style: AtrioTypography.bodyMedium.copyWith(
                                 color: isDark
                                     ? AtrioColors.hostTextSecondary
@@ -815,6 +824,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
           ),
 
+          // Typing indicator
+          if (_otherIsTyping)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 16, height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.5,
+                      color: AtrioColors.neonLimeDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    l.chatTyping,
+                    style: AtrioTypography.caption.copyWith(
+                      color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Input area
           Container(
             padding: EdgeInsets.fromLTRB(
@@ -853,7 +889,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             : AtrioColors.guestTextPrimary,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Escribe un mensaje...',
+                        hintText: l.chatMsgHint,
                         hintStyle: AtrioTypography.bodyMedium.copyWith(
                           color: isDark
                               ? AtrioColors.hostTextTertiary
@@ -865,6 +901,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       maxLines: 4,
                       minLines: 1,
                       textInputAction: TextInputAction.send,
+                      onChanged: (_) => _onTyping(),
                       onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
@@ -927,6 +964,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isImage = !isDeleted && imageUrl != null && imageUrl!.isNotEmpty;
 
     return Align(
@@ -980,7 +1018,7 @@ class _MessageBubble extends StatelessWidget {
               ),
             if (!isImage)
               Text(
-                isDeleted ? 'Mensaje eliminado' : text,
+                isDeleted ? l.chatDeleted : text,
                 style: AtrioTypography.bodyMedium.copyWith(
                   color: isMe
                       ? Colors.white
@@ -997,7 +1035,7 @@ class _MessageBubble extends StatelessWidget {
                 children: [
                   if (isEdited && !isDeleted) ...[
                     Text(
-                      'editado',
+                      l.chatEdited,
                       style: AtrioTypography.caption.copyWith(
                         color: isMe
                             ? Colors.white.withValues(alpha: 0.7)
@@ -1096,21 +1134,33 @@ class _DateSeparator extends StatelessWidget {
   final DateTime? date;
   const _DateSeparator({this.date});
 
-  String _format(DateTime? dt) {
+  String _format(BuildContext context, DateTime? dt) {
     if (dt == null) return '';
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
     if (dt.day == now.day && dt.month == now.month && dt.year == now.year) {
-      return 'Hoy';
+      return l.chatDateToday;
     }
     final yesterday = now.subtract(const Duration(days: 1));
     if (dt.day == yesterday.day &&
         dt.month == yesterday.month &&
         dt.year == yesterday.year) {
-      return 'Ayer';
+      return l.chatDateYesterday;
     }
-    const months = [
-      '', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    final months = [
+      '',
+      l.monthAbbrJan,
+      l.monthAbbrFeb,
+      l.monthAbbrMar,
+      l.monthAbbrApr,
+      l.monthAbbrMay,
+      l.monthAbbrJun,
+      l.monthAbbrJul,
+      l.monthAbbrAug,
+      l.monthAbbrSep,
+      l.monthAbbrOct,
+      l.monthAbbrNov,
+      l.monthAbbrDec,
     ];
     return '${dt.day} ${months[dt.month]}, ${dt.year}';
   }
@@ -1121,7 +1171,7 @@ class _DateSeparator extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
         child: Text(
-          _format(date),
+          _format(context, date),
           style: AtrioTypography.caption.copyWith(
             color: Theme.of(context).brightness == Brightness.dark
                 ? AtrioColors.hostTextTertiary

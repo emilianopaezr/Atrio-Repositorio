@@ -8,6 +8,7 @@ import '../../../core/providers/listings_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/realtime_service.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -35,11 +36,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   int _totalBookings = 0;
   int _blockedCount = 0;
 
-  static const List<String> _months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  List<String> _months(AppLocalizations l) => [
+    l.calendarMonthJan, l.calendarMonthFeb, l.calendarMonthMar, l.calendarMonthApr,
+    l.calendarMonthMay, l.calendarMonthJun, l.calendarMonthJul, l.calendarMonthAug,
+    l.calendarMonthSep, l.calendarMonthOct, l.calendarMonthNov, l.calendarMonthDec,
   ];
-  static const List<String> _dayHeaders = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
+  List<String> _dayHeaders(AppLocalizations l) => [
+    l.calendarDayShortMon, l.calendarDayShortTue, l.calendarDayShortWed,
+    l.calendarDayShortThu, l.calendarDayShortFri, l.calendarDayShortSat, l.calendarDayShortSun,
+  ];
+  List<String> _dayFullNames(AppLocalizations l) => [
+    l.calendarDayFullMon, l.calendarDayFullTue, l.calendarDayFullWed,
+    l.calendarDayFullThu, l.calendarDayFullFri, l.calendarDayFullSat, l.calendarDayFullSun,
+  ];
+  List<String> _dayAbbrNames(AppLocalizations l) => [
+    l.calendarDayAbbrMon, l.calendarDayAbbrTue, l.calendarDayAbbrWed,
+    l.calendarDayAbbrThu, l.calendarDayAbbrFri, l.calendarDayAbbrSat, l.calendarDayAbbrSun,
+  ];
 
   @override
   void initState() {
@@ -104,7 +117,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final key = _dateKey(date);
 
     if (_bookedDates.contains(key)) {
-      _showSnack('No puedes bloquear una fecha con reserva activa');
+      _showSnack(AppLocalizations.of(context).calendarCannotBlockBooked);
       return;
     }
 
@@ -127,7 +140,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         }
       });
     } catch (_) {
-      _showSnack('Error al actualizar disponibilidad');
+      if (mounted) _showSnack(AppLocalizations.of(context).calendarUpdateError);
     }
   }
 
@@ -141,7 +154,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     var d = start;
     while (!d.isAfter(end)) {
       if (_bookedDates.contains(_dateKey(d))) {
-        _showSnack('No puedes bloquear fechas con reservas activas');
+        _showSnack(AppLocalizations.of(context).calendarCannotBlockRangeBooked);
         return;
       }
       d = d.add(const Duration(days: 1));
@@ -162,10 +175,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _rangeEnd = null;
         _isRangeMode = false;
       });
-      _showSnack('Fechas bloqueadas correctamente');
+      if (mounted) _showSnack(AppLocalizations.of(context).calendarDatesBlocked);
     } catch (_) {
       setState(() => _isLoading = false);
-      _showSnack('Error al bloquear rango');
+      if (mounted) _showSnack(AppLocalizations.of(context).calendarBlockRangeError);
     }
   }
 
@@ -190,10 +203,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _rangeEnd = null;
         _isRangeMode = false;
       });
-      _showSnack('Fechas desbloqueadas correctamente');
+      if (mounted) _showSnack(AppLocalizations.of(context).calendarDatesUnblocked);
     } catch (_) {
       setState(() => _isLoading = false);
-      _showSnack('Error al desbloquear rango');
+      if (mounted) _showSnack(AppLocalizations.of(context).calendarUnblockRangeError);
     }
   }
 
@@ -237,12 +250,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _showDayDetail(DateTime date) {
+    final l = AppLocalizations.of(context);
     final key = _dateKey(date);
     final booked = _bookedDates.contains(key);
     final blocked = _blockedDates.contains(key);
     final status = _dateBookingStatus[key] ?? '';
     final bookingId = _dateBookingId[key];
-    final dayName = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][date.weekday - 1];
+    final dayName = _dayFullNames(l)[date.weekday - 1];
 
     showModalBottomSheet(
       context: context,
@@ -260,7 +274,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 20),
             Text(
-              '$dayName ${date.day} de ${_months[date.month - 1]}',
+              '$dayName ${date.day} de ${_months(l)[date.month - 1]}',
               style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
             ),
             const SizedBox(height: 8),
@@ -286,10 +300,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   const SizedBox(width: 8),
                   Text(
                     booked
-                        ? 'Reservado${status.isNotEmpty ? ' ($status)' : ''}'
+                        ? (status.isNotEmpty ? l.calendarStatusReservedWith(status) : l.calendarStatusReserved)
                         : blocked
-                            ? 'Bloqueado manualmente'
-                            : 'Disponible',
+                            ? l.calendarStatusBlockedManually
+                            : l.calendarStatusAvailable,
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -310,7 +324,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     context.push('/booking-detail/$bookingId');
                   },
                   icon: const Icon(Icons.visibility_outlined, size: 18),
-                  label: Text('Ver reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                  label: Text(l.calendarViewBooking, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AtrioColors.neonLime,
                     side: BorderSide(color: AtrioColors.neonLime.withValues(alpha: 0.3)),
@@ -329,7 +343,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   },
                   icon: Icon(blocked ? Icons.lock_open : Icons.block, size: 18),
                   label: Text(
-                    blocked ? 'Desbloquear día' : 'Bloquear día',
+                    blocked ? l.calendarUnblockDay : l.calendarBlockDay,
                     style: GoogleFonts.inter(fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -357,11 +371,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final userId = AuthService.currentUser?.id;
     if (userId == null) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AtrioColors.hostBackground,
-        body: Center(child: Text('Inicia sesión', style: TextStyle(color: Colors.white))),
+        body: Center(child: Text(l.calendarSignIn, style: const TextStyle(color: Colors.white))),
       );
     }
 
@@ -377,14 +392,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.calendar_today, size: 48, color: AtrioColors.hostTextTertiary),
                   const SizedBox(height: 16),
-                  Text('Publica un anuncio para ver\nel calendario', textAlign: TextAlign.center, style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.hostTextSecondary)),
+                  Text(l.calendarEmptyMessage, textAlign: TextAlign.center, style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.hostTextSecondary)),
                   const SizedBox(height: 20),
                   GestureDetector(
                     onTap: () => context.push('/host/create-listing'),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(12)),
-                      child: Text('Crear anuncio', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black)),
+                      child: Text(l.calendarCreateListing, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black)),
                     ),
                   ),
                 ]),
@@ -409,7 +424,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                   child: Row(
                     children: [
-                      Text('Calendario', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
+                      Text(l.calendarTitle, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
                       const Spacer(),
                       GestureDetector(
                         onTap: _goToToday,
@@ -420,7 +435,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AtrioColors.hostCardBorder),
                           ),
-                          child: Text('Hoy', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.neonLime)),
+                          child: Text(l.calendarToday, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.neonLime)),
                         ),
                       ),
                     ],
@@ -436,10 +451,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: listings.length,
                     itemBuilder: (_, i) {
-                      final l = listings[i];
-                      final id = l['id'] as String;
+                      final item = listings[i];
+                      final id = item['id'] as String;
                       final selected = _selectedListingId == id;
-                      final type = l['type'] as String? ?? '';
+                      final type = item['type'] as String? ?? '';
                       final icon = type == 'space' ? Icons.home_rounded : type == 'experience' ? Icons.explore_rounded : Icons.build_rounded;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
@@ -469,7 +484,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 ConstrainedBox(
                                   constraints: const BoxConstraints(maxWidth: 120),
                                   child: Text(
-                                    l['title'] as String? ?? 'Sin título',
+                                    item['title'] as String? ?? l.calendarNoTitle,
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
@@ -494,14 +509,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
-                      _statChip(Icons.event_available, '$_totalBookings', 'Reservas', Colors.green),
+                      _statChip(Icons.event_available, '$_totalBookings', l.calendarStatReservations, Colors.green),
                       const SizedBox(width: 8),
-                      _statChip(Icons.block, '$_blockedCount', 'Bloqueados', Colors.red[400]!),
+                      _statChip(Icons.block, '$_blockedCount', l.calendarStatBlocked, Colors.red[400]!),
                       const SizedBox(width: 8),
                       _statChip(
                         Icons.calendar_today,
                         '${_daysInMonth() - _totalBookings - _blockedCount}',
-                        'Disponibles',
+                        l.calendarStatAvailable,
                         AtrioColors.neonLimeDark,
                       ),
                     ],
@@ -520,14 +535,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ),
                     child: Row(
                       children: [
-                        _modeButton('Día', !_isRangeMode, () {
+                        _modeButton(l.calendarModeDay, !_isRangeMode, () {
                           setState(() {
                             _isRangeMode = false;
                             _rangeStart = null;
                             _rangeEnd = null;
                           });
                         }),
-                        _modeButton('Rango', _isRangeMode, () {
+                        _modeButton(l.calendarModeRange, _isRangeMode, () {
                           setState(() {
                             _isRangeMode = true;
                             _selectedDay = null;
@@ -560,7 +575,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         ),
                       ),
                       Text(
-                        '${_months[_focusedMonth.month - 1]} ${_focusedMonth.year}',
+                        '${_months(l)[_focusedMonth.month - 1]} ${_focusedMonth.year}',
                         style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                       GestureDetector(
@@ -586,7 +601,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
-                    children: _dayHeaders.map((d) => Expanded(
+                    children: _dayHeaders(l).map((d) => Expanded(
                       child: Center(
                         child: Text(d, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextTertiary)),
                       ),
@@ -615,13 +630,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
                   child: Row(children: [
-                    _legend(Colors.green[400]!, 'Reservado'),
+                    _legend(Colors.green[400]!, l.calendarLegendReserved),
                     const SizedBox(width: 12),
-                    _legend(Colors.red[400]!, 'Bloqueado'),
+                    _legend(Colors.red[400]!, l.calendarLegendBlocked),
                     const SizedBox(width: 12),
-                    _legend(AtrioColors.hostSurface, 'Disponible'),
+                    _legend(AtrioColors.hostSurface, l.calendarLegendAvailable),
                     const SizedBox(width: 12),
-                    if (_isRangeMode) _legend(AtrioColors.neonLime.withValues(alpha: 0.3), 'Selección'),
+                    if (_isRangeMode) _legend(AtrioColors.neonLime.withValues(alpha: 0.3), l.calendarLegendSelection),
                   ]),
                 ),
 
@@ -636,7 +651,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const Icon(Icons.error_outline, size: 48, color: AtrioColors.hostTextTertiary),
             const SizedBox(height: 12),
-            Text('Error al cargar', style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
+            Text(l.calendarLoadError, style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
           ]),
         ),
       ),
@@ -798,6 +813,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Widget _buildActionBar() {
+    final l = AppLocalizations.of(context);
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     if (_isRangeMode && _rangeStart != null && _rangeEnd != null) {
@@ -813,7 +829,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: ElevatedButton.icon(
                 onPressed: _blockRange,
                 icon: const Icon(Icons.block, size: 16),
-                label: Text('Bloquear', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
+                label: Text(l.calendarBlock, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[400],
                   foregroundColor: Colors.white,
@@ -828,7 +844,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: ElevatedButton.icon(
                 onPressed: _unblockRange,
                 icon: const Icon(Icons.lock_open, size: 16),
-                label: Text('Desbloquear', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
+                label: Text(l.calendarUnblock, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AtrioColors.neonLime,
                   foregroundColor: Colors.black,
@@ -847,7 +863,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       final key = _dateKey(_selectedDay!);
       final booked = _bookedDates.contains(key);
       final blocked = _blockedDates.contains(key);
-      final dayName = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'][_selectedDay!.weekday - 1];
+      final dayName = _dayAbbrNames(l)[_selectedDay!.weekday - 1];
 
       return Container(
         padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
@@ -863,11 +879,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '$dayName ${_selectedDay!.day} ${_months[_selectedDay!.month - 1]}',
+                    '$dayName ${_selectedDay!.day} ${_months(l)[_selectedDay!.month - 1]}',
                     style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
                   ),
                   Text(
-                    booked ? 'Reservado' : blocked ? 'Bloqueado' : 'Disponible',
+                    booked ? l.calendarStatusReserved : blocked ? l.calendarStatusBlocked : l.calendarStatusAvailable,
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: booked ? Colors.green : blocked ? Colors.red[400] : AtrioColors.neonLimeDark,
@@ -881,7 +897,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 onPressed: () => _toggleBlock(_selectedDay!),
                 icon: Icon(blocked ? Icons.lock_open : Icons.block, size: 16),
                 label: Text(
-                  blocked ? 'Desbloquear' : 'Bloquear',
+                  blocked ? l.calendarUnblock : l.calendarBlock,
                   style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
                 ),
                 style: ElevatedButton.styleFrom(
@@ -901,7 +917,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
-                child: Text('Ver detalles', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+                child: Text(l.calendarViewDetails, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
               ),
           ],
         ),
@@ -920,7 +936,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             Icon(Icons.info_outline, size: 16, color: AtrioColors.hostTextTertiary),
             const SizedBox(width: 8),
             Text(
-              _rangeStart == null ? 'Selecciona la fecha inicial' : 'Selecciona la fecha final',
+              _rangeStart == null ? l.calendarSelectStartDate : l.calendarSelectEndDate,
               style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary),
             ),
           ],

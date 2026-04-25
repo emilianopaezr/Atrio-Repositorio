@@ -11,9 +11,13 @@ import '../../../core/providers/listings_provider.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/pricing_engine_service.dart';
+import '../../../core/services/mercadopago_service.dart';
 import '../../../shared/widgets/availability_calendar.dart';
 import '../../../shared/widgets/time_slot_picker.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../l10n/app_localizations.dart';
+import 'payment_webview_screen.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   final String listingId;
@@ -30,7 +34,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   int _guests = 1;
   bool _isBooking = false;
   PricingResult? _pricingResult;
-  int _paymentIdx = 0;
   final Set<String> _selectedTimeSlots = {};
   final Map<String, String> _slotEndTimes = {};
 
@@ -90,17 +93,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   String _fmt(DateTime? dt) {
-    if (dt == null) return 'Seleccionar';
-    const m = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    final l = AppLocalizations.of(context);
+    if (dt == null) return l.checkoutSelectPlaceholder;
+    final m = ['', l.monthAbbrJan, l.monthAbbrFeb, l.monthAbbrMar, l.monthAbbrApr, l.monthAbbrMay, l.monthAbbrJun, l.monthAbbrJul, l.monthAbbrAug, l.monthAbbrSep, l.monthAbbrOct, l.monthAbbrNov, l.monthAbbrDec];
     return '${dt.day} ${m[dt.month]} ${dt.year}';
   }
 
   String _unitLabel(String u) {
+    final l = AppLocalizations.of(context);
     switch (u) {
-      case 'night': return 'noche';
-      case 'hour': return 'hora';
-      case 'session': return 'sesión';
-      case 'person': return 'persona';
+      case 'night': return l.checkoutUnitNight;
+      case 'hour': return l.checkoutUnitHour;
+      case 'session': return l.checkoutUnitSession;
+      case 'person': return l.checkoutUnitPerson;
       default: return u;
     }
   }
@@ -181,18 +186,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   Future<void> _confirm(Listing listing) async {
     Haptics.medium();
+    final l = AppLocalizations.of(context);
     final mode = listing.rentalMode;
 
     if (mode == 'nights' && (_checkIn == null || _checkOut == null)) {
-      _snack('Selecciona las fechas primero', isError: true);
+      _snack(l.checkoutSelectDatesFirst, isError: true);
       return;
     }
     if (mode == 'full_day' && _selectedDate == null) {
-      _snack('Selecciona un día', isError: true);
+      _snack(l.checkoutSelectDay, isError: true);
       return;
     }
     if (mode == 'hours' && (_selectedDate == null || _selectedTimeSlots.isEmpty)) {
-      _snack('Selecciona fecha y horarios', isError: true);
+      _snack(l.checkoutSelectDateAndSlots, isError: true);
       return;
     }
 
@@ -225,7 +231,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         feeRate: _feeRate,
       );
       if (!isValid) {
-        if (mounted) _snack('Error en el cálculo. Recarga e intenta de nuevo.', isError: true);
+        if (mounted) _snack(l.checkoutCalcError, isError: true);
         setState(() => _isBooking = false);
         return;
       }
@@ -262,23 +268,257 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         },
       };
 
+      // Step 1: Create booking with payment_status = 'pending'
       final result = await DatabaseService.createBookingWithCheck(bookingData);
 
       if (result == null) {
-        if (mounted) _snack('Las fechas seleccionadas ya no están disponibles', isError: true);
+        if (mounted) _snack(l.checkoutDatesUnavailable, isError: true);
         return;
       }
 
-      if (mounted) {
-        _snack('Reserva confirmada');
-        await Future.delayed(const Duration(milliseconds: 600));
-        if (mounted) context.pushReplacement('/booking-confirmed');
+      final bookingId = result['id'] as String;
+
+      // Step 2: If Mercado Pago is configured, process real payment
+      if (MercadoPagoService.isConfigured) {
+        await _processPayment(
+          listing: listing,
+          bookingId: bookingId,
+          total: total,
+          serviceFee: fee,
+        );
+      } else {
+        // Fallback: no payment provider → confirm directly (dev mode)
+        if (mounted) {
+          _snack(l.checkoutDevMode);
+          await Future.delayed(const Duration(milliseconds: 600));
+          if (mounted) context.pushReplacement('/booking-confirmed');
+        }
       }
     } catch (e) {
-      if (mounted) _snack('No se pudo completar la reserva. Intenta de nuevo.', isError: true);
+      if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isBooking = false);
     }
+  }
+
+  /// Process payment via Mercado Pago Checkout Pro.
+  ///
+  /// 1. Creates MP preference with booking details
+  /// 2. Opens WebView for user to pay
+  /// 3. Handles result: approved → update booking, rejected → show error
+  Future<void> _processPayment({
+    required Listing listing,
+    required String bookingId,
+    required double total,
+    required double serviceFee,
+  }) async {
+    try {
+      // Create Mercado Pago preference
+      final userEmail = AuthService.currentUser?.email ?? 'guest@atrio.app';
+      final preference = await MercadoPagoService.createPreference(
+        title: 'Reserva: ${listing.title}',
+        description: '${listing.city ?? 'Atrio'} - ${listing.type}',
+        amount: total,
+        payerEmail: userEmail,
+        externalReference: bookingId,
+      );
+
+      // Store preference ID in booking
+      await DatabaseService.updateBookingPaymentStatus(
+        bookingId,
+        paymentStatus: 'pending',
+        mpPreferenceId: preference.id,
+      );
+
+      if (!mounted) return;
+
+      // Open Mercado Pago Checkout in WebView
+      final paymentResult = await Navigator.of(context).push<PaymentResult>(
+        MaterialPageRoute(
+          builder: (_) => PaymentWebViewScreen(
+            checkoutUrl: preference.initPoint,
+            bookingId: bookingId,
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (paymentResult == null || paymentResult.isCancelled) {
+        // User closed the WebView without paying
+        _snack(
+          AppLocalizations.of(context).checkoutPaymentPending,
+          isError: false,
+        );
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (mounted) context.pushReplacement('/guest/bookings');
+        return;
+      }
+
+      if (paymentResult.isApproved) {
+        await _handlePaymentApproved(
+          bookingId: bookingId,
+          hostId: listing.hostId,
+          total: total,
+          serviceFee: serviceFee,
+          paymentId: paymentResult.paymentId,
+        );
+      } else if (paymentResult.isPending) {
+        await _handlePaymentPending(bookingId, paymentResult.paymentId);
+      } else {
+        await _handlePaymentRejected(bookingId, paymentResult);
+      }
+    } on MpException catch (e) {
+      if (mounted) {
+        _snack(AppLocalizations.of(context).checkoutPaymentError(e.message), isError: true);
+      }
+    }
+  }
+
+  /// Payment approved → update booking, create transaction, show success.
+  Future<void> _handlePaymentApproved({
+    required String bookingId,
+    required String hostId,
+    required double total,
+    required double serviceFee,
+    String? paymentId,
+  }) async {
+    // Verify with MP API if we have a payment ID
+    if (paymentId != null && paymentId.isNotEmpty) {
+      try {
+        final status = await MercadoPagoService.getPaymentStatus(paymentId);
+        if (!status.isApproved) {
+          // MP says it's not really approved - handle accordingly
+          if (status.isPending) {
+            await _handlePaymentPending(bookingId, paymentId);
+            return;
+          }
+          if (mounted) {
+            _snack(AppLocalizations.of(context).checkoutPaymentNotApproved(status.statusLabel),
+                isError: true);
+          }
+          return;
+        }
+      } catch (_) {
+        // Verification failed but redirect said approved - trust redirect
+      }
+    }
+
+    // Update booking payment status to paid
+    await DatabaseService.updateBookingPaymentStatus(
+      bookingId,
+      paymentStatus: 'paid',
+      mpPaymentId: paymentId,
+    );
+
+    // Create transaction records (host earning + platform fee)
+    await DatabaseService.createPaymentTransaction(
+      bookingId: bookingId,
+      hostId: hostId,
+      amount: total,
+      serviceFee: serviceFee,
+      mpPaymentId: paymentId,
+    );
+
+    if (mounted) {
+      _snack(AppLocalizations.of(context).checkoutPaymentApproved);
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (mounted) context.pushReplacement('/booking-confirmed');
+    }
+  }
+
+  /// Payment pending → update status, redirect to bookings.
+  Future<void> _handlePaymentPending(
+      String bookingId, String? paymentId) async {
+    await DatabaseService.updateBookingPaymentStatus(
+      bookingId,
+      paymentStatus: 'pending',
+      mpPaymentId: paymentId,
+    );
+
+    if (mounted) {
+      _snack(AppLocalizations.of(context).checkoutPaymentInProcess);
+      await Future.delayed(const Duration(milliseconds: 800));
+      if (mounted) context.pushReplacement('/guest/bookings');
+    }
+  }
+
+  /// Payment rejected → show error, allow retry.
+  Future<void> _handlePaymentRejected(
+      String bookingId, PaymentResult result) async {
+    await DatabaseService.updateBookingPaymentStatus(
+      bookingId,
+      paymentStatus: 'failed',
+      mpPaymentId: result.paymentId,
+    );
+
+    if (mounted) {
+      final l = AppLocalizations.of(context);
+      // Try to get specific rejection reason
+      String errorMsg = l.checkoutPaymentRejected;
+      if (result.paymentId != null && result.paymentId!.isNotEmpty) {
+        try {
+          final status =
+              await MercadoPagoService.getPaymentStatus(result.paymentId!);
+          if (status.rejectionReason != null) {
+            errorMsg = status.rejectionReason!;
+          }
+        } catch (_) {}
+      }
+
+      if (!mounted) return;
+      _snack(errorMsg, isError: true);
+
+      // Show retry dialog
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      _showRetryDialog(bookingId);
+    }
+  }
+
+  void _showRetryDialog(String bookingId) {
+    final l = AppLocalizations.of(context);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AtrioColors.error),
+            const SizedBox(width: 10),
+            Text(l.checkoutRejectedTitle,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: Text(l.checkoutRejectedDesc),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context.pushReplacement('/guest/bookings');
+            },
+            child: Text(
+              l.checkoutGoToBookings,
+              style: GoogleFonts.inter(color: AtrioColors.guestTextSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              // Stay on checkout to retry (booking already exists)
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AtrioColors.neonLime,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(l.checkoutRetryBtn,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _snack(String msg, {bool isError = false}) {
@@ -295,6 +535,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final listingAsync = ref.watch(listingDetailProvider(widget.listingId));
 
     return listingAsync.when(
@@ -303,7 +544,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           return Scaffold(
             backgroundColor: AtrioColors.guestBackground,
             appBar: AppBar(backgroundColor: AtrioColors.guestBackground, elevation: 0),
-            body: const Center(child: Text('No encontrado')),
+            body: Center(child: Text(l.checkoutNotFound)),
           );
         }
         return _page(Listing.fromJson(data));
@@ -315,12 +556,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       error: (_, _) => Scaffold(
         backgroundColor: AtrioColors.guestBackground,
         appBar: AppBar(backgroundColor: AtrioColors.guestBackground, elevation: 0),
-        body: const Center(child: Text('Error al cargar')),
+        body: Center(child: Text(l.checkoutLoadError)),
       ),
     );
   }
 
   Widget _page(Listing listing) {
+    final l = AppLocalizations.of(context);
     final mode = listing.rentalMode;
     final base = listing.basePrice ?? 0;
     final blockH = listing.blockHours > 0 ? listing.blockHours : 1;
@@ -341,16 +583,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     String unitSuffix;
     switch (mode) {
       case 'hours':
-        modeLabel = blockH > 1 ? 'Bloques de $blockH horas' : 'Reserva por horas';
-        unitSuffix = '$totalH hora${totalH > 1 ? 's' : ''} ($blocks bloque${blocks > 1 ? 's' : ''})';
+        modeLabel = blockH > 1 ? l.checkoutModeHoursBlock(blockH) : l.checkoutModeHours;
+        unitSuffix = l.checkoutUnitHoursBlocks(totalH, blocks);
         break;
       case 'full_day':
-        modeLabel = 'Día completo';
-        unitSuffix = '1 día';
+        modeLabel = l.checkoutModeFullDay;
+        unitSuffix = l.checkoutUnitOneDay;
         break;
       default:
-        modeLabel = 'Reserva por noches';
-        unitSuffix = '$_nights noche${_nights > 1 ? 's' : ''}';
+        modeLabel = l.checkoutModeNights;
+        unitSuffix = l.checkoutNightsBadge(_nights);
     }
 
     return Scaffold(
@@ -365,7 +607,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: AtrioColors.guestTextPrimary),
         ),
         title: Text(
-          'Confirmar Reserva',
+          l.checkoutConfirmTitle,
           style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary),
         ),
         centerTitle: true,
@@ -413,7 +655,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
                   // ─── Date/Time selection (mode-specific) ───
                   if (mode == 'nights') ...[
-                    Text('Fechas', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    Text(l.checkoutDatesLabel, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
                     const SizedBox(height: 12),
                     AvailabilityCalendar(
                       listingId: widget.listingId,
@@ -434,7 +676,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       _buildDateSummary(listing),
                     ],
                   ] else if (mode == 'full_day') ...[
-                    Text('Selecciona un día', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    Text(l.checkoutSelectDayLabel, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
                     const SizedBox(height: 12),
                     AvailabilityCalendar(
                       listingId: widget.listingId,
@@ -467,7 +709,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ],
                   ] else ...[
                     // Hours mode
-                    Text('Selecciona fecha', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    Text(l.checkoutSelectDateLabel, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
                     const SizedBox(height: 12),
                     AvailabilityCalendar(
                       listingId: widget.listingId,
@@ -488,7 +730,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Text(
-                            'Selecciona 1 horario (precio por persona)',
+                            l.checkoutSelectOneSlot,
                             style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.guestTextSecondary, fontStyle: FontStyle.italic),
                           ),
                         ),
@@ -530,7 +772,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   const SizedBox(height: 24),
 
                   // ─── Price breakdown ───
-                  Text('Resumen de Precio', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                  Text(l.checkoutPriceSummary, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
                   const SizedBox(height: 14),
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -543,17 +785,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       children: [
                         _priceRow(
                           _isPerPerson(listing)
-                              ? '${base.toCLP} x $_guests persona${_guests > 1 ? 's' : ''}${mode == 'hours' ? ' x $blocks bloque${blocks > 1 ? 's' : ''}' : ''}'
+                              ? (mode == 'hours'
+                                  ? l.checkoutPriceBasePersonHours(base.toCLP, _guests, blocks)
+                                  : l.checkoutPriceBasePerson(base.toCLP, _guests))
                               : mode == 'hours'
-                                  ? '${base.toCLP} x $blocks bloque${blocks > 1 ? 's' : ''} (${blockH}h c/u)'
-                                  : '${base.toCLP} x $unitSuffix',
+                                  ? l.checkoutPriceBaseHoursSimple(base.toCLP, blocks, blockH)
+                                  : l.checkoutPriceBaseUnit(base.toCLP, unitSuffix),
                           sub,
                         ),
-                        if (clean > 0) _priceRow('Limpieza', clean),
+                        if (clean > 0) _priceRow(l.checkoutCleaning, clean),
                         _priceRow(
                           _isPromoRate
-                              ? 'Tarifa promo ($feeLabel) 🎉'
-                              : 'Tarifa de servicio ($feeLabel${fee >= 90000 ? ', máx \$90.000' : ''})',
+                              ? l.checkoutPromoFeeLabel(feeLabel)
+                              : (fee >= 90000
+                                  ? l.checkoutServiceFeeCapped(feeLabel)
+                                  : l.checkoutServiceFeeLabel(feeLabel)),
                           fee,
                         ),
                         if (_isPromoRate)
@@ -571,7 +817,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Tarifa promocional 1% — ${PricingEngineService.promoBookingThreshold - (_hostBookingsCount ?? 0)} reservas restantes',
+                                      l.checkoutPromoRemaining(PricingEngineService.promoBookingThreshold - (_hostBookingsCount ?? 0)),
                                       style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600),
                                     ),
                                   ),
@@ -586,7 +832,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Total', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                            Text(l.bookingTotal, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
                             Text(total.toCLP, style: AtrioTypography.priceLarge.copyWith(color: AtrioColors.guestTextPrimary)),
                           ],
                         ),
@@ -596,32 +842,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ─── Payment method (Stripe) ───
-                  Text('Método de Pago', style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                  // ─── Payment method (Mercado Pago) ───
+                  Text(l.checkoutPaymentMethodTitle, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
                   const SizedBox(height: 12),
-                  _paymentTile(0, Icons.credit_card_rounded, 'Visa **** 4521', 'Exp 12/27'),
-                  const SizedBox(height: 8),
-                  _paymentTile(1, Icons.credit_card_rounded, 'Mastercard **** 8890', 'Exp 08/26'),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () => context.push('/payment-methods'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AtrioColors.guestSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AtrioColors.guestCardBorder),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.add, size: 16, color: AtrioColors.neonLimeDark),
-                          const SizedBox(width: 6),
-                          Text('Agregar tarjeta', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
-                        ],
-                      ),
-                    ),
-                  ),
+                  _buildPaymentMethodCard(),
 
                   const SizedBox(height: 24),
 
@@ -630,18 +854,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
                   const SizedBox(height: 16),
 
-                  // ─── Security (Stripe branding) ───
+                  // ─── Security (MP branding) ───
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.bolt, size: 13, color: Color(0xFF635BFF)),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.lock_outline, size: 13, color: Color(0xFF009EE3)),
+                      const SizedBox(width: 6),
                       Text(
-                        'PAGO SEGURO POR STRIPE',
+                        l.checkoutPaySecureBadge,
                         style: GoogleFonts.inter(fontSize: 10, color: AtrioColors.guestTextTertiary, letterSpacing: 1, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 6),
-                      const Icon(Icons.lock_outline, size: 11, color: AtrioColors.guestTextTertiary),
+                      const Icon(Icons.verified_user_outlined, size: 11, color: Color(0xFF009EE3)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -674,14 +898,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          const Icon(Icons.lock_outline, size: 16, color: Colors.black54),
+                          const SizedBox(width: 6),
                           Text(
-                            listing.instantBooking ? 'Reservar Ahora' : 'Confirmar y Reservar',
+                            l.checkoutPayAmount(total.toCLP),
                             style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            total.toCLP,
-                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black.withValues(alpha: 0.7)),
                           ),
                         ],
                       ),
@@ -747,25 +968,27 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _buildHostInfo(Map<String, dynamic> host) {
+    final l = AppLocalizations.of(context);
     return Row(children: [
       CircleAvatar(
         radius: 22,
         backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.2),
-        backgroundImage: host['photo_url'] != null ? NetworkImage(host['photo_url'] as String) : null,
+        backgroundImage: host['photo_url'] != null ? CachedNetworkImageProvider(host['photo_url'] as String) : null,
         child: host['photo_url'] == null ? const Icon(Icons.person, size: 22, color: AtrioColors.neonLimeDark) : null,
       ),
       const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Text(host['display_name'] as String? ?? 'Anfitrión', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
+          Text(host['display_name'] as String? ?? l.checkoutHostFallback, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
           if (host['is_verified'] == true) ...[const SizedBox(width: 5), const Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark)],
         ]),
-        Text('Anfitrión', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
+        Text(l.checkoutHostLabel, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
       ])),
     ]);
   }
 
   Widget _buildDateSummary(Listing listing) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -775,29 +998,31 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
       child: Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Check-in', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
+          Text(l.checkoutCheckInLabel, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
           const SizedBox(height: 4),
           Text(_fmt(_checkIn), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
         ])),
         Container(width: 1, height: 36, color: AtrioColors.guestCardBorder),
         Expanded(child: Padding(padding: const EdgeInsets.only(left: 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Check-out', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
+          Text(l.checkoutCheckOutLabel, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
           const SizedBox(height: 4),
           Text(_fmt(_checkOut), style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
         ]))),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(10)),
-          child: Text('$_nights noche${_nights > 1 ? 's' : ''}', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black)),
+          child: Text(l.checkoutNightsBadge(_nights), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black)),
         ),
       ]),
     );
   }
 
   Widget _buildGuestsSection(Listing listing) {
+    final l = AppLocalizations.of(context);
+    final isPeople = listing.type == 'experience' || listing.type == 'service';
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(
-      listing.type == 'experience' || listing.type == 'service' ? 'Personas' : 'Huéspedes',
+      isPeople ? l.checkoutPeople : l.checkoutGuests,
       style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary),
     ),
       const SizedBox(height: 12),
@@ -812,13 +1037,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           const Icon(Icons.people_outline_rounded, size: 22, color: AtrioColors.neonLimeDark),
           const SizedBox(width: 12),
           Expanded(child: Text(
-            listing.type == 'experience' || listing.type == 'service'
-                ? '$_guests persona${_guests > 1 ? 's' : ''}'
-                : '$_guests ${_guests == 1 ? 'huésped' : 'huéspedes'}',
+            isPeople
+                ? l.checkoutGuestsCountPeople(_guests)
+                : l.checkoutGuestsCountSpaces(_guests),
             style: AtrioTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary),
           )),
           if (listing.capacity != null)
-            Padding(padding: const EdgeInsets.only(right: 10), child: Text('máx ${listing.capacity}', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary))),
+            Padding(padding: const EdgeInsets.only(right: 10), child: Text(l.checkoutMax(listing.capacity!), style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary))),
           _counterBtn(Icons.remove, _guests > 1 ? () { setState(() => _guests--); if (_pricingResult != null) _calcPricing(); } : null),
           Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: Text('$_guests', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AtrioColors.guestTextPrimary))),
           _counterBtn(Icons.add, _guests < (listing.capacity ?? 10) ? () { setState(() => _guests++); if (_pricingResult != null) _calcPricing(); } : null),
@@ -828,20 +1053,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Widget _buildCancellationPolicy(Listing listing) {
+    final l = AppLocalizations.of(context);
     String policyTitle;
     String policyDesc;
     switch (listing.cancellationPolicy) {
       case 'strict':
-        policyTitle = 'Cancelación estricta';
-        policyDesc = 'Reembolso del 50% hasta 7 días antes. Sin reembolso después.';
+        policyTitle = l.checkoutPolicyStrictTitle;
+        policyDesc = l.checkoutPolicyStrictDesc;
         break;
       case 'moderate':
-        policyTitle = 'Cancelación moderada';
-        policyDesc = 'Cancelación gratuita hasta 5 días antes. Después se cobra el 50%.';
+        policyTitle = l.checkoutPolicyModerateTitle;
+        policyDesc = l.checkoutPolicyModerateDesc;
         break;
       default:
-        policyTitle = 'Cancelación flexible';
-        policyDesc = 'Cancelación gratuita hasta 24 horas antes del check-in. Después se cobra el 50%.';
+        policyTitle = l.checkoutPolicyFlexibleTitle;
+        policyDesc = l.checkoutPolicyFlexibleDesc;
     }
 
     return Container(
@@ -887,36 +1113,90 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  Widget _paymentTile(int idx, IconData icon, String title, String? sub) {
-    final sel = _paymentIdx == idx;
-    return GestureDetector(
-      onTap: () => setState(() => _paymentIdx = idx),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: sel ? AtrioColors.neonLime.withValues(alpha: 0.1) : AtrioColors.guestSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: sel ? AtrioColors.neonLimeDark : AtrioColors.guestCardBorder, width: sel ? 1.5 : 1),
-        ),
-        child: Row(children: [
-          Container(
-            width: 40, height: 28,
-            decoration: BoxDecoration(color: sel ? AtrioColors.neonLimeDark.withValues(alpha: 0.15) : AtrioColors.guestSurfaceVariant, borderRadius: BorderRadius.circular(6)),
-            alignment: Alignment.center,
-            child: Icon(icon, size: 18, color: sel ? AtrioColors.neonLimeDark : AtrioColors.guestTextSecondary),
+  Widget _buildPaymentMethodCard() {
+    final l = AppLocalizations.of(context);
+    final isSandbox = MercadoPagoService.isSandbox;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF009EE3).withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // MP icon
+              Container(
+                width: 44, height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF009EE3).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(Icons.account_balance_wallet,
+                    size: 22, color: Color(0xFF009EE3)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Mercado Pago',
+                        style: AtrioTypography.labelLarge
+                            .copyWith(color: AtrioColors.guestTextPrimary)),
+                    Text(
+                      l.checkoutMpMethods,
+                      style: AtrioTypography.caption
+                          .copyWith(color: AtrioColors.guestTextSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.check_circle,
+                  size: 20, color: Color(0xFF009EE3)),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
-            if (sub != null) Text(sub, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
-          ])),
-          Container(
-            width: 20, height: 20,
-            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: sel ? AtrioColors.neonLimeDark : AtrioColors.guestCardBorder, width: sel ? 2 : 1.5)),
-            child: sel ? Center(child: Container(width: 10, height: 10, decoration: const BoxDecoration(shape: BoxShape.circle, color: AtrioColors.neonLimeDark))) : null,
+          if (isSandbox) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.science_outlined,
+                      size: 14, color: Colors.orange),
+                  const SizedBox(width: 5),
+                  Text(l.checkoutSandboxMode,
+                      style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              for (final icon in [
+                Icons.credit_card,
+                Icons.account_balance,
+                Icons.qr_code_2,
+                Icons.store,
+              ]) ...[
+                Icon(icon, size: 16, color: AtrioColors.guestTextTertiary),
+                const SizedBox(width: 12),
+              ],
+            ],
           ),
-        ]),
+        ],
       ),
     );
   }

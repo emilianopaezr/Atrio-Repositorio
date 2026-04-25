@@ -1,4 +1,5 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase/supabase_config.dart';
 import '../utils/constants.dart';
@@ -29,6 +30,25 @@ class StorageService {
     // Limit length
     if (safe.length > 100) safe = safe.substring(0, 100);
     return safe;
+  }
+
+  /// Compress image bytes to max 1200px width and 85% JPEG quality.
+  /// Returns original bytes if compression fails or on unsupported platforms.
+  static Future<Uint8List> _compressImage(Uint8List bytes, {int maxWidth = 1200, int quality = 85}) async {
+    try {
+      final result = await FlutterImageCompress.compressWithList(
+        bytes,
+        minWidth: maxWidth,
+        minHeight: maxWidth,
+        quality: quality,
+        format: CompressFormat.jpeg,
+      );
+      debugPrint('Image compressed: ${bytes.length} → ${result.length} bytes');
+      return result;
+    } catch (e) {
+      debugPrint('Image compression skipped: $e');
+      return bytes;
+    }
   }
 
   static const _allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
@@ -64,6 +84,7 @@ class StorageService {
     required String fileName,
   }) async {
     _validateFileSize(fileBytes, maxFileSizeBytes);
+    final compressed = await _compressImage(fileBytes);
     final safeName = _validateImageExtension(_sanitizeFileName(fileName));
     final path = '$hostId/$listingId/$safeName';
 
@@ -71,9 +92,9 @@ class StorageService {
         .from(AppConstants.bucketListings)
         .uploadBinary(
           path,
-          fileBytes,
+          compressed,
           fileOptions: FileOptions(
-            contentType: _getMimeType(safeName),
+            contentType: 'image/jpeg',
             upsert: true,
           ),
         );
@@ -90,6 +111,7 @@ class StorageService {
     String fileName = 'avatar.jpg',
   }) async {
     _validateFileSize(fileBytes, maxAvatarSizeBytes);
+    final compressed = await _compressImage(fileBytes, maxWidth: 400, quality: 80);
     final safeName = _validateImageExtension(_sanitizeFileName(fileName));
     final path = '$userId/$safeName';
 
@@ -97,9 +119,9 @@ class StorageService {
         .from(AppConstants.bucketAvatars)
         .uploadBinary(
           path,
-          fileBytes,
+          compressed,
           fileOptions: FileOptions(
-            contentType: _getMimeType(safeName),
+            contentType: 'image/jpeg',
             upsert: true,
           ),
         );

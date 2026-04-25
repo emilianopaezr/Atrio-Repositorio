@@ -10,6 +10,7 @@ import '../../../core/providers/bookings_provider.dart';
 import '../../../core/services/database_service.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
   final String bookingId;
@@ -34,20 +35,21 @@ class BookingDetailScreen extends ConsumerWidget {
     }
   }
 
-  String _statusLabel(String status) {
+  String _statusLabel(BuildContext context, String status) {
+    final l = AppLocalizations.of(context);
     switch (status) {
       case 'confirmed':
-        return 'Confirmada';
+        return l.bookingStatusConfirmed;
       case 'pending':
-        return 'Pendiente';
+        return l.bookingStatusPending;
       case 'active':
-        return 'Activa';
+        return l.bookingStatusActive;
       case 'completed':
-        return 'Completada';
+        return l.bookingStatusCompleted;
       case 'cancelled':
-        return 'Cancelada';
+        return l.bookingStatusCancelled;
       case 'rejected':
-        return 'Rechazada';
+        return l.bookingStatusRejected;
       default:
         return status;
     }
@@ -74,6 +76,7 @@ class BookingDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final bookingAsync = ref.watch(bookingDetailProvider(bookingId));
 
     return bookingAsync.when(
@@ -107,12 +110,12 @@ class BookingDetailScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.error_outline, size: 48, color: AtrioColors.error),
               const SizedBox(height: 16),
-              Text('Error al cargar la reserva',
+              Text(l.bookingDetailError,
                   style: AtrioTypography.headingSmall),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => ref.invalidate(bookingDetailProvider(bookingId)),
-                child: const Text('Reintentar'),
+                child: Text(l.btnRetry),
               ),
             ],
           ),
@@ -130,7 +133,7 @@ class BookingDetailScreen extends ConsumerWidget {
                 onPressed: () => context.pop(),
               ),
             ),
-            body: const Center(child: Text('Reserva no encontrada')),
+            body: Center(child: Text(l.bookingNotFound)),
           );
         }
 
@@ -144,13 +147,13 @@ class BookingDetailScreen extends ConsumerWidget {
         final cleaningFee = (bookingData['cleaning_fee'] as num?)?.toDouble() ?? 0;
         final serviceFee = (bookingData['service_fee'] as num?)?.toDouble() ?? 0;
         final total = (bookingData['total'] as num?)?.toDouble() ?? 0;
-        final listingTitle = listing?['title'] as String? ?? 'Reserva';
+        final listingTitle = listing?['title'] as String? ?? l.bookingDefault;
         final listingCity = listing?['city'] as String? ?? '';
         final listingRating = (listing?['rating'] as num?)?.toDouble() ?? 0;
         final listingImages = List<String>.from(listing?['images'] ?? []);
         final listingBasePrice = (listing?['base_price'] as num?)?.toDouble() ?? 0;
         final listingPriceUnit = listing?['price_unit'] as String? ?? 'night';
-        final hostName = host?['display_name'] as String? ?? 'Anfitrión';
+        final hostName = host?['display_name'] as String? ?? l.bookingHost;
         final hostPhoto = host?['photo_url'] as String?;
         final hostVerified = host?['is_verified'] as bool? ?? false;
         final conversationId = bookingData['conversation_id'] as String?;
@@ -259,7 +262,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                   Icon(_statusIcon(status), size: 14, color: statusTextColor),
                                   const SizedBox(width: 6),
                                   Text(
-                                    _statusLabel(status),
+                                    _statusLabel(context, status),
                                     style: AtrioTypography.caption.copyWith(
                                       color: statusTextColor,
                                       fontWeight: FontWeight.w700,
@@ -349,7 +352,7 @@ class BookingDetailScreen extends ConsumerWidget {
                               children: [
                                 Expanded(
                                   child: _DateBlock(
-                                    label: 'ENTRADA',
+                                    label: l.bookingCheckIn,
                                     date: checkIn != null ? dateFormat.format(checkIn) : '--',
                                     time: checkIn != null ? timeFormat.format(checkIn) : '--',
                                   ),
@@ -368,7 +371,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                 ),
                                 Expanded(
                                   child: _DateBlock(
-                                    label: 'SALIDA',
+                                    label: l.bookingCheckOut,
                                     date: checkOut != null ? dateFormat.format(checkOut) : '--',
                                     time: checkOut != null ? timeFormat.format(checkOut) : '--',
                                     isEnd: true,
@@ -388,11 +391,11 @@ class BookingDetailScreen extends ConsumerWidget {
                                 children: [
                                   _InfoChip(
                                     icon: Icons.nights_stay_outlined,
-                                    label: '$nights ${nights == 1 ? 'noche' : 'noches'}',
+                                    label: l.bookingNights(nights),
                                   ),
                                   _InfoChip(
                                     icon: Icons.people_outline,
-                                    label: '$guestsCount persona${guestsCount == 1 ? '' : 's'}',
+                                    label: l.bookingPeople(guestsCount),
                                   ),
                                 ],
                               ),
@@ -450,7 +453,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                     ],
                                   ),
                                   Text(
-                                    'Anfitrión',
+                                    l.bookingHost,
                                     style: AtrioTypography.bodySmall.copyWith(
                                       color: AtrioColors.guestTextSecondary,
                                     ),
@@ -512,7 +515,7 @@ class BookingDetailScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Desglose de Precio',
+                              l.bookingPriceBreakdown,
                               style: AtrioTypography.labelLarge.copyWith(
                                 color: AtrioColors.guestTextPrimary,
                                 fontWeight: FontWeight.w700,
@@ -520,17 +523,17 @@ class BookingDetailScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 16),
                             _PriceRow(
-                              label: '${listingBasePrice.toCLP} x $nights $listingPriceUnit${nights != 1 ? 's' : ''}',
+                              label: l.bookingPriceLineFormat(listingBasePrice.toCLP, nights, listingPriceUnit),
                               value: baseTotal.toCLP,
                             ),
                             if (cleaningFee > 0)
                               _PriceRow(
-                                label: 'Tarifa de limpieza',
+                                label: l.bookingCleaningFee,
                                 value: cleaningFee.toCLP,
                               ),
                             if (serviceFee > 0)
                               _PriceRow(
-                                label: 'Tarifa de servicio Atrio',
+                                label: l.bookingServiceFee,
                                 value: serviceFee.toCLP,
                               ),
                             const Divider(height: 24),
@@ -538,14 +541,14 @@ class BookingDetailScreen extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Total',
+                                  l.bookingTotal,
                                   style: AtrioTypography.headingSmall.copyWith(
                                     color: AtrioColors.guestTextPrimary,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 Text(
-                                  '${total.toCLP} CLP',
+                                  l.bookingTotalWithCurrency(total.toCLP),
                                   style: const TextStyle(
                                     fontFamily: 'Roboto',
                                     fontSize: 20,
@@ -578,31 +581,31 @@ class BookingDetailScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Políticas',
+                              l.bookingPolicies,
                               style: AtrioTypography.labelLarge.copyWith(
                                 color: AtrioColors.guestTextPrimary,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 14),
-                            const _PolicyItem(
+                            _PolicyItem(
                               icon: Icons.cancel_outlined,
-                              title: 'Cancelación flexible',
-                              subtitle: 'Cancelación gratuita hasta 24h antes de la entrada',
+                              title: l.bookingPolicyFlexTitle,
+                              subtitle: l.bookingPolicyFlexDesc,
                             ),
                             const SizedBox(height: 12),
-                            const _PolicyItem(
+                            _PolicyItem(
                               icon: Icons.smoke_free,
-                              title: 'No fumar',
-                              subtitle: 'Prohibido fumar dentro del espacio',
+                              title: l.bookingPolicyNoSmokeTitle,
+                              subtitle: l.bookingPolicyNoSmokeDesc,
                             ),
                             const SizedBox(height: 12),
                             _PolicyItem(
                               icon: Icons.access_time,
-                              title: 'Horarios',
+                              title: l.bookingPolicyHoursTitle,
                               subtitle: checkIn != null && checkOut != null
-                                  ? 'Entrada: ${timeFormat.format(checkIn)} • Salida: ${timeFormat.format(checkOut)}'
-                                  : 'Consultar con el anfitrión',
+                                  ? l.bookingPolicyHoursFormat(timeFormat.format(checkIn), timeFormat.format(checkOut))
+                                  : l.bookingPolicyHoursConsult,
                             ),
                           ],
                         ),
@@ -626,7 +629,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                         content: Row(children: [
                                           const Icon(Icons.check_circle, color: Colors.black, size: 18),
                                           const SizedBox(width: 8),
-                                          const Text('Reserva confirmada', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+                                          Text(l.bookingConfirmed, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
                                         ]),
                                         backgroundColor: AtrioColors.neonLime,
                                         behavior: SnackBarBehavior.floating,
@@ -643,7 +646,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                   elevation: 0,
                                 ),
                                 icon: const Icon(Icons.check_rounded, size: 20),
-                                label: Text('Confirmar Reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
+                                label: Text(l.bookingConfirmBooking, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -671,10 +674,10 @@ class BookingDetailScreen extends ConsumerWidget {
                                             child: const Icon(Icons.block_rounded, size: 40, color: AtrioColors.error),
                                           ),
                                           const SizedBox(height: 20),
-                                          Text('Rechazar Reserva', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.guestTextPrimary)),
+                                          Text(l.bookingRejectBooking, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.guestTextPrimary)),
                                           const SizedBox(height: 10),
                                           Text(
-                                            'El huesped sera notificado y podra buscar otra opcion.',
+                                            l.bookingRejectConfirmDesc,
                                             style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.guestTextSecondary, height: 1.4),
                                             textAlign: TextAlign.center,
                                           ),
@@ -690,7 +693,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                                 elevation: 0,
                                               ),
-                                              child: Text('Si, rechazar', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
+                                              child: Text(l.bookingRejectYes, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
                                             ),
                                           ),
                                           const SizedBox(height: 10),
@@ -698,7 +701,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                             width: double.infinity,
                                             child: TextButton(
                                               onPressed: () => Navigator.pop(ctx, false),
-                                              child: Text('Volver', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15, color: AtrioColors.guestTextPrimary)),
+                                              child: Text(l.btnBack, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15, color: AtrioColors.guestTextPrimary)),
                                             ),
                                           ),
                                           const SizedBox(height: 8),
@@ -713,7 +716,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                     if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                          content: const Text('Reserva rechazada'),
+                                          content: Text(l.bookingRejected),
                                           backgroundColor: AtrioColors.guestTextPrimary,
                                           behavior: SnackBarBehavior.floating,
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -729,7 +732,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                 ),
                                 icon: const Icon(Icons.close_rounded, size: 18),
-                                label: Text('Rechazar Reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                label: Text(l.bookingRejectBooking, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -771,7 +774,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                   elevation: 0,
                                 ),
                                 icon: const Icon(Icons.chat_outlined, size: 18),
-                                label: const Text('Contactar Anfitrion'),
+                                label: Text(l.bookingContactHost),
                               ),
                             ),
                             if (status != 'active') ...[
@@ -811,7 +814,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                             ),
                                             const SizedBox(height: 20),
                                             Text(
-                                              'Cancelar Reserva',
+                                              l.bookingCancel,
                                               style: GoogleFonts.inter(
                                                 fontSize: 20,
                                                 fontWeight: FontWeight.w800,
@@ -820,7 +823,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                             ),
                                             const SizedBox(height: 10),
                                             Text(
-                                              'Esta accion no se puede deshacer. Si cancelas, perderas tu reserva en "$listingTitle".',
+                                              l.bookingCancelConfirmDesc(listingTitle),
                                               style: GoogleFonts.inter(
                                                 fontSize: 14,
                                                 color: AtrioColors.guestTextSecondary,
@@ -841,7 +844,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                                   const SizedBox(width: 8),
                                                   Expanded(
                                                     child: Text(
-                                                      'Cancelacion gratuita hasta 24h antes de la entrada',
+                                                      l.bookingCancelInfo,
                                                       style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.guestTextSecondary),
                                                     ),
                                                   ),
@@ -860,7 +863,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                                   elevation: 0,
                                                 ),
-                                                child: Text('Si, cancelar reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
+                                                child: Text(l.bookingCancelYes, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15)),
                                               ),
                                             ),
                                             const SizedBox(height: 10),
@@ -871,7 +874,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                                 style: TextButton.styleFrom(
                                                   padding: const EdgeInsets.symmetric(vertical: 14),
                                                 ),
-                                                child: Text('No, mantener reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15, color: AtrioColors.guestTextPrimary)),
+                                                child: Text(l.bookingCancelNo, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15, color: AtrioColors.guestTextPrimary)),
                                               ),
                                             ),
                                             const SizedBox(height: 8),
@@ -890,7 +893,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                               children: [
                                                 const Icon(Icons.check_circle, color: Colors.white, size: 18),
                                                 const SizedBox(width: 8),
-                                                const Text('Reserva cancelada correctamente'),
+                                                Text(l.bookingCancelled),
                                               ],
                                             ),
                                             backgroundColor: AtrioColors.guestTextPrimary,
@@ -909,7 +912,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                   ),
-                                  child: Text('Cancelar reserva', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                  child: Text(l.bookingCancelSimple, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                                 ),
                               ),
                             ],
@@ -940,7 +943,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                 ),
                               ),
                               icon: const Icon(Icons.star_rounded, size: 18),
-                              label: const Text('Escribir Reseña'),
+                              label: Text(l.bookingWriteReview),
                             ),
                           ),
                         ),

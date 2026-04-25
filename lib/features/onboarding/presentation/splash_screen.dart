@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -106,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Espacios · Experiencias · Servicios',
+                  AppLocalizations.of(context).splashCategories,
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w400,

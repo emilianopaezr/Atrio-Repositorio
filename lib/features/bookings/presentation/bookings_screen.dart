@@ -7,6 +7,7 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/bookings_provider.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 class BookingsScreen extends ConsumerStatefulWidget {
   const BookingsScreen({super.key});
@@ -22,6 +23,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   @override
   Widget build(BuildContext context) {
     final bookingsAsync = ref.watch(guestBookingsProvider);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
@@ -33,7 +35,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Text(
-                'Mis Reservas',
+                l.bookingsTitle,
                 style: GoogleFonts.inter(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
@@ -108,8 +110,8 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                   if (list.isEmpty) {
                     return _EmptyBookings(
                       message: _selectedTab == 0
-                          ? 'No tienes reservas próximas'
-                          : 'Aún no has completado ninguna reserva',
+                          ? l.bookingsNoUpcoming
+                          : l.bookingsNoPast,
                     );
                   }
 
@@ -140,7 +142,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                       Icon(Icons.cloud_off_rounded, size: 48, color: AtrioColors.error.withValues(alpha: 0.6)),
                       const SizedBox(height: 16),
                       Text(
-                        'Error al cargar reservas',
+                        l.bookingsLoadError,
                         style: AtrioTypography.bodyLarge.copyWith(
                           color: AtrioColors.guestTextSecondary,
                         ),
@@ -149,7 +151,7 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                       TextButton.icon(
                         onPressed: () => ref.invalidate(guestBookingsProvider),
                         icon: const Icon(Icons.refresh, size: 18),
-                        label: const Text('Reintentar'),
+                        label: Text(l.btnRetry),
                         style: TextButton.styleFrom(foregroundColor: AtrioColors.neonLimeDark),
                       ),
                     ],
@@ -164,10 +166,12 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   }
 
   Widget _buildTabPills(int? upcomingCount, int? pastCount) {
-    final upcomingLabel =
-        upcomingCount != null ? 'Proximas ($upcomingCount)' : 'Proximas';
+    final l = AppLocalizations.of(context);
+    final upcomingLabel = upcomingCount != null
+        ? l.bookingsUpcomingCount(upcomingCount)
+        : l.bookingsUpcoming;
     final pastLabel =
-        pastCount != null ? 'Pasadas ($pastCount)' : 'Pasadas';
+        pastCount != null ? l.bookingsPastCount(pastCount) : l.bookingsPast;
 
     return Container(
       padding: const EdgeInsets.all(3),
@@ -234,9 +238,10 @@ class _FilterChipsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final labels = selectedTab == 0
-        ? ['Todas', 'Pendientes', 'Confirmadas']
-        : ['Todas', 'Completadas', 'Canceladas'];
+        ? [l.bookingsAll, l.bookingsPending, l.bookingsConfirmed]
+        : [l.bookingsAll, l.bookingsCompleted, l.bookingsCancelled];
 
     return Row(
       children: List.generate(labels.length, (index) {
@@ -335,20 +340,21 @@ class _BookingCard extends StatelessWidget {
     }
   }
 
-  String _statusLabel(String status) {
+  String _statusLabel(BuildContext context, String status) {
+    final l = AppLocalizations.of(context);
     switch (status) {
       case 'confirmed':
-        return 'Confirmada';
+        return l.bookingStatusConfirmed;
       case 'pending':
-        return 'Pendiente';
+        return l.bookingStatusPending;
       case 'active':
-        return 'Activa';
+        return l.bookingStatusActive;
       case 'cancelled':
-        return 'Cancelada';
+        return l.bookingStatusCancelled;
       case 'rejected':
-        return 'Rechazada';
+        return l.bookingStatusRejected;
       case 'completed':
-        return 'Completada';
+        return l.bookingStatusCompleted;
       default:
         return status;
     }
@@ -367,17 +373,30 @@ class _BookingCard extends StatelessWidget {
     }
   }
 
-  String _formatDate(DateTime? dt) {
+  String _formatDate(BuildContext context, DateTime? dt) {
     if (dt == null) return '';
-    const months = [
-      '', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+    final l = AppLocalizations.of(context);
+    final months = [
+      '',
+      l.monthAbbrJan,
+      l.monthAbbrFeb,
+      l.monthAbbrMar,
+      l.monthAbbrApr,
+      l.monthAbbrMay,
+      l.monthAbbrJun,
+      l.monthAbbrJul,
+      l.monthAbbrAug,
+      l.monthAbbrSep,
+      l.monthAbbrOct,
+      l.monthAbbrNov,
+      l.monthAbbrDec,
     ];
     return '${dt.day} ${months[dt.month]}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final listing =
         booking['listing'] as Map<String, dynamic>? ?? {};
     final status = booking['status'] as String? ?? 'pending';
@@ -478,7 +497,7 @@ class _BookingCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            _statusLabel(status),
+                            _statusLabel(context, status),
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -491,7 +510,7 @@ class _BookingCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     // Title
                     Text(
-                      listing['title'] ?? 'Reserva',
+                      listing['title'] ?? l.bookingDefault,
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -511,8 +530,8 @@ class _BookingCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             checkOut != null
-                                ? '${_formatDate(checkIn)} - ${_formatDate(checkOut)}'
-                                : _formatDate(checkIn),
+                                ? '${_formatDate(context, checkIn)} - ${_formatDate(context, checkOut)}'
+                                : _formatDate(context, checkIn),
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               color: AtrioColors.guestTextSecondary,
@@ -590,7 +609,7 @@ class _EmptyBookings extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Text(
-                'Explorar',
+                AppLocalizations.of(context).btnExplore,
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,

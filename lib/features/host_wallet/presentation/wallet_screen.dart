@@ -7,6 +7,7 @@ import '../../../core/providers/host_wallet_provider.dart';
 import '../../../core/providers/host_stats_provider.dart';
 import '../../../shared/widgets/level_badge.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -23,6 +24,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final hostProfileAsync = ref.watch(hostProfileProvider);
     final transactionsAsync = ref.watch(hostTransactionsProvider);
     final hostStatsAsync = ref.watch(hostStatsProvider);
@@ -64,7 +66,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Finanzas',
+                        l.walletHeaderTitle,
                         style: AtrioTypography.headingLarge.copyWith(
                           color: AtrioColors.hostTextPrimary,
                         ),
@@ -166,6 +168,7 @@ class _BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -208,7 +211,7 @@ class _BalanceCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Disponible para retiro',
+                l.walletAvailableForWithdrawal,
                 style: AtrioTypography.bodyMedium.copyWith(
                   color: Colors.white.withValues(alpha: 0.8),
                 ),
@@ -230,12 +233,12 @@ class _BalanceCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _CardButton(
-                  label: 'Retirar',
+                  label: l.walletWithdrawBtn,
                   icon: Icons.arrow_upward_rounded,
                   filled: true,
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
+                      content: Text(l.walletComingSoon, style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
                       backgroundColor: Color(0xFFD4FF00),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -247,12 +250,12 @@ class _BalanceCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _CardButton(
-                  label: 'Historial',
+                  label: l.walletHistory,
                   icon: Icons.history_rounded,
                   filled: false,
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Próximamente', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
+                      content: Text(l.walletComingSoon, style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black)),
                       backgroundColor: Color(0xFFD4FF00),
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -330,86 +333,58 @@ class _CardButton extends StatelessWidget {
 class _LinkedAccountsSection extends StatelessWidget {
   const _LinkedAccountsSection();
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info_outline, color: Colors.black, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              '$feature - Próximamente',
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AtrioColors.neonLime,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Cuentas Vinculadas',
-              style: AtrioTypography.headingSmall.copyWith(
-                color: AtrioColors.hostTextPrimary,
-              ),
-            ),
-            GestureDetector(
-              onTap: () => _showComingSoon(context, 'Administrar cuentas'),
-              child: Text(
-                'Administrar',
-                style: AtrioTypography.labelMedium.copyWith(
-                  color: AtrioColors.neonLime,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        _AccountTile(
-          icon: Icons.account_balance_rounded,
-          iconBgColor: const Color(0xFF1A3A5C),
-          iconColor: const Color(0xFF5DADE2),
-          title: 'Chase Checking',
-          subtitle: '**** 8542 \u2022 Principal',
-          trailing: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1B5E20),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: Color(0xFF66BB6A),
-              size: 14,
-            ),
+        Text(
+          l.walletLinkedAccounts,
+          style: AtrioTypography.headingSmall.copyWith(
+            color: AtrioColors.hostTextPrimary,
           ),
         ),
-        const SizedBox(height: 10),
-        _AccountTile(
-          icon: Icons.paypal_outlined,
-          iconBgColor: const Color(0xFF1A2744),
-          iconColor: const Color(0xFF64B5F6),
-          title: 'PayPal',
-          subtitle: 'Sin configurar',
-          trailing: const Icon(
-            Icons.chevron_right_rounded,
-            color: AtrioColors.hostTextTertiary,
-            size: 22,
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+          decoration: BoxDecoration(
+            color: AtrioColors.hostSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AtrioColors.hostCardBorder),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLimeDark.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.account_balance_outlined,
+                  size: 36,
+                  color: AtrioColors.hostTextTertiary.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                l.walletNoLinkedAccounts,
+                style: AtrioTypography.labelLarge.copyWith(
+                  color: AtrioColors.hostTextSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l.walletLinkBankDesc,
+                style: AtrioTypography.caption.copyWith(
+                  color: AtrioColors.hostTextTertiary,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 14),
@@ -419,73 +394,10 @@ class _LinkedAccountsSection extends StatelessWidget {
   }
 }
 
-class _AccountTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconBgColor;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final Widget trailing;
-
-  const _AccountTile({
-    required this.icon,
-    required this.iconBgColor,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AtrioColors.hostSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AtrioColors.hostCardBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: iconColor, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AtrioTypography.labelMedium.copyWith(
-                    color: AtrioColors.hostTextPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AtrioTypography.caption.copyWith(
-                    color: AtrioColors.hostTextSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          trailing,
-        ],
-      ),
-    );
-  }
-}
-
 class _AddPayoutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -497,7 +409,7 @@ class _AddPayoutButton extends StatelessWidget {
                   const Icon(Icons.info_outline, color: Colors.black, size: 18),
                   const SizedBox(width: 8),
                   Text(
-                    'Agregar método de pago - Próximamente',
+                    l.walletAddPayoutComingSoon,
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
@@ -534,7 +446,7 @@ class _AddPayoutButton extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Agregar Método de Pago',
+                l.walletAddPayoutMethod,
                 style: AtrioTypography.buttonMedium.copyWith(
                   color: AtrioColors.neonLime,
                 ),
@@ -559,11 +471,12 @@ class _RecentTransfersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Transferencias Recientes',
+          l.walletRecentTransfers,
           style: AtrioTypography.headingSmall.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
@@ -579,7 +492,7 @@ class _RecentTransfersSection extends StatelessWidget {
                       (tx['amount'] as num?)?.toDouble() ?? 0;
                   final isPositive = amount > 0;
                   final description =
-                      tx['description'] as String? ?? 'Transacción';
+                      tx['description'] as String? ?? l.walletTransactionFallback;
                   final createdAt =
                       DateTime.tryParse(tx['created_at'] ?? '');
                   final dateStr = createdAt != null
@@ -603,7 +516,7 @@ class _RecentTransfersSection extends StatelessWidget {
                     amountColor: isPositive
                         ? const Color(0xFF66BB6A)
                         : AtrioColors.error,
-                    status: 'Completado',
+                    status: l.walletStatusCompleted,
                     statusColor: const Color(0xFF1B3A1B),
                     statusTextColor: const Color(0xFF66BB6A),
                   );
@@ -619,12 +532,12 @@ class _RecentTransfersSection extends StatelessWidget {
                   Icon(Icons.receipt_long_outlined, size: 48, color: AtrioColors.hostTextTertiary.withValues(alpha: 0.4)),
                   const SizedBox(height: 12),
                   Text(
-                    'Sin transacciones aún',
+                    l.walletNoTransactions,
                     style: AtrioTypography.labelLarge.copyWith(color: AtrioColors.hostTextSecondary),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Tus ingresos aparecerán aquí cuando\nrecibas tu primera reserva',
+                    l.walletNoTransactionsDesc,
                     style: AtrioTypography.caption.copyWith(color: AtrioColors.hostTextTertiary, height: 1.4),
                     textAlign: TextAlign.center,
                   ),
@@ -644,7 +557,7 @@ class _RecentTransfersSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Center(
               child: Text(
-                'Error al cargar transacciones',
+                l.walletLoadTransactionsError,
                 style: AtrioTypography.caption.copyWith(color: AtrioColors.hostTextTertiary),
               ),
             ),
@@ -661,7 +574,7 @@ class _RecentTransfersSection extends StatelessWidget {
                       const Icon(Icons.info_outline, color: Colors.black, size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        'Historial completo - Próximamente',
+                        l.walletFullHistoryComingSoon,
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
@@ -677,7 +590,7 @@ class _RecentTransfersSection extends StatelessWidget {
               );
             },
             child: Text(
-              'Ver todas las transacciones',
+              l.walletViewAllTransactions,
               style: AtrioTypography.labelMedium.copyWith(
                 color: AtrioColors.neonLime,
               ),
@@ -821,11 +734,12 @@ class _TaxDocumentsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Documentos Fiscales',
+          l.walletTaxDocuments,
           style: AtrioTypography.headingSmall.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
@@ -862,14 +776,14 @@ class _TaxDocumentsSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Facturas Fiscales Mensuales',
+                          l.walletMonthlyInvoices,
                           style: AtrioTypography.labelMedium.copyWith(
                             color: AtrioColors.hostTextPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Descarga resúmenes mensuales de ingresos',
+                          l.walletMonthlyInvoicesDesc,
                           style: AtrioTypography.caption.copyWith(
                             color: AtrioColors.hostTextSecondary,
                           ),
@@ -881,7 +795,7 @@ class _TaxDocumentsSection extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Disponible cuando tengas actividad financiera',
+                l.walletAvailableWhenActivity,
                 style: AtrioTypography.caption.copyWith(
                   color: AtrioColors.hostTextTertiary,
                   fontStyle: FontStyle.italic,
@@ -918,11 +832,12 @@ class _NotificationPreferencesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Preferencias de Notificación',
+          l.walletNotificationPreferences,
           style: AtrioTypography.headingSmall.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
@@ -940,8 +855,8 @@ class _NotificationPreferencesSection extends StatelessWidget {
             children: [
               _NotifToggle(
                 icon: Icons.email_outlined,
-                title: 'Recibos por Correo',
-                subtitle: 'Confirmaciones de transacciones por email',
+                title: l.walletEmailReceipts,
+                subtitle: l.walletEmailReceiptsDesc,
                 value: emailReceipts,
                 onChanged: onEmailChanged,
               ),
@@ -952,8 +867,8 @@ class _NotificationPreferencesSection extends StatelessWidget {
               ),
               _NotifToggle(
                 icon: Icons.notifications_active_outlined,
-                title: 'Notificaciones Push',
-                subtitle: 'Alertas instantáneas en tu dispositivo',
+                title: l.walletPushNotifications,
+                subtitle: l.walletPushNotificationsDesc,
                 value: pushNotifications,
                 onChanged: onPushChanged,
               ),
@@ -964,8 +879,8 @@ class _NotificationPreferencesSection extends StatelessWidget {
               ),
               _NotifToggle(
                 icon: Icons.sms_outlined,
-                title: 'Alertas SMS',
-                subtitle: 'Mensajes de texto para retiros grandes',
+                title: l.walletSmsAlerts,
+                subtitle: l.walletSmsAlertsDesc,
                 value: smsAlerts,
                 onChanged: onSmsChanged,
               ),
@@ -976,7 +891,7 @@ class _NotificationPreferencesSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            'Administra cómo recibes actualizaciones sobre retiros, transferencias y actividad financiera en tu cuenta.',
+            l.walletNotificationsFooter,
             style: AtrioTypography.caption.copyWith(
               color: AtrioColors.hostTextTertiary,
             ),

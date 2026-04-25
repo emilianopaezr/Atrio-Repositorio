@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../core/providers/locale_provider.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifBookings = true;
   bool _notifMessages = true;
   bool _notifReminders = true;
@@ -56,6 +59,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     const textS = AtrioColors.guestTextSecondary;
     const textT = AtrioColors.guestTextTertiary;
 
+    final l = AppLocalizations.of(context);
+    final locale = ref.watch(localeProvider);
+    final currentLanguageLabel =
+        locale.languageCode == 'en' ? l.langEnglish : l.langSpanish;
+
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
@@ -65,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: textP),
           onPressed: () => context.pop(),
         ),
-        title: Text('Configuración',
+        title: Text(l.settingsTitle,
             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: textP)),
         centerTitle: true,
       ),
@@ -74,78 +82,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _sectionTitle('Notificaciones', textS),
+                _sectionTitle(l.sectionNotifications, textS),
                 const SizedBox(height: 8),
                 _card(border, surface, [
-                  _toggle('Reservas nuevas', _notifBookings, textP, (v) {
+                  _toggle(l.notifBookings, _notifBookings, textP, (v) {
                     setState(() => _notifBookings = v);
                     _save('notif_bookings', v);
                   }),
                   _divider(),
-                  _toggle('Mensajes', _notifMessages, textP, (v) {
+                  _toggle(l.notifMessages, _notifMessages, textP, (v) {
                     setState(() => _notifMessages = v);
                     _save('notif_messages', v);
                   }),
                   _divider(),
-                  _toggle('Recordatorios', _notifReminders, textP, (v) {
+                  _toggle(l.notifReminders, _notifReminders, textP, (v) {
                     setState(() => _notifReminders = v);
                     _save('notif_reminders', v);
                   }),
                   _divider(),
-                  _toggle('Promociones', _notifPromos, textP, (v) {
+                  _toggle(l.notifPromos, _notifPromos, textP, (v) {
                     setState(() => _notifPromos = v);
                     _save('notif_promos', v);
                   }),
                   _divider(),
-                  _toggle('Actualizaciones de la app', _notifUpdates, textP, (v) {
+                  _toggle(l.notifUpdates, _notifUpdates, textP, (v) {
                     setState(() => _notifUpdates = v);
                     _save('notif_updates', v);
                   }),
                 ]),
                 const SizedBox(height: 24),
-                _sectionTitle('Privacidad', textS),
+                _sectionTitle(l.sectionPrivacy, textS),
                 const SizedBox(height: 8),
                 _card(border, surface, [
-                  _toggle('Perfil visible', _profileVisible, textP, (v) {
+                  _toggle(l.privacyVisible, _profileVisible, textP, (v) {
                     setState(() => _profileVisible = v);
                     _save('privacy_visible', v);
                   }),
                   _divider(),
-                  _toggle('Mostrar calificaciones', _showRatings, textP, (v) {
+                  _toggle(l.privacyRatings, _showRatings, textP, (v) {
                     setState(() => _showRatings = v);
                     _save('privacy_ratings', v);
                   }),
                 ]),
                 const SizedBox(height: 24),
-                _sectionTitle('General', textS),
+                _sectionTitle(l.sectionGeneral, textS),
                 const SizedBox(height: 8),
                 _card(border, surface, [
-                  _infoTile('Idioma', 'Español', textP, textT),
+                  _tappableTile(
+                    l.lblLanguage,
+                    currentLanguageLabel,
+                    textP,
+                    textT,
+                    onTap: () => _showLanguagePicker(l),
+                  ),
                   _divider(),
-                  _infoTile('Moneda', 'CLP', textP, textT),
+                  _infoTile(l.lblCurrency, 'CLP', textP, textT),
                   _divider(),
-                  _infoTile('Zona horaria', DateTime.now().timeZoneName, textP, textT),
+                  _infoTile(l.lblTimezone, DateTime.now().timeZoneName, textP, textT),
                 ]),
                 const SizedBox(height: 24),
-                _sectionTitle('Cuenta', textS),
+                _sectionTitle(l.sectionAccount, textS),
                 const SizedBox(height: 8),
                 _card(border, surface, [
                   ListTile(
                     leading: const Icon(Icons.lock_outline, size: 20, color: textP),
-                    title: Text('Cambiar contraseña',
+                    title: Text(l.lblChangePassword,
                         style: GoogleFonts.inter(fontSize: 15, color: textP)),
                     trailing: const Icon(Icons.chevron_right, color: textT, size: 20),
-                    onTap: () => _showChangePassword(),
+                    onTap: () => _showChangePassword(l),
                   ),
                   _divider(),
                   ListTile(
                     leading: const Icon(Icons.delete_outline, size: 20, color: AtrioColors.error),
-                    title: Text('Eliminar cuenta',
+                    title: Text(l.lblDeleteAccount,
                         style: GoogleFonts.inter(
                             fontSize: 15, color: AtrioColors.error, fontWeight: FontWeight.w500)),
                     trailing:
                         const Icon(Icons.chevron_right, color: AtrioColors.error, size: 20),
-                    onTap: () => _showDeleteConfirmation(),
+                    onTap: () => _showDeleteConfirmation(l),
                   ),
                 ]),
                 const SizedBox(height: 32),
@@ -195,40 +209,116 @@ class _SettingsScreenState extends State<SettingsScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       );
 
-  void _showChangePassword() {
+  Widget _tappableTile(
+    String title,
+    String value,
+    Color textColor,
+    Color valueColor, {
+    required VoidCallback onTap,
+  }) =>
+      ListTile(
+        title: Text(title, style: GoogleFonts.inter(fontSize: 15, color: textColor)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(value, style: GoogleFonts.inter(fontSize: 14, color: valueColor)),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, color: valueColor, size: 20),
+          ],
+        ),
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      );
+
+  Future<void> _showLanguagePicker(AppLocalizations l) async {
+    final current = ref.read(localeProvider).languageCode;
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AtrioColors.guestSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Text(
+                  l.langChooseTitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AtrioColors.guestTextPrimary,
+                  ),
+                ),
+              ),
+              RadioListTile<String>(
+                value: 'es',
+                groupValue: current,
+                title: Text(l.langSpanish,
+                    style: GoogleFonts.inter(color: AtrioColors.guestTextPrimary)),
+                activeColor: AtrioColors.neonLimeDark,
+                onChanged: (v) => Navigator.pop(ctx, v),
+              ),
+              RadioListTile<String>(
+                value: 'en',
+                groupValue: current,
+                title: Text(l.langEnglish,
+                    style: GoogleFonts.inter(color: AtrioColors.guestTextPrimary)),
+                activeColor: AtrioColors.neonLimeDark,
+                onChanged: (v) => Navigator.pop(ctx, v),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selected != null && selected != current) {
+      await ref.read(localeProvider.notifier).setLanguageCode(selected);
+    }
+  }
+
+  void _showChangePassword(AppLocalizations l) {
     final oldCtrl = TextEditingController();
     final newCtrl = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Cambiar contraseña', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+        title: Text(l.lblChangePassword,
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: oldCtrl,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Contraseña actual'),
+              decoration: InputDecoration(labelText: l.dlgCurrentPassword),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: newCtrl,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Nueva contraseña'),
+              decoration: InputDecoration(labelText: l.dlgNewPassword),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.btnCancel)),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Contraseña actualizada')),
+                SnackBar(content: Text(l.msgPasswordUpdated)),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime),
-            child: Text('Guardar',
+            child: Text(l.btnSave,
                 style: GoogleFonts.inter(color: AtrioColors.guestTextPrimary)),
           ),
         ],
@@ -236,27 +326,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showDeleteConfirmation() {
+  void _showDeleteConfirmation(AppLocalizations l) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Eliminar cuenta',
+        title: Text(l.lblDeleteAccount,
             style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.error)),
         content: Text(
-          'Esta acción es permanente. Se eliminarán todos tus datos, reservas y publicaciones. ¿Estás seguro?',
+          l.dlgDeleteAccountConfirm,
           style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.guestTextSecondary),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.btnCancel)),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Solicitud de eliminación enviada')),
+                SnackBar(content: Text(l.msgDeleteRequested)),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.error),
-            child: Text('Eliminar', style: GoogleFonts.inter(color: Colors.white)),
+            child: Text(l.btnDelete, style: GoogleFonts.inter(color: Colors.white)),
           ),
         ],
       ),

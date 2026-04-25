@@ -10,6 +10,9 @@ import '../../../core/services/auth_service.dart';
 import '../../../shared/widgets/atrio_button.dart';
 import '../../../shared/widgets/atrio_text_field.dart';
 import '../../../shared/widgets/location_picker_widget.dart';
+import '../../../core/utils/error_handler.dart';
+import '../../../l10n/app_localizations.dart';
+import 'widgets/rental_mode_step.dart';
 
 class CreateListingScreen extends StatefulWidget {
   final String? editId;
@@ -56,10 +59,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Future<void> _pickImages() async {
+    final l = AppLocalizations.of(context);
     if (_pickedImages.length >= 8) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Máximo 8 imágenes', style: GoogleFonts.inter(color: Colors.white)),
+          content: Text(l.clMaxImages, style: GoogleFonts.inter(color: Colors.white)),
           backgroundColor: AtrioColors.error,
           behavior: SnackBarBehavior.floating,
         ));
@@ -85,7 +89,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(2)),
               ),
               const SizedBox(height: 16),
-              Text('Agregar imágenes', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+              Text(l.clAddImages, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
               const SizedBox(height: 16),
               ListTile(
                 leading: Container(
@@ -93,8 +97,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.photo_library_rounded, color: AtrioColors.neonLimeDark),
                 ),
-                title: Text('Galería', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-                subtitle: Text('Seleccionar varias fotos', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary)),
+                title: Text(l.clGallery, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                subtitle: Text(l.clGallerySubtitle, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary)),
                 onTap: () => Navigator.pop(ctx, ImageSource.gallery),
               ),
               ListTile(
@@ -103,8 +107,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.camera_alt_rounded, color: AtrioColors.neonLimeDark),
                 ),
-                title: Text('Cámara', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-                subtitle: Text('Tomar una foto ahora', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary)),
+                title: Text(l.clCamera, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
+                subtitle: Text(l.clCameraSubtitle, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary)),
                 onTap: () => Navigator.pop(ctx, ImageSource.camera),
               ),
             ],
@@ -141,7 +145,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         if (bytes.lengthInBytes > 10 * 1024 * 1024) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('La imagen es demasiado grande (máx 10 MB)',
+              content: Text(l.clImageTooLarge,
                   style: GoogleFonts.inter(color: Colors.white)),
               backgroundColor: AtrioColors.error,
               behavior: SnackBarBehavior.floating,
@@ -163,11 +167,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Future<void> _publish() async {
+    final l = AppLocalizations.of(context);
     final userId = AuthService.currentUser?.id;
     if (userId == null) return;
     if (_selectedType == null || _titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Completa todos los campos requeridos',
+        content: Text(l.clCompleteRequired,
             style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: AtrioColors.error,
         behavior: SnackBarBehavior.floating,
@@ -180,7 +185,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     final price = double.tryParse(_priceController.text.trim()) ?? 0;
     if (price <= 0 || price > 99999999) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Ingresa un precio válido mayor a 0',
+        content: Text(l.clValidPrice,
             style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: AtrioColors.error,
         behavior: SnackBarBehavior.floating,
@@ -195,7 +200,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       final capacity = int.tryParse(capacityText) ?? 0;
       if (capacity <= 0 || capacity > 10000) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Ingresa una capacidad válida',
+          content: Text(l.clValidCapacity,
               style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
           backgroundColor: AtrioColors.error,
           behavior: SnackBarBehavior.floating,
@@ -208,7 +213,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     // Validate title length
     if (_titleController.text.trim().length > 200) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('El título es demasiado largo (máx 200 caracteres)',
+        content: Text(l.clTitleTooLong,
             style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
         backgroundColor: AtrioColors.error,
         behavior: SnackBarBehavior.floating,
@@ -273,7 +278,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             children: [
               const Icon(Icons.check_circle, color: Colors.black, size: 18),
               const SizedBox(width: 8),
-              Text('Anuncio publicado exitosamente',
+              Text(l.clPublishedSuccess,
                   style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)),
             ],
           ),
@@ -283,16 +288,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         ));
         Navigator.of(context).pop();
       }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('No se pudo publicar. Intenta de nuevo.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-          backgroundColor: AtrioColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
-      }
+    } catch (e) {
+      if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isPublishing = false);
     }
@@ -300,10 +297,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.editId != null ? 'Editar Anuncio' : 'Nuevo Anuncio',
+          widget.editId != null ? l.clEditTitle : l.clNewTitle,
           style: AtrioTypography.headingSmall.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
@@ -339,7 +337,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
             child: Align(
               alignment: Alignment.centerRight,
               child: Text(
-                'Paso ${_currentStep + 1} de $_totalSteps',
+                l.clStepOf(_currentStep + 1, _totalSteps),
                 style: AtrioTypography.caption.copyWith(
                   color: AtrioColors.hostTextTertiary,
                 ),
@@ -368,7 +366,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 if (_currentStep > 0)
                   Expanded(
                     child: AtrioButton(
-                      label: 'Anterior',
+                      label: l.clBack,
                       variant: AtrioButtonVariant.secondary,
                       onTap: () {
                         setState(() => _currentStep--);
@@ -379,8 +377,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 Expanded(
                   child: AtrioButton(
                     label: _currentStep < _totalSteps - 1
-                        ? 'Siguiente'
-                        : 'Publicar',
+                        ? l.clNext
+                        : l.clPublish,
                     isLoading: _isPublishing,
                     onTap: () {
                       if (_currentStep < _totalSteps - 1) {
@@ -410,7 +408,25 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       case 3:
         return _buildLocationStep();
       case 4:
-        return _buildRentalModeStep();
+        return RentalModeStep(
+          selectedType: _selectedType,
+          rentalMode: _rentalMode,
+          availableFrom: _availableFrom,
+          availableUntil: _availableUntil,
+          blockHours: _blockHours,
+          capacityController: _capacityController,
+          instantBooking: _instantBooking,
+          cancellationPolicy: _cancellationPolicy,
+          onRentalModeChanged: (mode) => setState(() {
+            _rentalMode = mode;
+            _priceUnit = mode == 'hours' ? 'hour' : mode == 'full_day' ? 'session' : 'night';
+          }),
+          onAvailableFromChanged: (v) => setState(() => _availableFrom = v),
+          onAvailableUntilChanged: (v) => setState(() => _availableUntil = v),
+          onBlockHoursChanged: (v) => setState(() => _blockHours = v),
+          onInstantBookingChanged: (v) => setState(() => _instantBooking = v),
+          onCancellationPolicyChanged: (v) => setState(() => _cancellationPolicy = v),
+        );
       case 5:
         return _buildPricingStep();
       default:
@@ -419,10 +435,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Widget _buildCategoryStep() {
+    final l = AppLocalizations.of(context);
     final types = [
-      {'id': 'space', 'icon': Icons.home_work, 'label': 'Espacio', 'desc': 'Loft, estudio, villa, sala...'},
-      {'id': 'experience', 'icon': Icons.auto_awesome, 'label': 'Experiencia', 'desc': 'Tour, clase, taller, evento...'},
-      {'id': 'service', 'icon': Icons.build_circle, 'label': 'Servicio', 'desc': 'Fotografía, catering, limpieza...'},
+      {'id': 'space', 'icon': Icons.home_work, 'label': l.clTypeSpace, 'desc': l.clTypeSpaceDesc},
+      {'id': 'experience', 'icon': Icons.auto_awesome, 'label': l.clTypeExperience, 'desc': l.clTypeExperienceDesc},
+      {'id': 'service', 'icon': Icons.build_circle, 'label': l.clTypeService, 'desc': l.clTypeServiceDesc},
     ];
 
     return Column(
@@ -460,7 +477,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Comisión del 7% (máx \$90.000)',
+                      l.clCommissionTitle,
                       style: AtrioTypography.labelLarge.copyWith(
                         color: AtrioColors.neonLimeDark,
                         fontWeight: FontWeight.w800,
@@ -468,7 +485,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Si el 7% supera \$90.000, solo se cobran \$90.000. Transparencia total.',
+                      l.clCommissionDesc,
                       style: AtrioTypography.bodySmall.copyWith(
                         color: AtrioColors.hostTextSecondary,
                       ),
@@ -481,14 +498,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         ),
         const SizedBox(height: 24),
         Text(
-          '¿Qué vas a ofrecer?',
+          l.clCategoryQuestion,
           style: AtrioTypography.headingLarge.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Selecciona la categoría que mejor describe tu oferta',
+          l.clCategorySelect,
           style: AtrioTypography.bodyMedium.copyWith(
             color: AtrioColors.hostTextSecondary,
           ),
@@ -571,11 +588,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Widget _buildDetailsStep() {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Detalles del anuncio',
+          l.clDetailsTitle,
           style: AtrioTypography.headingLarge.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
@@ -583,14 +601,14 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 24),
         AtrioTextField(
           controller: _titleController,
-          label: 'Título',
-          hint: 'Ej: Loft Industrial con Vista a la Ciudad',
+          label: l.clTitleLabel,
+          hint: l.clTitleHint,
         ),
         const SizedBox(height: 20),
         AtrioTextField(
           controller: _descriptionController,
-          label: 'Descripción',
-          hint: 'Describe tu espacio, experiencia o servicio...',
+          label: l.clDescriptionLabel,
+          hint: l.clDescriptionHint,
           maxLines: 5,
         ),
       ],
@@ -598,18 +616,19 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Widget _buildPhotosStep() {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Agrega fotos',
+          l.clPhotosTitle,
           style: AtrioTypography.headingLarge.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Las buenas fotos atraen más reservas (max 8)',
+          l.clPhotosSubtitle,
           style: AtrioTypography.bodyMedium.copyWith(
             color: AtrioColors.hostTextSecondary,
           ),
@@ -633,12 +652,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AtrioColors.hostCardBorder),
                       ),
-                      child: const Column(
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_rounded, size: 32, color: AtrioColors.neonLimeDark),
-                          SizedBox(height: 4),
-                          Text('Agregar', style: TextStyle(fontSize: 12, color: AtrioColors.hostTextSecondary)),
+                          const Icon(Icons.add_rounded, size: 32, color: AtrioColors.neonLimeDark),
+                          const SizedBox(height: 4),
+                          Text(l.clPhotosAdd, style: const TextStyle(fontSize: 12, color: AtrioColors.hostTextSecondary)),
                         ],
                       ),
                     ),
@@ -683,7 +702,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                             color: AtrioColors.neonLime,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text('Portada', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black)),
+                          child: Text(l.clPhotosCover, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black)),
                         ),
                       ),
                   ],
@@ -693,7 +712,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${_imageBytes.length} foto${_imageBytes.length != 1 ? 's' : ''} seleccionada${_imageBytes.length != 1 ? 's' : ''}',
+            l.clPhotosCount(_imageBytes.length),
             style: AtrioTypography.caption.copyWith(color: AtrioColors.hostTextTertiary),
           ),
         ] else
@@ -713,7 +732,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                   const Icon(Icons.add_photo_alternate_outlined, size: 48, color: AtrioColors.neonLimeDark),
                   const SizedBox(height: 12),
                   Text(
-                    'Toca para agregar fotos',
+                    l.clPhotosTapToAdd,
                     style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextSecondary),
                   ),
                 ],
@@ -751,11 +770,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   }
 
   Widget _buildLocationStep() {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ubicación',
+          l.clLocationTitle,
           style: AtrioTypography.headingLarge.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
@@ -763,19 +783,19 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 24),
         AtrioTextField(
           controller: _addressController,
-          label: 'Dirección',
-          hint: 'Calle, número, colonia',
+          label: l.clAddressLabel,
+          hint: l.clAddressHint,
           prefixIcon: const Icon(Icons.location_on_outlined, size: 20),
         ),
         const SizedBox(height: 20),
         Row(
           children: [
             Expanded(
-              child: AtrioTextField(controller: _cityController, label: 'Ciudad', hint: 'Ciudad'),
+              child: AtrioTextField(controller: _cityController, label: l.clCityLabel, hint: l.clCityHint),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: AtrioTextField(controller: _countryController, label: 'País', hint: 'País'),
+              child: AtrioTextField(controller: _countryController, label: l.clCountryLabel, hint: l.clCountryHint),
             ),
           ],
         ),
@@ -820,7 +840,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                               color: AtrioColors.neonLimeDark,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text('Cambiar', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                            child: Text(l.clChange, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
                           ),
                         ),
                       ],
@@ -832,12 +852,12 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       const Icon(Icons.add_location_alt_rounded, size: 40, color: AtrioColors.neonLimeDark),
                       const SizedBox(height: 8),
                       Text(
-                        'Seleccionar en el mapa',
+                        l.clMapSelect,
                         style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Toca para abrir el mapa',
+                        l.clMapTapToOpen,
                         style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary),
                       ),
                     ],
@@ -851,7 +871,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               Icon(Icons.check_circle, size: 14, color: AtrioColors.success),
               const SizedBox(width: 6),
               Text(
-                'Ubicación seleccionada',
+                l.clLocationSelected,
                 style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.success, fontWeight: FontWeight.w500),
               ),
             ],
@@ -861,265 +881,20 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     );
   }
 
-  Widget _buildRentalModeStep() {
-    // Services: only hours and full_day (no nights)
-    // Experiences: only hours and full_day (no nights)
-    // Spaces: all 3 modes
-    final isService = _selectedType == 'service';
-    final isExperience = _selectedType == 'experience';
-    final restrictedType = isService || isExperience;
-
-    final allModes = [
-      if (!restrictedType) {'id': 'nights', 'icon': Icons.nightlight_round, 'label': 'Por noches', 'desc': 'Check-in / Check-out por noches'},
-      {'id': 'full_day', 'icon': Icons.today, 'label': 'Día completo', 'desc': isService ? 'Precio por sesión / día' : isExperience ? 'Experiencia de día completo' : 'Reserva de un día completo'},
-      {'id': 'hours', 'icon': Icons.access_time, 'label': 'Por horas', 'desc': isService ? 'Precio por hora' : isExperience ? 'Experiencia con horario específico' : 'Bloques horarios personalizados'},
-    ];
-
-    // Auto-correct if service/experience had nights selected
-    if (restrictedType && _rentalMode == 'nights') {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          _rentalMode = 'hours';
-          _priceUnit = 'hour';
-        });
-      });
-    }
-
-    final typeLabel = isService ? 'tu servicio' : isExperience ? 'tu experiencia' : 'tu espacio';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Modalidad de reserva', style: AtrioTypography.headingLarge.copyWith(color: AtrioColors.hostTextPrimary)),
-        const SizedBox(height: 8),
-        Text('¿Cómo quieres que reserven $typeLabel?', style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.hostTextSecondary)),
-        const SizedBox(height: 24),
-        ...allModes.map((m) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _rentalMode = m['id'] as String;
-                if (_rentalMode == 'hours') {
-                  _priceUnit = 'hour';
-                } else if (_rentalMode == 'full_day') {
-                  _priceUnit = 'session';
-                } else {
-                  _priceUnit = 'night';
-                }
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AtrioColors.hostSurface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: _rentalMode == m['id'] ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder,
-                  width: _rentalMode == m['id'] ? 2 : 1,
-                ),
-              ),
-              child: Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: _rentalMode == m['id'] ? AtrioColors.neonLimeDark.withValues(alpha: 0.2) : AtrioColors.hostSurfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(m['icon'] as IconData, color: _rentalMode == m['id'] ? AtrioColors.neonLimeDark : AtrioColors.hostTextSecondary),
-                ),
-                const SizedBox(width: 14),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(m['label'] as String, style: AtrioTypography.labelLarge.copyWith(color: AtrioColors.hostTextPrimary)),
-                  Text(m['desc'] as String, style: AtrioTypography.bodySmall.copyWith(color: AtrioColors.hostTextSecondary)),
-                ])),
-                if (_rentalMode == m['id']) const Icon(Icons.check_circle, color: AtrioColors.neonLimeDark),
-              ]),
-            ),
-          ),
-        )),
-        if (_rentalMode == 'hours') ...[
-          const SizedBox(height: 16),
-          Text('Horario disponible', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
-          const SizedBox(height: 8),
-          Row(children: [
-            Expanded(child: GestureDetector(
-              onTap: () async {
-                final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 9, minute: 0));
-                if (t != null) setState(() => _availableFrom = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AtrioColors.hostCardBorder)),
-                child: Row(children: [
-                  const Icon(Icons.schedule, size: 18, color: AtrioColors.neonLimeDark),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      'Desde: $_availableFrom',
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary),
-                    ),
-                  ),
-                ]),
-              ),
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: GestureDetector(
-              onTap: () async {
-                final t = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 22, minute: 0));
-                if (t != null) setState(() => _availableUntil = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AtrioColors.hostCardBorder)),
-                child: Row(children: [
-                  const Icon(Icons.schedule, size: 18, color: AtrioColors.neonLimeDark),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      'Hasta: $_availableUntil',
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary),
-                    ),
-                  ),
-                ]),
-              ),
-            )),
-          ]),
-          const SizedBox(height: 16),
-          Text('Duración del bloque', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
-          const SizedBox(height: 6),
-          Text('El precio base se cobra por cada bloque de horas', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary)),
-          const SizedBox(height: 8),
-          Builder(builder: (_) {
-            // Calculate max possible block hours from the time range
-            final fromParts = _availableFrom.split(':');
-            final untilParts = _availableUntil.split(':');
-            final fromH = int.tryParse(fromParts[0]) ?? 9;
-            final untilH = int.tryParse(untilParts[0]) ?? 22;
-            final totalHours = untilH - fromH;
-            if (totalHours <= 0) return const SizedBox.shrink();
-
-            // Generate valid block sizes (divisors of totalHours)
-            final validBlocks = <int>[];
-            for (int b = 1; b <= totalHours; b++) {
-              if (totalHours % b == 0) validBlocks.add(b);
-            }
-            // Also add blocks that fit at least once even if not perfect divisor
-            for (int b = 1; b <= totalHours; b++) {
-              if (!validBlocks.contains(b)) validBlocks.add(b);
-            }
-            validBlocks.sort();
-            // Ensure current selection is valid
-            if (!validBlocks.contains(_blockHours)) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) setState(() => _blockHours = validBlocks.first);
-              });
-            }
-
-            return Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: validBlocks.map((b) {
-                final sel = b == _blockHours;
-                return GestureDetector(
-                  onTap: () => setState(() => _blockHours = b),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: sel ? AtrioColors.neonLime : AtrioColors.hostSurface,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: sel ? AtrioColors.neonLime : AtrioColors.hostCardBorder),
-                    ),
-                    child: Text(
-                      '$b hora${b > 1 ? 's' : ''}',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: sel ? Colors.black : AtrioColors.hostTextPrimary,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            );
-          }),
-        ],
-        const SizedBox(height: 20),
-        // Capacity
-        AtrioTextField(
-          controller: _capacityController,
-          label: 'Capacidad máxima',
-          hint: 'Ej: 10',
-          keyboardType: TextInputType.number,
-          prefixIcon: const Icon(Icons.people_outline, size: 20),
-        ),
-        const SizedBox(height: 20),
-        // Instant booking toggle
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
-          child: Row(children: [
-            Icon(Icons.flash_on, size: 20, color: _instantBooking ? AtrioColors.neonLimeDark : AtrioColors.hostTextTertiary),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Reserva instantánea', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
-              Text('Se confirma automáticamente', style: AtrioTypography.caption.copyWith(color: AtrioColors.hostTextSecondary)),
-            ])),
-            Switch(
-              value: _instantBooking,
-              onChanged: (v) => setState(() => _instantBooking = v),
-              activeTrackColor: AtrioColors.neonLimeDark,
-            ),
-          ]),
-        ),
-        const SizedBox(height: 16),
-        // Cancellation policy
-        Text('Política de cancelación', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
-        const SizedBox(height: 8),
-        Wrap(spacing: 8, children: [
-          for (final p in [
-            {'id': 'flexible', 'label': 'Flexible'},
-            {'id': 'moderate', 'label': 'Moderada'},
-            {'id': 'strict', 'label': 'Estricta'},
-          ])
-            GestureDetector(
-              onTap: () => setState(() => _cancellationPolicy = p['id']!),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: _cancellationPolicy == p['id'] ? AtrioColors.neonLime : AtrioColors.hostSurface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _cancellationPolicy == p['id'] ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder),
-                ),
-                child: Text(p['label']!, style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: _cancellationPolicy == p['id'] ? FontWeight.w700 : FontWeight.w500,
-                  color: _cancellationPolicy == p['id'] ? Colors.black : AtrioColors.hostTextSecondary,
-                )),
-              ),
-            ),
-        ]),
-      ],
-    );
-  }
-
   Widget _buildPricingStep() {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Precio',
+          l.clPricingTitle,
           style: AtrioTypography.headingLarge.copyWith(
             color: AtrioColors.hostTextPrimary,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Establece un precio competitivo',
+          l.clPricingSubtitle,
           style: AtrioTypography.bodyMedium.copyWith(
             color: AtrioColors.hostTextSecondary,
           ),
@@ -1127,7 +902,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         const SizedBox(height: 24),
         AtrioTextField(
           controller: _priceController,
-          label: 'Precio base (CLP)',
+          label: l.clPriceLabel,
           hint: '0.00',
           keyboardType: TextInputType.number,
           prefixIcon: const Padding(
@@ -1136,16 +911,16 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Text('Cobrar por:', style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
+        Text(l.clChargeBy, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.hostTextPrimary)),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           children: [
             for (final u in [
-              if (_selectedType == 'space' && _rentalMode == 'nights') {'id': 'night', 'label': 'Noche'},
-              if (_rentalMode == 'hours') {'id': 'hour', 'label': 'Hora'},
-              if (_rentalMode == 'full_day') {'id': 'session', 'label': 'Sesión'},
-              if (_selectedType == 'experience') {'id': 'person', 'label': 'Persona'},
+              if (_selectedType == 'space' && _rentalMode == 'nights') {'id': 'night', 'label': l.clUnitNight},
+              if (_rentalMode == 'hours') {'id': 'hour', 'label': l.clUnitHour},
+              if (_rentalMode == 'full_day') {'id': 'session', 'label': l.clUnitSession},
+              if (_selectedType == 'experience') {'id': 'person', 'label': l.clUnitPerson},
             ])
               GestureDetector(
                 onTap: () => setState(() => _priceUnit = u['id']!),
@@ -1188,7 +963,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Atrio cobra 7% de comisión por reserva. Si el 7% supera \$90.000 CLP, solo se cobran \$90.000.',
+                  l.clCommissionInfo,
                   style: AtrioTypography.bodySmall.copyWith(
                     color: AtrioColors.hostTextPrimary,
                   ),

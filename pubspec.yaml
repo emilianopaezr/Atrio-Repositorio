@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # State Management
   flutter_riverpod: any
@@ -30,6 +32,7 @@ dependencies:
 
   # Media
   image_picker: any
+  flutter_image_compress: any
 
   # Maps & Location
   google_maps_flutter: any
@@ -41,9 +44,23 @@ dependencies:
 
   # Local Storage
   shared_preferences: any
+  hive: any
+  hive_flutter: any
+
+  # Connectivity
+  connectivity_plus: any
+
+  # Push notifications (Firebase Cloud Messaging + local display)
+  firebase_core: any
+  firebase_messaging: any
+  flutter_local_notifications: any
 
   # Sharing
   share_plus: any
+
+  # Payments
+  http: any
+  webview_flutter: any
 
   # Environment
   flutter_dotenv: any
@@ -77,6 +94,7 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - .env

@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/database_service.dart';
+import '../../../l10n/app_localizations.dart';
 
 class ReviewsListScreen extends StatefulWidget {
   final String listingId;
@@ -30,12 +32,16 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
       if (mounted) setState(() { _reviews = data; _loading = false; });
     } catch (e) {
       debugPrint('ReviewsList error: $e');
-      if (mounted) setState(() { _loading = false; _error = 'Error al cargar reseñas'; });
+      if (mounted) {
+        final l = AppLocalizations.of(context);
+        setState(() { _loading = false; _error = l.reviewsError; });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     const bg = AtrioColors.guestBackground;
     const textP = AtrioColors.guestTextPrimary;
     const textS = AtrioColors.guestTextSecondary;
@@ -51,7 +57,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: textP),
           onPressed: () => context.pop(),
         ),
-        title: Text('Reseñas (${_reviews.length})',
+        title: Text(l.reviewsListCountTitle(_reviews.length),
             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: textP)),
         centerTitle: true,
       ),
@@ -68,7 +74,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                       const SizedBox(height: 12),
                       GestureDetector(
                         onTap: _load,
-                        child: Text('Reintentar', style: GoogleFonts.inter(color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600)),
+                        child: Text(l.reviewsRetry, style: GoogleFonts.inter(color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600)),
                       ),
                     ],
                   ),
@@ -80,10 +86,10 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                     children: [
                       Icon(Icons.rate_review_outlined, size: 64, color: textT),
                       const SizedBox(height: 16),
-                      Text('Aún no hay reseñas',
+                      Text(l.reviewsEmptyTitle,
                           style: GoogleFonts.inter(fontSize: 16, color: textS)),
                       const SizedBox(height: 8),
-                      Text('Sé el primero en dejar una reseña',
+                      Text(l.reviewsEmptySubtitle,
                           style: GoogleFonts.inter(fontSize: 13, color: textT)),
                     ],
                   ),
@@ -98,12 +104,12 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                     itemBuilder: (context, i) {
                       final r = _reviews[i];
                       final guest = r['guest'] as Map<String, dynamic>?;
-                      final name = guest?['full_name'] ?? 'Usuario';
+                      final name = guest?['full_name'] ?? l.reviewsDefaultUser;
                       final avatar = guest?['avatar_url'] as String?;
                       final rating = (r['rating'] as num?)?.toInt() ?? 5;
                       final comment = r['comment'] as String? ?? '';
                       final createdAt = DateTime.tryParse(r['created_at'] ?? '');
-                      final timeAgo = _formatTimeAgo(createdAt);
+                      final timeAgo = _formatTimeAgo(l, createdAt);
 
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,7 +118,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                             radius: 22,
                             backgroundColor: border,
                             backgroundImage:
-                                avatar != null ? NetworkImage(avatar) : null,
+                                avatar != null ? CachedNetworkImageProvider(avatar) : null,
                             child: avatar == null
                                 ? Text(name[0].toUpperCase(),
                                     style: GoogleFonts.inter(
@@ -168,14 +174,14 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
     );
   }
 
-  String _formatTimeAgo(DateTime? date) {
+  String _formatTimeAgo(AppLocalizations l, DateTime? date) {
     if (date == null) return '';
     final diff = DateTime.now().difference(date);
-    if (diff.inDays == 0) return 'Hoy';
-    if (diff.inDays == 1) return 'Ayer';
-    if (diff.inDays < 7) return 'Hace ${diff.inDays} días';
-    if (diff.inDays < 30) return 'Hace ${diff.inDays ~/ 7} sem';
-    if (diff.inDays < 365) return 'Hace ${diff.inDays ~/ 30} meses';
-    return 'Hace ${diff.inDays ~/ 365} años';
+    if (diff.inDays == 0) return l.timeToday;
+    if (diff.inDays == 1) return l.timeYesterday;
+    if (diff.inDays < 7) return l.timeDaysAgo(diff.inDays);
+    if (diff.inDays < 30) return l.timeWeeksAgo(diff.inDays ~/ 7);
+    if (diff.inDays < 365) return l.timeMonthsAgo(diff.inDays ~/ 30);
+    return l.timeYearsAgo(diff.inDays ~/ 365);
   }
 }

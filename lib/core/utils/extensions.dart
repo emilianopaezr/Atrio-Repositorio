@@ -13,10 +13,14 @@ extension ContextExtensions on BuildContext {
   bool get isDarkMode => theme.brightness == Brightness.dark;
 
   void showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(this).removeCurrentSnackBar();
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? colorScheme.error : null,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }

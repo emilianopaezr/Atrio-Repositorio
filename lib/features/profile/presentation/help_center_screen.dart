@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
+import '../../../l10n/app_localizations.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7FC),
       appBar: AppBar(
@@ -19,7 +21,7 @@ class HelpCenterScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Centro de Ayuda',
+          l.helpCenterTitle,
           style: AtrioTypography.headingSmall.copyWith(
             color: AtrioColors.guestTextPrimary,
             fontWeight: FontWeight.w700,
@@ -48,7 +50,7 @@ class HelpCenterScreen extends StatelessWidget {
               ),
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Buscar en el centro de ayuda...',
+                  hintText: l.hcSearchHint,
                   hintStyle: AtrioTypography.bodyMedium.copyWith(
                     color: AtrioColors.guestTextTertiary,
                   ),
@@ -62,7 +64,7 @@ class HelpCenterScreen extends StatelessWidget {
 
             // === QUICK ACTIONS ===
             Text(
-              'Acciones Rápidas',
+              l.hcQuickActions,
               style: AtrioTypography.labelLarge.copyWith(
                 color: AtrioColors.guestTextPrimary,
                 fontWeight: FontWeight.w700,
@@ -74,7 +76,7 @@ class HelpCenterScreen extends StatelessWidget {
                 Expanded(
                   child: _QuickAction(
                     icon: Icons.chat_bubble_outline,
-                    label: 'Chat en\nVivo',
+                    label: l.hcQALiveChat,
                     color: AtrioColors.neonLimeDark,
                     onTap: () => _showComingSoon(context),
                   ),
@@ -83,7 +85,7 @@ class HelpCenterScreen extends StatelessWidget {
                 Expanded(
                   child: _QuickAction(
                     icon: Icons.email_outlined,
-                    label: 'Enviar\nEmail',
+                    label: l.hcQAEmail,
                     color: AtrioColors.vibrantOrange,
                     onTap: () => _showComingSoon(context),
                   ),
@@ -92,7 +94,7 @@ class HelpCenterScreen extends StatelessWidget {
                 Expanded(
                   child: _QuickAction(
                     icon: Icons.phone_outlined,
-                    label: 'Llamar\nSoporte',
+                    label: l.hcQACall,
                     color: AtrioColors.neonLimeDark,
                     onTap: () => _showComingSoon(context),
                   ),
@@ -103,7 +105,7 @@ class HelpCenterScreen extends StatelessWidget {
 
             // === FAQ CATEGORIES ===
             Text(
-              'Categorías',
+              l.hcCategories,
               style: AtrioTypography.labelLarge.copyWith(
                 color: AtrioColors.guestTextPrimary,
                 fontWeight: FontWeight.w700,
@@ -112,39 +114,39 @@ class HelpCenterScreen extends StatelessWidget {
             const SizedBox(height: 14),
             _CategoryTile(
               icon: Icons.book_outlined,
-              title: 'Reservas',
-              subtitle: '12 artículos',
+              title: l.hcCatBookings,
+              subtitle: l.hcArticlesCount(12),
               onTap: () => _showComingSoon(context),
             ),
             _CategoryTile(
               icon: Icons.payment_outlined,
-              title: 'Pagos y Reembolsos',
-              subtitle: '8 artículos',
+              title: l.hcCatPayments,
+              subtitle: l.hcArticlesCount(8),
               onTap: () => _showComingSoon(context),
             ),
             _CategoryTile(
               icon: Icons.home_outlined,
-              title: 'Anfitriones',
-              subtitle: '15 artículos',
+              title: l.hcCatHosts,
+              subtitle: l.hcArticlesCount(15),
               onTap: () => _showComingSoon(context),
             ),
             _CategoryTile(
               icon: Icons.person_outline,
-              title: 'Tu Cuenta',
-              subtitle: '10 artículos',
+              title: l.hcCatAccount,
+              subtitle: l.hcArticlesCount(10),
               onTap: () => _showComingSoon(context),
             ),
             _CategoryTile(
               icon: Icons.security_outlined,
-              title: 'Seguridad y Privacidad',
-              subtitle: '7 artículos',
+              title: l.hcCatSecurity,
+              subtitle: l.hcArticlesCount(7),
               onTap: () => _showComingSoon(context),
             ),
             const SizedBox(height: 28),
 
             // === COMMON QUESTIONS ===
             Text(
-              'Preguntas Frecuentes',
+              l.hcFaq,
               style: AtrioTypography.labelLarge.copyWith(
                 color: AtrioColors.guestTextPrimary,
                 fontWeight: FontWeight.w700,
@@ -152,29 +154,24 @@ class HelpCenterScreen extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             _FaqItem(
-              question: '¿Cómo puedo cancelar una reserva?',
-              answer:
-                  'Puedes cancelar una reserva desde la sección "Mis Reservas". La política de cancelación depende del anfitrión y el tipo de reserva.',
+              question: l.hcFaqCancelQ,
+              answer: l.hcFaqCancelA,
             ),
             _FaqItem(
-              question: '¿Cuándo recibiré mi reembolso?',
-              answer:
-                  'Los reembolsos se procesan en 5-10 días hábiles dependiendo de tu banco. Recibirás una notificación cuando el reembolso sea procesado.',
+              question: l.hcFaqRefundQ,
+              answer: l.hcFaqRefundA,
             ),
             _FaqItem(
-              question: '¿Cómo me convierto en anfitrión?',
-              answer:
-                  'Ve a tu perfil y selecciona "Cambiar a Anfitrión". Completa tu perfil de anfitrión y crea tu primer anuncio.',
+              question: l.hcFaqHostQ,
+              answer: l.hcFaqHostA,
             ),
             _FaqItem(
-              question: '¿Cómo verifico mi identidad?',
-              answer:
-                  'Ve a Perfil > Verificación de identidad. Necesitarás un documento oficial con foto y una selfie. El proceso toma menos de 5 minutos.',
+              question: l.hcFaqKycQ,
+              answer: l.hcFaqKycA,
             ),
             _FaqItem(
-              question: '¿Es seguro usar Atrio?',
-              answer:
-                  'Sí. Todos los pagos están protegidos, verificamos la identidad de los usuarios, y ofrecemos soporte 24/7. Tu información personal nunca se comparte.',
+              question: l.hcFaqSafeQ,
+              answer: l.hcFaqSafeA,
             ),
             const SizedBox(height: 28),
 
@@ -197,9 +194,9 @@ class HelpCenterScreen extends StatelessWidget {
                   const Icon(Icons.support_agent,
                       size: 48, color: Colors.white),
                   const SizedBox(height: 14),
-                  const Text(
-                    '¿Necesitas más ayuda?',
-                    style: TextStyle(
+                  Text(
+                    l.hcNeedMoreHelp,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -207,7 +204,7 @@ class HelpCenterScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Nuestro equipo de soporte está disponible 24/7',
+                    l.hcSupport247,
                     textAlign: TextAlign.center,
                     style: AtrioTypography.bodySmall.copyWith(
                       color: Colors.white.withValues(alpha: 0.8),
@@ -228,7 +225,7 @@ class HelpCenterScreen extends StatelessWidget {
                         elevation: 0,
                       ),
                       child: Text(
-                        'Contactar Soporte',
+                        l.hcContactSupport,
                         style: AtrioTypography.buttonMedium.copyWith(
                           color: Colors.black,
                           fontWeight: FontWeight.w700,
@@ -248,7 +245,7 @@ class HelpCenterScreen extends StatelessWidget {
 
   void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Función disponible próximamente')),
+      SnackBar(content: Text(AppLocalizations.of(context).hcComingSoon)),
     );
   }
 }

@@ -7,6 +7,7 @@ import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Provider for user's favorite listings using favorite_listing_ids from profiles
 final favoritesProvider = FutureProvider<List<Listing>>((ref) async {
@@ -40,6 +41,7 @@ class FavoritesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final favoritesAsync = ref.watch(favoritesProvider);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
@@ -51,7 +53,7 @@ class FavoritesScreen extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Favoritos',
+          l.favoritesTitle,
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -81,7 +83,7 @@ class FavoritesScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Sin favoritos aun',
+                    l.favoritesEmptyTitle,
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -92,7 +94,7 @@ class FavoritesScreen extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 48),
                     child: Text(
-                      'Guarda tus espacios y experiencias\nfavoritos tocando el corazon',
+                      l.favoritesEmptyDesc,
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: AtrioColors.guestTextTertiary,
@@ -115,7 +117,7 @@ class FavoritesScreen extends ConsumerWidget {
                           const Icon(Icons.explore_rounded, size: 18, color: Colors.black),
                           const SizedBox(width: 8),
                           Text(
-                            'Explorar',
+                            l.favoritesExplore,
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -176,7 +178,7 @@ class FavoritesScreen extends ConsumerWidget {
               const Icon(Icons.error_outline, size: 48, color: AtrioColors.error),
               const SizedBox(height: 12),
               Text(
-                'Error al cargar favoritos',
+                l.favoritesLoadError,
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   color: AtrioColors.guestTextSecondary,
@@ -186,7 +188,7 @@ class FavoritesScreen extends ConsumerWidget {
               TextButton(
                 onPressed: () => ref.invalidate(favoritesProvider),
                 child: Text(
-                  'Reintentar',
+                  l.favoritesRetry,
                   style: GoogleFonts.inter(
                     color: AtrioColors.neonLimeDark,
                     fontWeight: FontWeight.w600,

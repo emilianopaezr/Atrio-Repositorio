@@ -63,6 +63,7 @@ _Listing _$ListingFromJson(Map<String, dynamic> json) => _Listing(
       ? null
       : DateTime.parse(json['updated_at'] as String),
   hostData: json['host'] as Map<String, dynamic>?,
+  distanceM: (json['distance_m'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$ListingToJson(_Listing instance) => <String, dynamic>{
@@ -108,4 +109,5 @@ Map<String, dynamic> _$ListingToJson(_Listing instance) => <String, dynamic>{
   'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
   'host': instance.hostData,
+  'distance_m': instance.distanceM,
 };

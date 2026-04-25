@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/atrio_button.dart';
 
 
@@ -44,6 +45,7 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -79,7 +81,7 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
                 child: Column(
                   children: [
                     Text(
-                      '¡Reserva Confirmada!',
+                      l.checkoutConfirmedTitle,
                       style: AtrioTypography.headingLarge.copyWith(
                         color: isDark
                             ? AtrioColors.hostTextPrimary
@@ -89,7 +91,7 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Tu solicitud ha sido enviada al anfitrión.\nTe notificaremos cuando sea confirmada.',
+                      l.bookingConfirmedMessage,
                       style: AtrioTypography.bodyMedium.copyWith(
                         color: isDark
                             ? AtrioColors.hostTextSecondary
@@ -106,8 +108,8 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
                         Expanded(
                           child: _InfoCard(
                             icon: Icons.notifications_active_outlined,
-                            title: 'Notificación',
-                            subtitle: 'Recibirás un aviso',
+                            title: l.bookingConfirmedNotificationTitle,
+                            subtitle: l.bookingConfirmedNotificationSubtitle,
                             isDark: isDark,
                           ),
                         ),
@@ -115,8 +117,8 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
                         Expanded(
                           child: _InfoCard(
                             icon: Icons.chat_outlined,
-                            title: 'Chat',
-                            subtitle: 'Contacta al anfitrión',
+                            title: l.bookingConfirmedChatTitle,
+                            subtitle: l.bookingConfirmedChatSubtitle,
                             isDark: isDark,
                           ),
                         ),
@@ -137,12 +139,12 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
               const SizedBox(height: 24),
 
               AtrioButton(
-                label: 'Ver Mis Reservas',
+                label: l.bookingConfirmedViewBookings,
                 onTap: () => context.go('/guest/bookings'),
               ),
               const SizedBox(height: 12),
               AtrioButton(
-                label: 'Volver al Inicio',
+                label: l.bookingConfirmedBackHome,
                 variant: AtrioButtonVariant.secondary,
                 onTap: () => context.go('/guest/home'),
               ),

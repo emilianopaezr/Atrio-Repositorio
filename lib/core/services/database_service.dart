@@ -69,6 +69,33 @@ class DatabaseService {
     return List<Map<String, dynamic>>.from(response);
   }
 
+  /// Radius search over published listings using PostGIS RPC.
+  ///
+  /// Returns listings ordered by distance ASC, each row includes a
+  /// `distance_m` (meters) field.
+  static Future<List<Map<String, dynamic>>> searchListingsNearby({
+    required double latitude,
+    required double longitude,
+    double radiusMeters = 10000,
+    String? category,
+    String? type,
+    int limit = 50,
+  }) async {
+    final response = await _client.rpc(
+      'search_listings_nearby',
+      params: {
+        'p_lat': latitude,
+        'p_lng': longitude,
+        'p_radius_m': radiusMeters,
+        'p_category': category,
+        'p_type': type,
+        'p_limit': limit,
+      },
+    );
+    if (response == null) return const [];
+    return List<Map<String, dynamic>>.from(response as List);
+  }
+
   /// Fetch featured listings
   static Future<List<Map<String, dynamic>>> getFeaturedListings({
     int limit = 10,
@@ -306,6 +333,81 @@ class DatabaseService {
         .from(AppConstants.tableBookings)
         .update({'status': status})
         .eq('id', bookingId);
+  }
+
+  /// Update booking payment status and optionally store MP payment ID.
+  static Future<void> updateBookingPaymentStatus(
+    String bookingId, {
+    required String paymentStatus,
+    String? mpPaymentId,
+    String? mpPreferenceId,
+  }) async {
+    final updates = <String, dynamic>{
+      'payment_status': paymentStatus,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    if (mpPaymentId != null) updates['mp_payment_id'] = mpPaymentId;
+    if (mpPreferenceId != null) updates['mp_preference_id'] = mpPreferenceId;
+
+    await _client
+        .from(AppConstants.tableBookings)
+        .update(updates)
+        .eq('id', bookingId);
+  }
+
+  /// Create a transaction record after successful payment.
+  static Future<void> createPaymentTransaction({
+    required String bookingId,
+    required String hostId,
+    required double amount,
+    required double serviceFee,
+    String currency = 'CLP',
+    String? mpPaymentId,
+  }) async {
+    // Create earning transaction for the host (amount minus service fee)
+    final hostEarning = amount - serviceFee;
+    await _client.from(AppConstants.tableTransactions).insert({
+      'booking_id': bookingId,
+      'host_id': hostId,
+      'type': 'earning',
+      'amount': hostEarning,
+      'currency': currency,
+      'status': 'completed',
+      'description': 'Pago de reserva',
+    });
+
+    // Create fee transaction for the platform
+    await _client.from(AppConstants.tableTransactions).insert({
+      'booking_id': bookingId,
+      'host_id': hostId,
+      'type': 'fee',
+      'amount': serviceFee,
+      'currency': currency,
+      'status': 'completed',
+      'description': 'Comision Atrio',
+    });
+
+    // Update host balance
+    final hostProfile = await _client
+        .from(AppConstants.tableHostProfiles)
+        .select('current_balance, pending_balance, total_earnings')
+        .eq('user_id', hostId)
+        .maybeSingle();
+
+    if (hostProfile != null) {
+      final currentBalance =
+          (hostProfile['current_balance'] as num?)?.toDouble() ?? 0;
+      final totalEarnings =
+          (hostProfile['total_earnings'] as num?)?.toDouble() ?? 0;
+
+      await _client
+          .from(AppConstants.tableHostProfiles)
+          .update({
+            'current_balance': currentBalance + hostEarning,
+            'total_earnings': totalEarnings + hostEarning,
+          })
+          .eq('user_id', hostId);
+    }
   }
 
   // =============================================
@@ -788,6 +890,30 @@ class DatabaseService {
         .maybeSingle();
 
     return response;
+  }
+
+  /// Submit host defense for a dispute
+  static Future<void> submitHostDefense(String disputeId, String defense) async {
+    await _client.from(AppConstants.tableDisputes).update({
+      'host_defense': defense,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', disputeId);
+  }
+
+  /// Add evidence URL to a dispute (guest or host)
+  static Future<void> addDisputeEvidence(String disputeId, String imageUrl, {required bool isHost}) async {
+    final field = isHost ? 'host_evidence' : 'guest_evidence';
+    final current = await _client
+        .from(AppConstants.tableDisputes)
+        .select(field)
+        .eq('id', disputeId)
+        .single();
+    final urls = List<String>.from(current[field] ?? []);
+    urls.add(imageUrl);
+    await _client.from(AppConstants.tableDisputes).update({
+      field: urls,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', disputeId);
   }
 
   // =============================================

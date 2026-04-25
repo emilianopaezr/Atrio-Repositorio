@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -15,24 +16,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  static const _pages = [
+  List<_OnboardingPageData> _buildPages(AppLocalizations l) => [
     _OnboardingPageData(
       icon: Icons.location_city_rounded,
-      title: 'Descubre Espacios Únicos',
-      subtitle:
-          'Lofts, estudios, cabañas y más. Reserva por horas, día completo o noches.',
+      title: l.onboardingPage1Title,
+      subtitle: l.onboardingPage1Subtitle,
     ),
     _OnboardingPageData(
       icon: Icons.explore_rounded,
-      title: 'Vive Experiencias Inolvidables',
-      subtitle:
-          'Trekking, fotografía, tours gastronómicos. Aventuras con cupos limitados.',
+      title: l.onboardingPage2Title,
+      subtitle: l.onboardingPage2Subtitle,
     ),
     _OnboardingPageData(
       icon: Icons.handshake_rounded,
-      title: 'Servicios a tu Medida',
-      subtitle:
-          'DJ, catering, limpieza y más. Contrata profesionales verificados.',
+      title: l.onboardingPage3Title,
+      subtitle: l.onboardingPage3Subtitle,
     ),
   ];
 
@@ -50,8 +48,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
+  void _nextPage(int pagesLength) {
+    if (_currentPage < pagesLength - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
@@ -61,6 +59,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final pages = _buildPages(l);
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
       body: SafeArea(
@@ -71,11 +71,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               alignment: Alignment.centerRight,
               child: Padding(
                 padding: const EdgeInsets.only(top: 16, right: 16),
-                child: _currentPage < _pages.length - 1
+                child: _currentPage < pages.length - 1
                     ? TextButton(
                         onPressed: _completeOnboarding,
                         child: Text(
-                          'Omitir',
+                          l.onboardingSkip,
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             color: AtrioColors.guestTextSecondary,
@@ -90,12 +90,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 onPageChanged: (index) {
                   setState(() => _currentPage = index);
                 },
                 itemBuilder: (context, index) {
-                  final page = _pages[index];
+                  final page = pages[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: Column(
@@ -141,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
-                      _pages.length,
+                      pages.length,
                       (index) => AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -163,8 +163,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: _currentPage < _pages.length - 1
-                          ? _nextPage
+                      onPressed: _currentPage < pages.length - 1
+                          ? () => _nextPage(pages.length)
                           : _completeOnboarding,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AtrioColors.neonLime,
@@ -175,9 +175,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        _currentPage < _pages.length - 1
-                            ? 'Siguiente'
-                            : 'Comenzar',
+                        _currentPage < pages.length - 1
+                            ? l.onboardingNext
+                            : l.onboardingGetStarted,
                         style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

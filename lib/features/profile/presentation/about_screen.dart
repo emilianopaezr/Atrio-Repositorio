@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/atrio_card.dart';
 
 class AboutScreen extends StatelessWidget {
@@ -11,11 +12,12 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Sobre Atrio',
+          l.aboutHeader,
           style: AtrioTypography.headingSmall.copyWith(
             color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
           ),
@@ -52,7 +54,7 @@ class AboutScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tu Marketplace Premium',
+                    l.aboutPremiumMarket,
                     style: AtrioTypography.headingSmall.copyWith(
                       color: isDark
                           ? AtrioColors.hostTextPrimary
@@ -61,14 +63,7 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Atrio es el marketplace premium que conecta anfitriones con usuarios a través de espacios únicos, experiencias memorables y servicios profesionales.\n\n'
-                    'Nuestra plataforma ofrece un ecosistema completo: búsqueda inteligente, reservas en tiempo real con 3 modalidades (por horas, día completo y noches), '
-                    'chat directo con anfitriones, sistema de reseñas verificadas, verificación de identidad (KYC), gestión de pagos con comisiones transparentes (7%, máx \$90.000 CLP), '
-                    'panel de control para anfitriones con analítica de ingresos, calendario de disponibilidad interactivo, notificaciones en tiempo real, '
-                    'servicios rápidos bajo demanda, experiencias con cupos y horarios, sistema de niveles y logros, y resolución de disputas integrada.\n\n'
-                    'Ya sea que busques un loft industrial para un shooting, una villa para un retiro creativo, un tour gastronómico, o un servicio de fotografía profesional, '
-                    'Atrio te conecta con las mejores opciones curadas por nuestra comunidad.\n\n'
-                    'Desarrollada con pasión en Santiago de Chile 🇨🇱',
+                    l.aboutDescription,
                     style: AtrioTypography.bodyMedium.copyWith(
                       color: isDark
                           ? AtrioColors.hostTextSecondary
@@ -88,43 +83,43 @@ class AboutScreen extends StatelessWidget {
                 children: [
                   _FeatureRow(
                     icon: Icons.home_work_outlined,
-                    title: 'Espacios',
-                    description: 'Lofts, villas, estudios y rooftops',
+                    title: l.aboutFeatSpaces,
+                    description: l.aboutFeatSpacesDesc,
                     isDark: isDark,
                   ),
                   const Divider(height: 24),
                   _FeatureRow(
                     icon: Icons.auto_awesome_outlined,
-                    title: 'Experiencias',
-                    description: 'Tours, talleres y eventos únicos',
+                    title: l.aboutFeatExperiences,
+                    description: l.aboutFeatExperiencesDesc,
                     isDark: isDark,
                   ),
                   const Divider(height: 24),
                   _FeatureRow(
                     icon: Icons.build_circle_outlined,
-                    title: 'Servicios',
-                    description: 'Fotografía, catering, limpieza y más',
+                    title: l.aboutFeatServices,
+                    description: l.aboutFeatServicesDesc,
                     isDark: isDark,
                   ),
                   const Divider(height: 24),
                   _FeatureRow(
                     icon: Icons.chat_outlined,
-                    title: 'Chat en Tiempo Real',
-                    description: 'Comunícate directo con anfitriones',
+                    title: l.aboutFeatChat,
+                    description: l.aboutFeatChatDesc,
                     isDark: isDark,
                   ),
                   const Divider(height: 24),
                   _FeatureRow(
                     icon: Icons.verified_user_outlined,
-                    title: 'Verificación KYC',
-                    description: 'Identidad verificada para mayor confianza',
+                    title: l.aboutFeatKyc,
+                    description: l.aboutFeatKycDesc,
                     isDark: isDark,
                   ),
                   const Divider(height: 24),
                   _FeatureRow(
                     icon: Icons.notifications_active_outlined,
-                    title: 'Notificaciones',
-                    description: 'Actualizaciones en tiempo real',
+                    title: l.aboutFeatNotifications,
+                    description: l.aboutFeatNotificationsDesc,
                     isDark: isDark,
                   ),
                 ],
@@ -138,7 +133,7 @@ class AboutScreen extends StatelessWidget {
                 Expanded(
                   child: _StatBox(
                     value: '7%',
-                    label: 'Comisión estándar',
+                    label: l.aboutStatCommission,
                     isDark: isDark,
                   ),
                 ),
@@ -146,7 +141,7 @@ class AboutScreen extends StatelessWidget {
                 Expanded(
                   child: _StatBox(
                     value: '\$90.000',
-                    label: 'Fee máximo',
+                    label: l.aboutStatMaxFee,
                     isDark: isDark,
                   ),
                 ),
@@ -154,7 +149,7 @@ class AboutScreen extends StatelessWidget {
                 Expanded(
                   child: _StatBox(
                     value: '24/7',
-                    label: 'Soporte',
+                    label: l.aboutStatSupport,
                     isDark: isDark,
                   ),
                 ),
@@ -165,19 +160,19 @@ class AboutScreen extends StatelessWidget {
             // Links
             _LinkTile(
               icon: Icons.description_outlined,
-              title: 'Términos y Condiciones',
+              title: l.aboutLinkTerms,
               isDark: isDark,
               onTap: () => context.push('/terms'),
             ),
             _LinkTile(
               icon: Icons.privacy_tip_outlined,
-              title: 'Política de Privacidad',
+              title: l.aboutLinkPrivacy,
               isDark: isDark,
               onTap: () => context.push('/privacy'),
             ),
             _LinkTile(
               icon: Icons.gavel_outlined,
-              title: 'Licencias de Software',
+              title: l.aboutLinkLicenses,
               isDark: isDark,
               onTap: () => showLicensePage(
                 context: context,
@@ -187,12 +182,12 @@ class AboutScreen extends StatelessWidget {
             ),
             _LinkTile(
               icon: Icons.share_outlined,
-              title: 'Compartir Atrio',
+              title: l.aboutLinkShare,
               isDark: isDark,
               onTap: () {
                 SharePlus.instance.share(
                   ShareParams(
-                    text: '¡Descubre Atrio! El marketplace de espacios, experiencias y servicios premium. Descárgala ahora.',
+                    text: l.aboutShareText,
                   ),
                 );
               },
@@ -200,7 +195,7 @@ class AboutScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
             Text(
-              '© 2026 Atrio Technologies SpA. Santiago de Chile.',
+              l.aboutCopyright,
               style: AtrioTypography.caption.copyWith(
                 color: isDark
                     ? AtrioColors.hostTextTertiary

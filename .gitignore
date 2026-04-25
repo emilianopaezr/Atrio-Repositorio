@@ -5,6 +5,10 @@ android/local.properties
 **/*.keystore
 .env
 
+# Firebase credentials (NEVER commit)
+android/app/google-services.json
+../secrets/
+
 # Build scripts with secrets
 run_secure.bat
 run_secure.sh
@@ -61,3 +65,7 @@ app.*.map.json
 # Environment variables - NEVER commit
 .env
 .env.*
+
+# PowerShell helper scripts (contain Supabase service_role JWT keys)
+*.ps1
+supabase/*.ps1

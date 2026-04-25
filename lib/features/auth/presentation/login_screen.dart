@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -75,7 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       _showError(e.message);
     } catch (e) {
       if (!mounted) return;
-      _showError('Ocurrió un error inesperado. Intenta de nuevo.');
+      _showError(AppLocalizations.of(context).commonUnexpectedError);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -94,13 +95,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       _showError(e.message);
     } catch (e) {
       if (!mounted) return;
-      _showError('No se pudo iniciar sesión con Google. Intenta de nuevo.');
+      _showError(AppLocalizations.of(context).authGoogleFail);
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
   Future<void> _resetPassword() async {
+    final l = AppLocalizations.of(context);
     final resetEmailController = TextEditingController(
       text: _emailController.text.trim(),
     );
@@ -111,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         backgroundColor: AtrioColors.guestSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'Recuperar contraseña',
+          l.authResetPasswordTitle,
           style: GoogleFonts.inter(
             fontWeight: FontWeight.w700,
             color: AtrioColors.guestTextPrimary,
@@ -121,7 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.',
+              l.authResetPasswordHint,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 color: AtrioColors.guestTextSecondary,
@@ -134,7 +136,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               keyboardType: TextInputType.emailAddress,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Tu email',
+                hintText: l.authYourEmail,
                 hintStyle: GoogleFonts.inter(color: AtrioColors.guestTextTertiary),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -152,7 +154,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Cancelar',
+            child: Text(l.btnCancel,
                 style: GoogleFonts.inter(color: AtrioColors.guestTextSecondary)),
           ),
           ElevatedButton(
@@ -163,7 +165,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Enviar',
+            child: Text(l.btnSend,
                 style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ),
         ],
@@ -174,7 +176,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     final email = resetEmailController.text.trim();
     if (email.isEmpty) {
-      _showError('Ingresa tu email para recuperar tu contraseña.');
+      _showError(l.authResetEnterEmail);
       return;
     }
 
@@ -193,7 +195,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Si el email está registrado, recibirás un enlace de recuperación.',
+                l.authResetSent,
                 style: GoogleFonts.inter(fontSize: 13),
               ),
             ),
@@ -235,6 +237,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
@@ -271,7 +274,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   // Heading
                   Center(
                     child: Text(
-                      'Bienvenido',
+                      l.authWelcome,
                       style: GoogleFonts.inter(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
@@ -284,7 +287,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   const SizedBox(height: 6),
                   Center(
                     child: Text(
-                      'Inicia sesión para continuar en Atrio',
+                      l.authLoginSubtitle,
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         color: AtrioColors.guestTextSecondary,
@@ -296,19 +299,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   // Email
                   _LightTextField(
                     controller: _emailController,
-                    hint: 'Email',
+                    hint: l.authEmail,
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.email],
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Ingresa tu email';
+                        return l.authEnterEmail;
                       }
                       final emailRegex =
                           RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
                       if (!emailRegex.hasMatch(value.trim())) {
-                        return 'Email no válido';
+                        return l.authInvalidEmail;
                       }
                       return null;
                     },
@@ -317,7 +320,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   // Password
                   _LightTextField(
                     controller: _passwordController,
-                    hint: 'Contraseña',
+                    hint: l.authPassword,
                     icon: Icons.lock_outline,
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
@@ -336,7 +339,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Ingresa tu contraseña';
+                        return l.authEnterPassword;
                       }
                       return null;
                     },
@@ -348,7 +351,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     child: TextButton(
                       onPressed: _resetPassword,
                       child: Text(
-                        '¿Olvidaste tu contraseña?',
+                        l.authForgotPassword,
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           color: AtrioColors.neonLimeDark,
@@ -387,7 +390,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'Iniciar Sesión',
+                                  l.authSignIn,
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -410,7 +413,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          'o continúa con',
+                          l.authOrContinueWith,
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             color: AtrioColors.guestTextTertiary,
@@ -456,7 +459,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 const Icon(Icons.g_mobiledata, size: 24),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Continuar con Google',
+                                  l.authContinueWithGoogle,
                                   style: GoogleFonts.inter(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -474,7 +477,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '¿No tienes cuenta? ',
+                          l.authNoAccount,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color: AtrioColors.guestTextSecondary,
@@ -483,7 +486,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         GestureDetector(
                           onTap: () => context.go('/auth/register'),
                           child: Text(
-                            'Regístrate',
+                            l.authSignUp,
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,

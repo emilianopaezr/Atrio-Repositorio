@@ -13,6 +13,7 @@ import '../../../core/providers/host_stats_provider.dart';
 import '../../../core/providers/notifications_provider.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -24,7 +25,30 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedPeriodIndex = 1; // default "1M"
 
-  final List<String> _periodLabels = ['1S', '1M', '3M', '6M', '1A', 'Todo'];
+  List<String> _periodLabels(AppLocalizations l) => [
+    l.dashboardPeriod1W,
+    l.dashboardPeriod1M,
+    l.dashboardPeriod3M,
+    l.dashboardPeriod6M,
+    l.dashboardPeriod1Y,
+    l.dashboardPeriodAll,
+  ];
+
+  List<String> _shortDays(AppLocalizations l) => [
+    l.dashboardDayShortMon,
+    l.dashboardDayShortTue,
+    l.dashboardDayShortWed,
+    l.dashboardDayShortThu,
+    l.dashboardDayShortFri,
+    l.dashboardDayShortSat,
+    l.dashboardDayShortSun,
+  ];
+
+  List<String> _shortMonths(AppLocalizations l) => [
+    l.monthAbbrJan, l.monthAbbrFeb, l.monthAbbrMar, l.monthAbbrApr,
+    l.monthAbbrMay, l.monthAbbrJun, l.monthAbbrJul, l.monthAbbrAug,
+    l.monthAbbrSep, l.monthAbbrOct, l.monthAbbrNov, l.monthAbbrDec,
+  ];
 
   /// Number of buckets per period
   int get _bucketCount {
@@ -89,36 +113,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Format bucket index → label for X axis
   String _bucketLabel(int index) {
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
     switch (_selectedPeriodIndex) {
       case 0: {
         // Days of week
         final d = now.subtract(Duration(days: 6 - index));
-        const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-        return days[(d.weekday - 1) % 7];
+        return _shortDays(l)[(d.weekday - 1) % 7];
       }
-      case 1: return 'S${index + 1}';
-      case 2: return 'S${index + 1}';
+      case 1: return l.dashboardWeekPrefix(index + 1);
+      case 2: return l.dashboardWeekPrefix(index + 1);
       case 3: {
         final m = DateTime(now.year, now.month - (5 - index), 1);
-        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        return months[m.month - 1];
+        return _shortMonths(l)[m.month - 1];
       }
       case 4:
       case 5: {
         final m = DateTime(now.year, now.month - (11 - index), 1);
-        const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        return months[m.month - 1];
+        return _shortMonths(l)[m.month - 1];
       }
       default: return '';
     }
   }
 
   String _getGreeting() {
+    final l = AppLocalizations.of(context);
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Buenos días';
-    if (hour < 18) return 'Buenas tardes';
-    return 'Buenas noches';
+    if (hour < 12) return l.dashboardGoodMorning;
+    if (hour < 18) return l.dashboardGoodAfternoon;
+    return l.dashboardGoodEvening;
   }
 
   @override
@@ -184,7 +207,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => context.push('/host/analytics'),
                     icon: const Icon(Icons.analytics_outlined, size: 20),
-                    label: Text('Ver analíticas completas',
+                    label: Text(AppLocalizations.of(context).dashboardViewFullAnalytics,
                         style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AtrioColors.neonLime,
@@ -209,12 +232,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // HEADER
   // ────────────────────────────────────────────
   Widget _buildHeader(AsyncValue<dynamic> userAsync) {
+    final l = AppLocalizations.of(context);
     return Row(
       children: [
         Expanded(
           child: userAsync.when(
             data: (profile) {
-              final name = profile?.displayName?.split(' ').first ?? 'Anfitrión';
+              final name = profile?.displayName?.split(' ').first ?? l.dashboardHostFallback;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -228,7 +252,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Hola, $name',
+                    l.dashboardGreeting(name),
                     style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
@@ -239,7 +263,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               );
             },
             loading: () => Text(
-              'Hola, Anfitrión',
+              l.dashboardGreeting(l.dashboardHostFallback),
               style: GoogleFonts.inter(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
@@ -298,6 +322,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // REVENUE DISPLAY
   // ────────────────────────────────────────────
   Widget _buildRevenueDisplay(AsyncValue<Map<String, dynamic>?> hostProfileAsync) {
+    final l = AppLocalizations.of(context);
     return hostProfileAsync.when(
       data: (profile) {
         final totalEarnings = double.tryParse(profile?['total_earnings']?.toString() ?? '0') ?? 0;
@@ -316,7 +341,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Ganancias totales',
+              l.dashboardTotalEarnings,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
@@ -327,13 +352,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Row(
               children: [
                 _MiniBalance(
-                  label: 'Disponible',
+                  label: l.dashboardAvailable,
                   amount: currentBalance.toCLP,
                   color: AtrioColors.success,
                 ),
                 const SizedBox(width: 16),
                 _MiniBalance(
-                  label: 'Pendiente',
+                  label: l.dashboardPending,
                   amount: pendingBalance.toCLP,
                   color: AtrioColors.ratingGold,
                 ),
@@ -523,7 +548,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         size: 32, color: AtrioColors.hostTextTertiary.withValues(alpha: 0.5)),
                     const SizedBox(height: 6),
                     Text(
-                      'Sin ingresos en este período',
+                      AppLocalizations.of(context).dashboardNoRevenueInPeriod,
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AtrioColors.hostTextTertiary,
@@ -542,12 +567,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // PERIOD TABS
   // ────────────────────────────────────────────
   Widget _buildPeriodTabs() {
+    final labels = _periodLabels(AppLocalizations.of(context));
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(_periodLabels.length, (index) {
+        children: List.generate(labels.length, (index) {
           final isSelected = index == _selectedPeriodIndex;
           return GestureDetector(
             onTap: () {
@@ -562,7 +588,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                _periodLabels[index],
+                labels[index],
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -583,6 +609,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     AsyncValue<List<Map<String, dynamic>>> allBookingsAsync,
     AsyncValue<dynamic> hostStatsAsync,
   ) {
+    final l = AppLocalizations.of(context);
     return Row(
       children: [
         // Reservas Activas
@@ -593,11 +620,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   b['status'] == 'confirmed' || b['status'] == 'active').length;
               return _StatCard(
                 value: '$active',
-                label: 'Reservas\nActivas',
+                label: l.dashboardActiveBookings,
               );
             },
-            loading: () => _StatCard(value: '--', label: 'Reservas\nActivas'),
-            error: (_, _) => _StatCard(value: '--', label: 'Reservas\nActivas'),
+            loading: () => _StatCard(value: '--', label: l.dashboardActiveBookings),
+            error: (_, _) => _StatCard(value: '--', label: l.dashboardActiveBookings),
           ),
         ),
         const SizedBox(width: 10),
@@ -611,11 +638,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               final occupancy = total > 0 ? ((active / total) * 100).toInt() : 0;
               return _StatCard(
                 value: '$occupancy%',
-                label: 'Ocupación',
+                label: l.dashboardOccupancy,
               );
             },
-            loading: () => _StatCard(value: '--%', label: 'Ocupación'),
-            error: (_, _) => _StatCard(value: '--%', label: 'Ocupación'),
+            loading: () => _StatCard(value: '--%', label: l.dashboardOccupancy),
+            error: (_, _) => _StatCard(value: '--%', label: l.dashboardOccupancy),
           ),
         ),
         const SizedBox(width: 10),
@@ -626,13 +653,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               final rating = stats?.averageRating ?? 0;
               return _StatCard(
                 value: rating > 0 ? rating.toStringAsFixed(1) : '--',
-                label: 'Calificación',
+                label: l.dashboardRating,
                 icon: Icons.star_rounded,
                 iconColor: AtrioColors.ratingGold,
               );
             },
-            loading: () => _StatCard(value: '--', label: 'Calificación'),
-            error: (_, _) => _StatCard(value: '--', label: 'Calificación'),
+            loading: () => _StatCard(value: '--', label: l.dashboardRating),
+            error: (_, _) => _StatCard(value: '--', label: l.dashboardRating),
           ),
         ),
       ],
@@ -643,11 +670,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // PROXIMAS RESERVAS
   // ────────────────────────────────────────────
   Widget _buildUpcomingBookings(AsyncValue<List<Map<String, dynamic>>> bookingsAsync) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Próximas Reservas',
+          l.dashboardUpcomingBookings,
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -664,7 +692,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
-                  'No hay reservas próximas',
+                  l.dashboardNoUpcomingBookings,
                   style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary),
                 ),
               );
@@ -675,8 +703,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ...upcoming.map((booking) {
                   final guest = booking['guest'] as Map<String, dynamic>?;
                   final listing = booking['listing'] as Map<String, dynamic>?;
-                  final guestName = guest?['display_name'] ?? 'Huésped';
-                  final listingTitle = listing?['title'] ?? 'Espacio';
+                  final guestName = guest?['display_name'] ?? l.dashboardGuestFallback;
+                  final listingTitle = listing?['title'] ?? l.dashboardListingFallback;
                   final checkIn = booking['check_in']?.toString().split('T').first ?? '';
                   final avatarUrl = guest?['photo_url'] as String?;
 
@@ -737,11 +765,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                'Pendiente',
+                                l.dashboardStatusPending,
                                 style: GoogleFonts.inter(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color: AtrioColors.vibrantOrange,
+                                ),
+                              ),
+                            )
+                          else if (booking['status'] == 'confirmed')
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AtrioColors.neonLimeDark.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                l.dashboardStatusConfirmed,
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AtrioColors.neonLimeDark,
                                 ),
                               ),
                             ),
@@ -756,7 +800,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: GestureDetector(
                     onTap: () => context.go('/host/calendar'),
                     child: Text(
-                      'Ver todo',
+                      l.dashboardViewAll,
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -801,21 +845,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   String _timeAgo(DateTime date) {
+    final l = AppLocalizations.of(context);
     final diff = DateTime.now().difference(date);
-    if (diff.inDays > 0) return 'Hace ${diff.inDays}d';
-    if (diff.inHours > 0) return 'Hace ${diff.inHours}h';
-    if (diff.inMinutes > 0) return 'Hace ${diff.inMinutes}m';
-    return 'Ahora';
+    if (diff.inDays > 0) return l.dashboardTimeDays(diff.inDays);
+    if (diff.inHours > 0) return l.dashboardTimeHours(diff.inHours);
+    if (diff.inMinutes > 0) return l.dashboardTimeMins(diff.inMinutes);
+    return l.dashboardTimeNow;
   }
 
   Widget _buildRecentActivity(WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final notifsAsync = ref.watch(notificationsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Actividad Reciente',
+          l.dashboardRecentActivity,
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -829,7 +875,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Text(
-                  'No hay actividad reciente',
+                  l.dashboardNoRecentActivity,
                   style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary),
                 ),
               );
@@ -900,7 +946,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           error: (_, _) => Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
-              'Error al cargar actividad',
+              l.dashboardLoadActivityError,
               style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary),
             ),
           ),
@@ -909,7 +955,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         GestureDetector(
           onTap: () => context.push('/notifications'),
           child: Text(
-            'Ver todo',
+            l.dashboardViewAll,
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w500,

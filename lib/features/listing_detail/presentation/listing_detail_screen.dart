@@ -13,6 +13,8 @@ import '../../../core/models/listing_model.dart';
 import '../../../core/models/enums.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../l10n/app_localizations.dart';
+import 'widgets/reviews_section.dart';
 
 const _bg = AtrioColors.guestSurfaceVariant;
 const _white = AtrioColors.guestSurface;
@@ -100,29 +102,35 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   }
 
   void _shareListing() {
+    final l = AppLocalizations.of(context);
     final listingsAsync = ref.read(listingsProvider(const ListingsFilter()));
     final all = listingsAsync.value ?? [];
     final listing = all.cast<Map<String, dynamic>>().where((l) => l['id'] == widget.listingId).firstOrNull;
     if (listing == null) return;
     final type = listing['type'] as String? ?? 'space';
-    final typeLabel = type == 'space' ? 'espacio' : type == 'experience' ? 'experiencia' : 'servicio';
+    final typeLabel = type == 'space'
+        ? l.listingTypeSpaceLower
+        : type == 'experience'
+            ? l.listingTypeExperienceLower
+            : l.listingTypeServiceLower;
     final price = (listing['base_price'] as num?)?.toCLP ?? '\$0';
     final title = listing['title'] as String? ?? '';
     final unit = listing['price_unit'] as String? ?? 'session';
     SharePlus.instance.share(
-      ShareParams(text: '¡Mira este $typeLabel en Atrio! $title - $price/${_priceUnit(unit)}'),
+      ShareParams(text: l.listingShareText(typeLabel, title, price, _priceUnit(context, unit))),
     );
   }
 
   void _showReportSheet() {
+    final l = AppLocalizations.of(context);
     String? selectedReason;
     final reasons = [
-      'Contenido inapropiado',
-      'Información falsa o engañosa',
-      'Fotos no coinciden',
-      'Precio incorrecto',
-      'Spam o estafa',
-      'Otro',
+      l.listingReportInappropriate,
+      l.listingReportFalseInfo,
+      l.listingReportPhotosMismatch,
+      l.listingReportWrongPrice,
+      l.listingReportSpam,
+      l.listingReportOther,
     ];
     showModalBottomSheet(
       context: context,
@@ -142,7 +150,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 child: Container(width: 40, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(2))),
               ),
               const SizedBox(height: 16),
-              Text('Reportar publicación', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: _text)),
+              Text(l.listingReportTitle, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: _text)),
               const SizedBox(height: 16),
               RadioGroup<String>(
                 groupValue: selectedReason,
@@ -168,7 +176,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                       : () {
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Reporte enviado. Gracias por ayudarnos a mejorar.')),
+                            SnackBar(content: Text(l.listingReportSent)),
                           );
                         },
                   style: ElevatedButton.styleFrom(
@@ -177,7 +185,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     elevation: 0,
                   ),
-                  child: Text('Enviar reporte', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _text)),
+                  child: Text(l.listingReportSubmit, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: _text)),
                 ),
               ),
             ],
@@ -187,23 +195,15 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     );
   }
 
-  String _priceUnit(String u) {
+  String _priceUnit(BuildContext context, String u) {
+    final l = AppLocalizations.of(context);
     switch (u) {
-      case 'night': return 'noche';
-      case 'hour': return 'hora';
-      case 'session': return 'sesión';
-      case 'person': return 'persona';
+      case 'night': return l.listingUnitNight;
+      case 'hour': return l.listingUnitHour;
+      case 'session': return l.listingUnitSession;
+      case 'person': return l.listingUnitPerson;
       default: return u;
     }
-  }
-
-  String _timeAgo(DateTime d) {
-    final diff = DateTime.now().difference(d);
-    if (diff.inDays > 365) return 'Hace ${diff.inDays ~/ 365} año${diff.inDays ~/ 365 > 1 ? 's' : ''}';
-    if (diff.inDays > 30) return 'Hace ${diff.inDays ~/ 30} mes${diff.inDays ~/ 30 > 1 ? 'es' : ''}';
-    if (diff.inDays > 0) return 'Hace ${diff.inDays} día${diff.inDays > 1 ? 's' : ''}';
-    if (diff.inHours > 0) return 'Hace ${diff.inHours}h';
-    return 'Hace un momento';
   }
 
   IconData _amenityIcon(String a) {
@@ -240,7 +240,9 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     );
   }
 
-  Widget _empty({bool error = false}) => Scaffold(
+  Widget _empty({bool error = false}) {
+    final l = AppLocalizations.of(context);
+    return Scaffold(
     backgroundColor: _bg,
     appBar: AppBar(backgroundColor: _bg, elevation: 0, surfaceTintColor: Colors.transparent,
       leading: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_ios_new, size: 16, color: _text))),
@@ -250,22 +252,24 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         children: [
           Icon(error ? Icons.error_outline : Icons.search_off, size: 48, color: _textMuted),
           const SizedBox(height: 12),
-          Text(error ? 'Error al cargar' : 'No encontrado', style: GoogleFonts.inter(fontSize: 16, color: _textSec)),
+          Text(error ? l.listingLoadError : l.listingNotFound, style: GoogleFonts.inter(fontSize: 16, color: _textSec)),
           if (error) ...[
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () => ref.invalidate(listingDetailProvider(widget.listingId)),
-              child: Text('Reintentar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _limeDark)),
+              child: Text(l.btnRetry, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _limeDark)),
             ),
           ],
         ],
       ),
     ),
   );
+  }
 
   Widget _page(Listing listing) {
+    final l = AppLocalizations.of(context);
     final host = listing.hostData;
-    final hostName = host?['display_name'] as String? ?? 'Anfitrión';
+    final hostName = host?['display_name'] as String? ?? l.listingDefaultHost;
     final hostPhoto = host?['photo_url'] as String?;
     final isSuperhost = host?['is_superhost'] == true;
     final bottom = MediaQuery.of(context).padding.bottom;
@@ -310,7 +314,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
-                                    listing.type == 'space' ? 'Espacio' : listing.type == 'experience' ? 'Experiencia' : 'Servicio',
+                                    listing.type == 'space' ? l.listingTypeSpace : listing.type == 'experience' ? l.listingTypeExperience : l.listingTypeService,
                                     style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: _limeDark, letterSpacing: 0.3),
                                   ),
                                 ),
@@ -380,16 +384,16 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _highlight(Icons.people_outline_rounded, '${listing.capacity ?? 4} pers.'),
+                              _highlight(Icons.people_outline_rounded, l.listingHighlightPersons(listing.capacity ?? 4)),
                               _highlight(
                                 _rentalModeIcon(listing.rentalMode),
                                 RentalMode.fromDb(listing.rentalMode).label,
                               ),
-                              _highlight(Icons.verified_user_outlined, 'Asegurado'),
+                              _highlight(Icons.verified_user_outlined, l.listingHighlightInsured),
                               if (listing.instantBooking == true)
-                                _highlight(Icons.flash_on_rounded, 'Inmediato')
+                                _highlight(Icons.flash_on_rounded, l.listingHighlightInstant)
                               else
-                                _highlight(Icons.schedule_rounded, 'Confirm.'),
+                                _highlight(Icons.schedule_rounded, l.listingHighlightConfirm),
                             ],
                           ),
 
@@ -448,7 +452,13 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                           ],
 
                           // ─── Reviews ───
-                          _reviewsSection(listing),
+                          ListingReviewsSection(
+                            listingId: widget.listingId,
+                            rating: listing.rating,
+                            reviewCount: listing.reviewCount,
+                            loadingReviews: _loadingReviews,
+                            reviews: _reviews,
+                          ),
 
                           const SizedBox(height: 24),
                           SizedBox(height: 90 + bottom),
@@ -555,7 +565,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                     style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black),
                   ),
                   Text(
-                    '/${_priceUnit(listing.priceUnit)}',
+                    '/${_priceUnit(context, listing.priceUnit)}',
                     style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black.withValues(alpha: 0.6)),
                   ),
                 ],
@@ -588,6 +598,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   // HOST CARD
   // ══════════════════════════════════════════
   Widget _hostCard(String name, String? photo, bool superhost, Listing listing) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -602,7 +613,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               CircleAvatar(
                 radius: 24,
                 backgroundColor: _lime.withValues(alpha: 0.2),
-                backgroundImage: photo != null ? NetworkImage(photo) : null,
+                backgroundImage: photo != null ? CachedNetworkImageProvider(photo) : null,
                 child: photo == null ? const Icon(Icons.person, size: 24, color: _limeDark) : null,
               ),
               if (superhost)
@@ -628,7 +639,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: _text)),
                 const SizedBox(height: 2),
                 Text(
-                  '${superhost ? 'Superhost · ' : ''}Responde en 1hr',
+                  '${superhost ? l.listingSuperhostLabel : ''}${l.listingHostResponseTime}',
                   style: GoogleFonts.inter(fontSize: 12, color: _textMuted),
                 ),
               ],
@@ -660,7 +671,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 children: [
                   const Icon(Icons.chat_bubble_outline, size: 14, color: _limeDark),
                   const SizedBox(width: 5),
-                  Text('Chat', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _limeDark)),
+                  Text(l.listingChatButton, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _limeDark)),
                 ],
               ),
             ),
@@ -674,7 +685,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   // DESCRIPTION
   // ══════════════════════════════════════════
   Widget _descSection(Listing listing) {
-    final desc = listing.description ?? 'Sin descripción disponible.';
+    final l = AppLocalizations.of(context);
+    final desc = listing.description ?? l.listingDescEmpty;
     final words = desc.split(RegExp(r'\s+'));
     final isLong = words.length > 60;
     final display = (!_descExpanded && isLong) ? '${words.take(60).join(' ')}...' : desc;
@@ -683,7 +695,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          listing.type == 'space' ? 'Acerca del espacio' : listing.type == 'experience' ? 'Acerca de la experiencia' : 'Acerca del servicio',
+          listing.type == 'space' ? l.listingAboutSpace : listing.type == 'experience' ? l.listingAboutExperience : l.listingAboutService,
           style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text),
         ),
         const SizedBox(height: 10),
@@ -696,7 +708,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           GestureDetector(
             onTap: () => setState(() => _descExpanded = !_descExpanded),
             child: Text(
-              _descExpanded ? 'Mostrar menos' : 'Ver más',
+              _descExpanded ? l.listingShowLess : l.listingShowMore,
               style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: _limeDark),
             ),
           ),
@@ -712,7 +724,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Amenidades', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+        Text(AppLocalizations.of(context).listingAmenities, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
         const SizedBox(height: 14),
         Wrap(
           spacing: 10,
@@ -742,6 +754,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   // RENTAL MODE BADGE
   // ══════════════════════════════════════════
   Widget _rentalModeBadge(Listing listing) {
+    final l = AppLocalizations.of(context);
     final mode = RentalMode.fromDb(listing.rentalMode);
     String subtitle;
     switch (mode) {
@@ -749,16 +762,16 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         final from = listing.availableFrom ?? '09:00';
         final until = listing.availableUntil ?? '22:00';
         final minH = listing.minHours;
-        subtitle = 'Disponible $from - $until · Mín. $minH hora${minH > 1 ? 's' : ''}';
+        subtitle = l.listingRentalHoursSubtitle(from, until, minH);
         break;
       case RentalMode.fullDay:
-        subtitle = 'Reserva por día completo';
+        subtitle = l.listingRentalFullDaySubtitle;
         break;
       case RentalMode.nights:
         final checkIn = listing.checkInTime ?? '15:00';
         final checkOut = listing.checkOutTime ?? '11:00';
         final minN = listing.minNights;
-        subtitle = 'Check-in $checkIn · Check-out $checkOut · Mín. $minN noche${minN > 1 ? 's' : ''}';
+        subtitle = l.listingRentalNightsSubtitle(checkIn, checkOut, minN);
         break;
     }
 
@@ -785,7 +798,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Modalidad: ${mode.label}',
+                  l.listingRentalMode(mode.label),
                   style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: _text),
                 ),
                 const SizedBox(height: 2),
@@ -805,6 +818,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   // AVAILABILITY SECTION
   // ══════════════════════════════════════════
   Widget _availabilitySection(Listing listing) {
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
     final startDate = DateTime(now.year, now.month, 1);
     final endDate = DateTime(now.year, now.month + 3, 0);
@@ -818,7 +832,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Disponibilidad', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+        Text(l.listingAvailability, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
         const SizedBox(height: 14),
         bookedAsync.when(
           data: (data) {
@@ -848,7 +862,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               border: Border.all(color: _border),
             ),
             child: Center(
-              child: Text('No se pudo cargar la disponibilidad', style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
+              child: Text(l.listingAvailabilityLoadError, style: GoogleFonts.inter(fontSize: 13, color: _textMuted)),
             ),
           ),
         ),
@@ -856,11 +870,11 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         // Legend
         Row(
           children: [
-            _availLegend(AtrioColors.success, 'Disponible'),
+            _availLegend(AtrioColors.success, l.listingAvailabilityAvailable),
             const SizedBox(width: 14),
-            _availLegend(Colors.red[400]!, 'Reservado'),
+            _availLegend(Colors.red[400]!, l.listingAvailabilityBooked),
             const SizedBox(width: 14),
-            _availLegend(Colors.grey[400]!, 'Bloqueado'),
+            _availLegend(Colors.grey[400]!, l.listingAvailabilityBlocked),
           ],
         ),
       ],
@@ -868,11 +882,12 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   }
 
   Widget _buildMiniCalendar(DateTime now, Set<String> bookedDates, Set<String> blockedDates) {
+    final l = AppLocalizations.of(context);
     final firstDay = DateTime(now.year, now.month, 1);
     final lastDay = DateTime(now.year, now.month + 1, 0);
     final startWeekday = (firstDay.weekday - 1) % 7;
     final totalDays = lastDay.day;
-    const dayHeaders = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
+    final dayHeaders = [l.listingDayMon, l.listingDayTue, l.listingDayWed, l.listingDayThu, l.listingDayFri, l.listingDaySat, l.listingDaySun];
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -885,7 +900,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         children: [
           // Month header
           Text(
-            '${_monthName(now.month)} ${now.year}',
+            '${_monthName(context, now.month)} ${now.year}',
             style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: _text),
           ),
           const SizedBox(height: 10),
@@ -943,9 +958,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     );
   }
 
-  String _monthName(int m) {
-    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  String _monthName(BuildContext context, int m) {
+    final l = AppLocalizations.of(context);
+    final months = [l.listingMonthJan, l.listingMonthFeb, l.listingMonthMar, l.listingMonthApr, l.listingMonthMay, l.listingMonthJun,
+      l.listingMonthJul, l.listingMonthAug, l.listingMonthSep, l.listingMonthOct, l.listingMonthNov, l.listingMonthDec];
     return months[m - 1];
   }
 
@@ -962,6 +978,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   // HOUSE RULES
   // ══════════════════════════════════════════
   Widget _rulesSection(Listing listing) {
+    final l = AppLocalizations.of(context);
     final mode = RentalMode.fromDb(listing.rentalMode);
     final checkIn = listing.checkInTime ?? '15:00';
     final checkOut = listing.checkOutTime ?? '11:00';
@@ -969,17 +986,17 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Reglas', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+        Text(l.listingRules, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
         const SizedBox(height: 12),
         if (mode == RentalMode.nights)
-          _ruleRow(Icons.schedule_rounded, 'Check-in: $checkIn — Check-out: $checkOut')
+          _ruleRow(Icons.schedule_rounded, l.listingRuleCheckInOut(checkIn, checkOut))
         else if (mode == RentalMode.hours)
-          _ruleRow(Icons.schedule_rounded, 'Horario: ${listing.availableFrom ?? "09:00"} — ${listing.availableUntil ?? "22:00"}')
+          _ruleRow(Icons.schedule_rounded, l.listingRuleHours(listing.availableFrom ?? '09:00', listing.availableUntil ?? '22:00'))
         else
-          _ruleRow(Icons.schedule_rounded, 'Día completo disponible'),
-        _ruleRow(Icons.smoke_free_rounded, 'No fumar dentro del espacio'),
-        _ruleRow(Icons.pets_rounded, 'Mascotas con previo aviso'),
-        _ruleRow(Icons.volume_down_rounded, 'Respetar horario de silencio'),
+          _ruleRow(Icons.schedule_rounded, l.listingRuleFullDay),
+        _ruleRow(Icons.smoke_free_rounded, l.listingRuleNoSmoke),
+        _ruleRow(Icons.pets_rounded, l.listingRulePets),
+        _ruleRow(Icons.volume_down_rounded, l.listingRuleQuiet),
       ],
     );
   }
@@ -999,6 +1016,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   // CANCELLATION
   // ══════════════════════════════════════════
   Widget _cancellationSection(Listing listing) {
+    final l = AppLocalizations.of(context);
     final policy = CancellationPolicy.fromDb(listing.cancellationPolicy);
 
     return Column(
@@ -1006,7 +1024,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       children: [
         Row(
           children: [
-            Text('Cancelación', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
+            Text(l.listingCancellation, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1037,23 +1055,23 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
               ),
               const SizedBox(height: 12),
               if (policy == CancellationPolicy.flexible) ...[
-                _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 48h antes', 'Reembolso completo'),
+                _cancelRow(Icons.check_circle_outline, _limeDark, l.listingCancelFlexFree, l.listingCancelFlexFreeDesc),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.warning_amber_rounded, _gold, '24-48h: 50% reembolso', 'Se retiene la mitad'),
+                _cancelRow(Icons.warning_amber_rounded, _gold, l.listingCancelFlexPartial, l.listingCancelFlexPartialDesc),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.cancel_outlined, AtrioColors.error, 'Menos de 24h', 'Sin reembolso'),
+                _cancelRow(Icons.cancel_outlined, AtrioColors.error, l.listingCancelFlexNone, l.listingCancelFlexNoneDesc),
               ] else if (policy == CancellationPolicy.moderate) ...[
-                _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 5 días antes', 'Reembolso completo'),
+                _cancelRow(Icons.check_circle_outline, _limeDark, l.listingCancelModFree, l.listingCancelModFreeDesc),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.warning_amber_rounded, _gold, '2-5 días: 50% reembolso', 'Se retiene la mitad'),
+                _cancelRow(Icons.warning_amber_rounded, _gold, l.listingCancelModPartial, l.listingCancelModPartialDesc),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.cancel_outlined, AtrioColors.error, 'Menos de 2 días', 'Sin reembolso'),
+                _cancelRow(Icons.cancel_outlined, AtrioColors.error, l.listingCancelModNone, l.listingCancelModNoneDesc),
               ] else ...[
-                _cancelRow(Icons.check_circle_outline, _limeDark, 'Gratis hasta 7 días antes', 'Reembolso completo'),
+                _cancelRow(Icons.check_circle_outline, _limeDark, l.listingCancelStrictFree, l.listingCancelStrictFreeDesc),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.warning_amber_rounded, _gold, '3-7 días: 50% reembolso', 'Se retiene la mitad'),
+                _cancelRow(Icons.warning_amber_rounded, _gold, l.listingCancelStrictPartial, l.listingCancelStrictPartialDesc),
                 const SizedBox(height: 12),
-                _cancelRow(Icons.cancel_outlined, AtrioColors.error, 'Menos de 3 días', 'Sin reembolso'),
+                _cancelRow(Icons.cancel_outlined, AtrioColors.error, l.listingCancelStrictNone, l.listingCancelStrictNoneDesc),
               ],
             ],
           ),
@@ -1089,7 +1107,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           children: [
             const Icon(Icons.map_outlined, size: 20, color: _limeDark),
             const SizedBox(width: 8),
-            Text('Ubicación', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: _text)),
+            Text(AppLocalizations.of(context).listingLocation, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: _text)),
           ],
         ),
         const SizedBox(height: 6),
@@ -1105,157 +1123,6 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
           title: listing.title,
           height: 200,
         ),
-      ],
-    );
-  }
-
-  // ══════════════════════════════════════════
-  // REVIEWS
-  // ══════════════════════════════════════════
-  Widget _reviewsSection(Listing listing) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text('Reseñas', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: _text)),
-            const SizedBox(width: 8),
-            if (listing.rating > 0) ...[
-              const Icon(Icons.star_rounded, size: 16, color: _gold),
-              const SizedBox(width: 3),
-              Text(
-                '${listing.rating.toStringAsFixed(1)} (${listing.reviewCount})',
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _text),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 14),
-
-        if (_loadingReviews)
-          const Center(child: Padding(
-            padding: EdgeInsets.all(20),
-            child: CircularProgressIndicator(color: _limeDark, strokeWidth: 2),
-          ))
-        else if (_reviews.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: _white, borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _border),
-            ),
-            child: Center(
-              child: Column(
-                children: [
-                  const Icon(Icons.rate_review_outlined, size: 32, color: _textMuted),
-                  const SizedBox(height: 8),
-                  Text('Aún no hay reseñas', style: GoogleFonts.inter(fontSize: 14, color: _textMuted)),
-                  Text('Sé el primero en opinar', style: GoogleFonts.inter(fontSize: 12, color: _textMuted)),
-                ],
-              ),
-            ),
-          )
-        else
-          ...List.generate(
-            _reviews.length > 3 ? 3 : _reviews.length,
-            (i) {
-              final r = _reviews[i];
-              final reviewer = r['reviewer'] as Map<String, dynamic>?;
-              final name = reviewer?['display_name'] as String? ?? 'Usuario';
-              final photo = reviewer?['photo_url'] as String?;
-              final rating = (r['rating'] as num?)?.toDouble() ?? 0;
-              final comment = r['comment'] as String? ?? '';
-              final hostReply = r['host_reply'] as String?;
-              final created = DateTime.tryParse(r['created_at'] ?? '');
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: _white, borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: _lime.withValues(alpha: 0.2),
-                            backgroundImage: photo != null ? CachedNetworkImageProvider(photo) : null,
-                            child: photo == null ? Text(name[0].toUpperCase(), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: _limeDark)) : null,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(name, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: _text)),
-                                if (created != null)
-                                  Text(_timeAgo(created), style: GoogleFonts.inter(fontSize: 11, color: _textMuted)),
-                              ],
-                            ),
-                          ),
-                          Row(
-                            children: List.generate(5, (j) => Icon(
-                              j < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                              size: 14,
-                              color: j < rating ? _gold : _gold.withValues(alpha: 0.3),
-                            )),
-                          ),
-                        ],
-                      ),
-                      if (comment.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Text(comment, style: GoogleFonts.inter(fontSize: 13, color: _textSec, height: 1.5)),
-                      ],
-                      if (hostReply != null && hostReply.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: _bg, borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.reply_rounded, size: 14, color: _limeDark),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Respuesta del anfitrión', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: _text)),
-                                    const SizedBox(height: 3),
-                                    Text(hostReply, style: GoogleFonts.inter(fontSize: 12, color: _textSec, height: 1.4)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-        if (_reviews.length > 3) ...[
-          const SizedBox(height: 4),
-          Center(
-            child: GestureDetector(
-              onTap: () => context.push('/reviews/${widget.listingId}'),
-              child: Text(
-                'Ver las ${_reviews.length} reseñas',
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _limeDark),
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -1283,7 +1150,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                   style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: _text),
                 ),
                 Text(
-                  '/ ${_priceUnit(listing.priceUnit)}',
+                  '/ ${_priceUnit(context, listing.priceUnit)}',
                   style: GoogleFonts.inter(fontSize: 12, color: _textSec),
                 ),
               ],
@@ -1297,7 +1164,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
                 color: _lime, borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                'Reservar',
+                AppLocalizations.of(context).listingBookNow,
                 style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
               ),
             ),

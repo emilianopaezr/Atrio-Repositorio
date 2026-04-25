@@ -5,6 +5,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'config/supabase/supabase_config.dart';
+import 'core/services/cache_service.dart';
+import 'core/services/push_service.dart';
 import 'core/services/security_service.dart';
 import 'app.dart';
 
@@ -21,6 +23,10 @@ void main() async {
     }
 
     await SupabaseConfig.initialize();
+    // Offline cache — best-effort, never fatal.
+    await CacheService.initialize();
+    // Push notifications — no-op if google-services.json is missing.
+    await PushService.initialize();
   } catch (e) {
     debugPrint('Fatal initialization error: $e');
     runApp(MaterialApp(

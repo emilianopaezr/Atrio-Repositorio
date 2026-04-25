@@ -21,6 +21,9 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "8.11.1" apply false
     id("org.jetbrains.kotlin.android") version "2.2.20" apply false
+    // Push notifications (FCM) — plugin is applied in app/build.gradle.kts only if
+    // android/app/google-services.json exists. See that file for conditional apply.
+    id("com.google.gms.google-services") version "4.4.2" apply false
 }
 
 include(":app")
