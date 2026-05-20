@@ -112,8 +112,14 @@ class PricingEngineService {
     );
   }
 
-  /// Validates that client-side pricing matches expected calculations
-  /// Prevents tampered pricing from being submitted
+  /// Validates that client-side pricing matches expected calculations.
+  /// Prevents tampered pricing from being submitted.
+  ///
+  /// Service fee is computed over `subtotal + cleaningFee` to stay
+  /// consistent with [previewPricing] and [calculateServiceFee] callers
+  /// that pre-add cleaning. Without this, any listing with a non-zero
+  /// `cleaning_fee` (e.g. Loft Industrial) failed validation with
+  /// "Error en el cálculo".
   static bool validatePricing({
     required double basePrice,
     required double submittedSubtotal,
@@ -122,14 +128,15 @@ class PricingEngineService {
     required int guests,
     required bool isPerPerson,
     required double feeRate,
+    double cleaningFee = 0,
   }) {
     final expectedSub = isPerPerson
         ? basePrice * units * guests
         : basePrice * units;
-    final rawFee = expectedSub * feeRate;
+    final rawFee = (expectedSub + cleaningFee) * feeRate;
     final expectedFee = rawFee > maxFeeCap ? maxFeeCap : rawFee;
 
-    // Allow 1 cent tolerance for floating point
+    // Allow 1 cent tolerance for floating point.
     final subOk = (submittedSubtotal - expectedSub).abs() < 0.02;
     final feeOk = (submittedFee - expectedFee).abs() < 0.02;
     return subOk && feeOk;

@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'Configuración'**
   String get settingsTitle;
 
+  /// No description provided for @settingsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Preferencias'**
+  String get settingsEyebrow;
+
   /// No description provided for @sectionNotifications.
   ///
   /// In es, this message translates to:
@@ -848,6 +854,54 @@ abstract class AppLocalizations {
   /// **'No se pudo enviar el código. Intenta de nuevo.'**
   String get verifySendFail;
 
+  /// No description provided for @homeEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'EXPLORA'**
+  String get homeEyebrow;
+
+  /// No description provided for @homeHeroTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Qué necesitas hoy?'**
+  String get homeHeroTitle;
+
+  /// No description provided for @homeTrendingTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'En tendencia'**
+  String get homeTrendingTitle;
+
+  /// No description provided for @homeTrendingSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo más visto esta semana'**
+  String get homeTrendingSubtitle;
+
+  /// No description provided for @homeNearbyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerca de ti'**
+  String get homeNearbyTitle;
+
+  /// No description provided for @homeNearbySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'A pocos minutos de distancia'**
+  String get homeNearbySubtitle;
+
+  /// No description provided for @homeRecentTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Recién publicados'**
+  String get homeRecentTitle;
+
+  /// No description provided for @homeRecentSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo último en Atrio'**
+  String get homeRecentSubtitle;
+
   /// No description provided for @homeSearchHint.
   ///
   /// In es, this message translates to:
@@ -863,8 +917,56 @@ abstract class AppLocalizations {
   /// No description provided for @homeQuickServicesSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Mudanza, limpieza, armado y más'**
+  /// **'Resuelve hoy lo que necesitas'**
   String get homeQuickServicesSubtitle;
+
+  /// No description provided for @homeQuickServicesCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Explorar servicios'**
+  String get homeQuickServicesCta;
+
+  /// No description provided for @homeQuickServicesBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponible 24/7'**
+  String get homeQuickServicesBadge;
+
+  /// No description provided for @homeQuickCatMoving.
+  ///
+  /// In es, this message translates to:
+  /// **'Mudanza'**
+  String get homeQuickCatMoving;
+
+  /// No description provided for @homeQuickCatCleaning.
+  ///
+  /// In es, this message translates to:
+  /// **'Limpieza'**
+  String get homeQuickCatCleaning;
+
+  /// No description provided for @homeQuickCatAssembly.
+  ///
+  /// In es, this message translates to:
+  /// **'Armado'**
+  String get homeQuickCatAssembly;
+
+  /// No description provided for @homeQuickCatRepair.
+  ///
+  /// In es, this message translates to:
+  /// **'Reparación'**
+  String get homeQuickCatRepair;
+
+  /// No description provided for @homeFeaturedListings.
+  ///
+  /// In es, this message translates to:
+  /// **'Para ti'**
+  String get homeFeaturedListings;
+
+  /// No description provided for @homeFeaturedSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Espacios y experiencias seleccionados'**
+  String get homeFeaturedSubtitle;
 
   /// No description provided for @homeBecomeHostTitle.
   ///
@@ -1117,6 +1219,54 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Error al buscar. Intenta de nuevo.'**
   String get searchError;
+
+  /// No description provided for @searchHeroEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'EXPLORA'**
+  String get searchHeroEyebrow;
+
+  /// No description provided for @searchHeroTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Encuentra tu lugar'**
+  String get searchHeroTitle;
+
+  /// No description provided for @searchPopularSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que más buscan los huéspedes'**
+  String get searchPopularSubtitle;
+
+  /// No description provided for @searchBrowseSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Filtra por tipo de experiencia'**
+  String get searchBrowseSubtitle;
+
+  /// No description provided for @searchNearYouSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'A pocos pasos de donde estás'**
+  String get searchNearYouSubtitle;
+
+  /// No description provided for @searchSeeAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver todo'**
+  String get searchSeeAll;
+
+  /// No description provided for @bookingsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'TU AGENDA'**
+  String get bookingsEyebrow;
+
+  /// No description provided for @bookingsHeroSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Todas tus reservas y contrataciones en un solo lugar'**
+  String get bookingsHeroSubtitle;
 
   /// No description provided for @bookingsTitle.
   ///
@@ -1460,6 +1610,84 @@ abstract class AppLocalizations {
   /// **'Mensajes'**
   String get chatTitle;
 
+  /// No description provided for @chatEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'BANDEJA'**
+  String get chatEyebrow;
+
+  /// No description provided for @chatHeroSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Coordina todo con anfitriones y proveedores'**
+  String get chatHeroSubtitle;
+
+  /// No description provided for @chatTabAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos'**
+  String get chatTabAll;
+
+  /// No description provided for @chatTabUnread.
+  ///
+  /// In es, this message translates to:
+  /// **'No leídos'**
+  String get chatTabUnread;
+
+  /// No description provided for @chatTabRead.
+  ///
+  /// In es, this message translates to:
+  /// **'Leídos'**
+  String get chatTabRead;
+
+  /// No description provided for @chatAllEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin conversaciones'**
+  String get chatAllEmptyTitle;
+
+  /// No description provided for @chatAllEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando reserves o contrates, los chats aparecerán aquí'**
+  String get chatAllEmptySubtitle;
+
+  /// No description provided for @chatUnreadCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Todo al día} =1{1 sin leer} other{{count} sin leer}}'**
+  String chatUnreadCount(int count);
+
+  /// No description provided for @chatReadEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin chats archivados'**
+  String get chatReadEmptyTitle;
+
+  /// No description provided for @chatReadEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Las conversaciones que ya leíste aparecerán aquí'**
+  String get chatReadEmptySubtitle;
+
+  /// No description provided for @chatUnreadEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estás al día'**
+  String get chatUnreadEmptyTitle;
+
+  /// No description provided for @chatUnreadEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes mensajes sin leer'**
+  String get chatUnreadEmptySubtitle;
+
+  /// No description provided for @chatNewBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'NUEVO'**
+  String get chatNewBadge;
+
   /// No description provided for @chatSearchHint.
   ///
   /// In es, this message translates to:
@@ -1751,7 +1979,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkoutTitle.
   ///
   /// In es, this message translates to:
-  /// **'Checkout'**
+  /// **'Reserva tu lugar'**
   String get checkoutTitle;
 
   /// No description provided for @checkoutSummary.
@@ -1769,7 +1997,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkoutTotal.
   ///
   /// In es, this message translates to:
-  /// **'Total a pagar'**
+  /// **'Total'**
   String get checkoutTotal;
 
   /// No description provided for @checkoutPay.
@@ -2876,6 +3104,54 @@ abstract class AppLocalizations {
   /// **'Mis Espacios'**
   String get hostListingsHeader;
 
+  /// No description provided for @hostListingsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'TU PORTAFOLIO'**
+  String get hostListingsEyebrow;
+
+  /// No description provided for @hostListingsHeroSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Gestiona tus anuncios y mantenlos siempre listos'**
+  String get hostListingsHeroSubtitle;
+
+  /// No description provided for @hostListingsStatPublished.
+  ///
+  /// In es, this message translates to:
+  /// **'Publicados'**
+  String get hostListingsStatPublished;
+
+  /// No description provided for @hostListingsStatDraft.
+  ///
+  /// In es, this message translates to:
+  /// **'Borradores'**
+  String get hostListingsStatDraft;
+
+  /// No description provided for @hostListingsStatPaused.
+  ///
+  /// In es, this message translates to:
+  /// **'Pausados'**
+  String get hostListingsStatPaused;
+
+  /// No description provided for @hostListingsAllSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Todos tus anuncios'**
+  String get hostListingsAllSection;
+
+  /// No description provided for @hostListingsAllSectionSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{1 publicación} other{{count} publicaciones}}'**
+  String hostListingsAllSectionSubtitle(int count);
+
+  /// No description provided for @hostListingsTapToManage.
+  ///
+  /// In es, this message translates to:
+  /// **'Mantén presionado para gestionar'**
+  String get hostListingsTapToManage;
+
   /// No description provided for @hostListingsKeepRate.
   ///
   /// In es, this message translates to:
@@ -3182,6 +3458,108 @@ abstract class AppLocalizations {
   /// **'Administra cómo recibes actualizaciones sobre retiros, transferencias y actividad financiera en tu cuenta.'**
   String get walletNotificationsFooter;
 
+  /// No description provided for @walletHeaderEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'FINANZAS'**
+  String get walletHeaderEyebrow;
+
+  /// No description provided for @walletPayoutSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuentas donde recibirás tus retiros'**
+  String get walletPayoutSubtitle;
+
+  /// No description provided for @walletPayoutAdd.
+  ///
+  /// In es, this message translates to:
+  /// **'Agregar'**
+  String get walletPayoutAdd;
+
+  /// No description provided for @walletActivitySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimientos recientes de tu billetera'**
+  String get walletActivitySubtitle;
+
+  /// No description provided for @walletActivityAll.
+  ///
+  /// In es, this message translates to:
+  /// **'Ver todo'**
+  String get walletActivityAll;
+
+  /// No description provided for @walletNotificationsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo te avisamos sobre tu dinero'**
+  String get walletNotificationsSubtitle;
+
+  /// No description provided for @walletStatPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendiente'**
+  String get walletStatPending;
+
+  /// No description provided for @walletStatThisMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Este mes'**
+  String get walletStatThisMonth;
+
+  /// No description provided for @walletStatTotal.
+  ///
+  /// In es, this message translates to:
+  /// **'Total ganado'**
+  String get walletStatTotal;
+
+  /// No description provided for @walletQuickActionsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Acciones rápidas'**
+  String get walletQuickActionsTitle;
+
+  /// No description provided for @walletQuickActionsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Gestiona tus finanzas en un toque'**
+  String get walletQuickActionsSubtitle;
+
+  /// No description provided for @walletActionAddBank.
+  ///
+  /// In es, this message translates to:
+  /// **'Vincular banco'**
+  String get walletActionAddBank;
+
+  /// No description provided for @walletActionTaxDocs.
+  ///
+  /// In es, this message translates to:
+  /// **'Documentos fiscales'**
+  String get walletActionTaxDocs;
+
+  /// No description provided for @walletActionMovements.
+  ///
+  /// In es, this message translates to:
+  /// **'Movimientos'**
+  String get walletActionMovements;
+
+  /// No description provided for @walletActionHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Ayuda'**
+  String get walletActionHelp;
+
+  /// No description provided for @walletSupport247.
+  ///
+  /// In es, this message translates to:
+  /// **'Soporte disponible 24/7 — Próximamente'**
+  String get walletSupport247;
+
+  /// No description provided for @walletPayoutHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Vincula una cuenta para recibir tus pagos rápidamente y sin comisiones extra.'**
+  String get walletPayoutHint;
+
   /// No description provided for @listingAbout.
   ///
   /// In es, this message translates to:
@@ -3448,7 +3826,7 @@ abstract class AppLocalizations {
   /// No description provided for @listingHighlightInstant.
   ///
   /// In es, this message translates to:
-  /// **'Inmediato'**
+  /// **'Reserva instantánea'**
   String get listingHighlightInstant;
 
   /// No description provided for @listingHighlightConfirm.
@@ -3552,6 +3930,78 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Respetar horario de silencio'**
   String get listingRuleQuiet;
+
+  /// No description provided for @ruleNoSmoking.
+  ///
+  /// In es, this message translates to:
+  /// **'No fumar'**
+  String get ruleNoSmoking;
+
+  /// No description provided for @ruleNoPets.
+  ///
+  /// In es, this message translates to:
+  /// **'No se admiten mascotas'**
+  String get ruleNoPets;
+
+  /// No description provided for @rulePetsAllowed.
+  ///
+  /// In es, this message translates to:
+  /// **'Mascotas permitidas'**
+  String get rulePetsAllowed;
+
+  /// No description provided for @ruleNoParties.
+  ///
+  /// In es, this message translates to:
+  /// **'No fiestas ni eventos'**
+  String get ruleNoParties;
+
+  /// No description provided for @ruleNoKids.
+  ///
+  /// In es, this message translates to:
+  /// **'No apto para niños'**
+  String get ruleNoKids;
+
+  /// No description provided for @ruleQuietHours.
+  ///
+  /// In es, this message translates to:
+  /// **'Horario de silencio (22:00 — 08:00)'**
+  String get ruleQuietHours;
+
+  /// No description provided for @ruleNoShoes.
+  ///
+  /// In es, this message translates to:
+  /// **'Quitarse los zapatos al entrar'**
+  String get ruleNoShoes;
+
+  /// No description provided for @ruleNoFood.
+  ///
+  /// In es, this message translates to:
+  /// **'No comer dentro del espacio'**
+  String get ruleNoFood;
+
+  /// No description provided for @ruleNoExtraGuests.
+  ///
+  /// In es, this message translates to:
+  /// **'No invitados sin previo aviso'**
+  String get ruleNoExtraGuests;
+
+  /// No description provided for @ruleNoFilming.
+  ///
+  /// In es, this message translates to:
+  /// **'Prohibido grabar contenido'**
+  String get ruleNoFilming;
+
+  /// No description provided for @ruleNoLoudMusic.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin música a alto volumen'**
+  String get ruleNoLoudMusic;
+
+  /// No description provided for @ruleRespectNeighbors.
+  ///
+  /// In es, this message translates to:
+  /// **'Respetar a los vecinos'**
+  String get ruleRespectNeighbors;
 
   /// No description provided for @listingCancellation.
   ///
@@ -4003,6 +4453,54 @@ abstract class AppLocalizations {
   /// **'Explora y reserva experiencias'**
   String get profileSwitchGuestSubtitle;
 
+  /// No description provided for @profileSwitchActivate.
+  ///
+  /// In es, this message translates to:
+  /// **'Activar'**
+  String get profileSwitchActivate;
+
+  /// No description provided for @profileSwitchEnter.
+  ///
+  /// In es, this message translates to:
+  /// **'Entrar'**
+  String get profileSwitchEnter;
+
+  /// No description provided for @profileSwitchEarnBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'GANA'**
+  String get profileSwitchEarnBadge;
+
+  /// No description provided for @profileReputation.
+  ///
+  /// In es, this message translates to:
+  /// **'Reputación'**
+  String get profileReputation;
+
+  /// No description provided for @profileUserInfo.
+  ///
+  /// In es, this message translates to:
+  /// **'Información del usuario'**
+  String get profileUserInfo;
+
+  /// No description provided for @profileUserInfoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Información del usuario'**
+  String get profileUserInfoTitle;
+
+  /// No description provided for @profileUserInfoStatsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estadísticas'**
+  String get profileUserInfoStatsTitle;
+
+  /// No description provided for @profileUserInfoLevelTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Progreso de nivel'**
+  String get profileUserInfoLevelTitle;
+
   /// No description provided for @profileUserFallback.
   ///
   /// In es, this message translates to:
@@ -4068,6 +4566,48 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Notificaciones'**
   String get profileNotifications;
+
+  /// No description provided for @profileHeaderEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'MI CUENTA'**
+  String get profileHeaderEyebrow;
+
+  /// No description provided for @profileSectionAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta'**
+  String get profileSectionAccount;
+
+  /// No description provided for @profileSectionAccountSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus datos personales y verificaciones'**
+  String get profileSectionAccountSubtitle;
+
+  /// No description provided for @profileSectionPreferences.
+  ///
+  /// In es, this message translates to:
+  /// **'Preferencias'**
+  String get profileSectionPreferences;
+
+  /// No description provided for @profileSectionPreferencesSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Personaliza tu experiencia en Atrio'**
+  String get profileSectionPreferencesSubtitle;
+
+  /// No description provided for @profileSectionSupport.
+  ///
+  /// In es, this message translates to:
+  /// **'Soporte'**
+  String get profileSectionSupport;
+
+  /// No description provided for @profileSectionSupportSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estamos aquí para ayudarte'**
+  String get profileSectionSupportSubtitle;
 
   /// No description provided for @editProfileTitle.
   ///
@@ -4228,7 +4768,7 @@ abstract class AppLocalizations {
   /// No description provided for @pmStripePayments.
   ///
   /// In es, this message translates to:
-  /// **'Pagos con Stripe'**
+  /// **'Pagos con Mercado Pago'**
   String get pmStripePayments;
 
   /// No description provided for @pmStripeTagline.
@@ -4246,13 +4786,13 @@ abstract class AppLocalizations {
   /// No description provided for @pmConnectStripe.
   ///
   /// In es, this message translates to:
-  /// **'Conectar con Stripe'**
+  /// **'Conectar con Mercado Pago'**
   String get pmConnectStripe;
 
   /// No description provided for @pmStripeConnected.
   ///
   /// In es, this message translates to:
-  /// **'Stripe conectado exitosamente'**
+  /// **'Mercado Pago conectado exitosamente'**
   String get pmStripeConnected;
 
   /// No description provided for @pmSavedCards.
@@ -4336,7 +4876,7 @@ abstract class AppLocalizations {
   /// No description provided for @pmSecureDesc.
   ///
   /// In es, this message translates to:
-  /// **'Tus pagos son procesados por Stripe con cifrado de grado bancario. Atrio nunca almacena tus datos de tarjeta.'**
+  /// **'Tus pagos son procesados por Mercado Pago con cifrado de grado bancario. Atrio nunca almacena tus datos de tarjeta.'**
   String get pmSecureDesc;
 
   /// No description provided for @pmAddCardTitle.
@@ -4348,7 +4888,7 @@ abstract class AppLocalizations {
   /// No description provided for @pmAddCardDesc.
   ///
   /// In es, this message translates to:
-  /// **'Tu tarjeta será procesada de forma segura por Stripe'**
+  /// **'Tu tarjeta será procesada de forma segura por Mercado Pago'**
   String get pmAddCardDesc;
 
   /// No description provided for @pmFieldCardNumber.
@@ -4384,7 +4924,7 @@ abstract class AppLocalizations {
   /// No description provided for @pmSaveWithStripe.
   ///
   /// In es, this message translates to:
-  /// **'Guardar con Stripe'**
+  /// **'Guardar con Mercado Pago'**
   String get pmSaveWithStripe;
 
   /// No description provided for @pmCardAdded.
@@ -4396,7 +4936,7 @@ abstract class AppLocalizations {
   /// No description provided for @pmProcessedByStripe.
   ///
   /// In es, this message translates to:
-  /// **'Procesado de forma segura por Stripe'**
+  /// **'Procesado de forma segura por Mercado Pago'**
   String get pmProcessedByStripe;
 
   /// No description provided for @helpCenterTitle.
@@ -6351,6 +6891,66 @@ abstract class AppLocalizations {
   /// **'Servicios Rápidos'**
   String get qsTitle;
 
+  /// No description provided for @qsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'RESUELVE TU DÍA'**
+  String get qsEyebrow;
+
+  /// No description provided for @qsHeroSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ofrece o encuentra cualquier servicio que necesites'**
+  String get qsHeroSubtitle;
+
+  /// No description provided for @qsResultsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =0{Sin resultados} =1{1 servicio} other{{count} servicios}}'**
+  String qsResultsCount(int count);
+
+  /// No description provided for @qsAvailableSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Disponibles cerca tuyo'**
+  String get qsAvailableSection;
+
+  /// No description provided for @qsPayWithMp.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar {amount} con Mercado Pago'**
+  String qsPayWithMp(String amount);
+
+  /// No description provided for @qsPaymentApproved.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Pago aprobado! Coordina los detalles por chat.'**
+  String get qsPaymentApproved;
+
+  /// No description provided for @qsPaymentRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago rechazado'**
+  String get qsPaymentRejected;
+
+  /// No description provided for @qsPaymentPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago pendiente, te avisaremos cuando se confirme'**
+  String get qsPaymentPending;
+
+  /// No description provided for @qsPaymentError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error al procesar el pago: {msg}'**
+  String qsPaymentError(String msg);
+
+  /// No description provided for @qsPaymentNotConfigured.
+  ///
+  /// In es, this message translates to:
+  /// **'Mercado Pago no está configurado'**
+  String get qsPaymentNotConfigured;
+
   /// No description provided for @qsPublish.
   ///
   /// In es, this message translates to:
@@ -6662,6 +7262,66 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'¡Servicio solicitado!'**
   String get qsRequested;
+
+  /// No description provided for @psEyebrowOffer.
+  ///
+  /// In es, this message translates to:
+  /// **'PUBLICA TU TALENTO'**
+  String get psEyebrowOffer;
+
+  /// No description provided for @psEyebrowRequest.
+  ///
+  /// In es, this message translates to:
+  /// **'BUSCA AYUDA'**
+  String get psEyebrowRequest;
+
+  /// No description provided for @psSubtitleOffer.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta qué haces y empieza a recibir solicitudes'**
+  String get psSubtitleOffer;
+
+  /// No description provided for @psSubtitleRequest.
+  ///
+  /// In es, this message translates to:
+  /// **'Describe lo que necesitas y deja que los profesionales se acerquen'**
+  String get psSubtitleRequest;
+
+  /// No description provided for @psSectionPresentation.
+  ///
+  /// In es, this message translates to:
+  /// **'PRESENTACIÓN'**
+  String get psSectionPresentation;
+
+  /// No description provided for @psSectionPhotos.
+  ///
+  /// In es, this message translates to:
+  /// **'FOTOS'**
+  String get psSectionPhotos;
+
+  /// No description provided for @psSectionCategoryLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'CATEGORÍA'**
+  String get psSectionCategoryLabel;
+
+  /// No description provided for @psSectionPriceLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'PRECIO'**
+  String get psSectionPriceLabel;
+
+  /// No description provided for @psSectionUrgencyLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'URGENCIA'**
+  String get psSectionUrgencyLabel;
+
+  /// No description provided for @psPhotosSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sube hasta {n} imágenes para generar más confianza'**
+  String psPhotosSubtitle(int n);
 
   /// No description provided for @psMaxPhotos.
   ///
@@ -7098,13 +7758,13 @@ abstract class AppLocalizations {
   /// No description provided for @clCommissionTitle.
   ///
   /// In es, this message translates to:
-  /// **'Comisión del 7% (máx \$90.000)'**
+  /// **'1% en tus primeras 5 reservas'**
   String get clCommissionTitle;
 
   /// No description provided for @clCommissionDesc.
   ///
   /// In es, this message translates to:
-  /// **'Si el 7% supera \$90.000, solo se cobran \$90.000. Transparencia total.'**
+  /// **'Después: 7% por reserva, máx \$90.000 CLP. El dinero va directo a ti.'**
   String get clCommissionDesc;
 
   /// No description provided for @clCategoryQuestion.
@@ -7118,6 +7778,66 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Selecciona la categoría que mejor describe tu oferta'**
   String get clCategorySelect;
+
+  /// No description provided for @clCategoryEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'EMPECEMOS'**
+  String get clCategoryEyebrow;
+
+  /// No description provided for @clDetailsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'PRESENTACIÓN'**
+  String get clDetailsEyebrow;
+
+  /// No description provided for @clDetailsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El título y la descripción son lo primero que verán los huéspedes'**
+  String get clDetailsSubtitle;
+
+  /// No description provided for @clPhotosEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'VISUAL'**
+  String get clPhotosEyebrow;
+
+  /// No description provided for @clLocationEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'DÓNDE'**
+  String get clLocationEyebrow;
+
+  /// No description provided for @clLocationSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Indica dónde está y los huéspedes podrán encontrarte'**
+  String get clLocationSubtitle;
+
+  /// No description provided for @clRulesEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'TUS LÍMITES'**
+  String get clRulesEyebrow;
+
+  /// No description provided for @clModeEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'MODALIDAD'**
+  String get clModeEyebrow;
+
+  /// No description provided for @clPricingEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'PRECIO'**
+  String get clPricingEyebrow;
+
+  /// No description provided for @clNavStep.
+  ///
+  /// In es, this message translates to:
+  /// **'Paso {current}/{total}'**
+  String clNavStep(int current, int total);
 
   /// No description provided for @clTypeSpace.
   ///
@@ -7194,7 +7914,7 @@ abstract class AppLocalizations {
   /// No description provided for @clPhotosSubtitle.
   ///
   /// In es, this message translates to:
-  /// **'Las buenas fotos atraen más reservas (max 8)'**
+  /// **'Las buenas fotos atraen más reservas (max 15)'**
   String get clPhotosSubtitle;
 
   /// No description provided for @clPhotosAdd.
@@ -7338,8 +8058,44 @@ abstract class AppLocalizations {
   /// No description provided for @clCommissionInfo.
   ///
   /// In es, this message translates to:
-  /// **'Atrio cobra 7% de comisión por reserva. Si el 7% supera \$90.000 CLP, solo se cobran \$90.000.'**
+  /// **'Tus primeras 5 reservas pagan solo 1%. Luego, 7% por reserva con tope de \$90.000 CLP. El monto del huésped se transfiere directo a tu cuenta menos esa comisión.'**
   String get clCommissionInfo;
+
+  /// No description provided for @clRulesTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Reglas del espacio'**
+  String get clRulesTitle;
+
+  /// No description provided for @clRulesSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona hasta 5 reglas para tus huéspedes'**
+  String get clRulesSubtitle;
+
+  /// No description provided for @clRulesSelected.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} de 5 seleccionadas'**
+  String clRulesSelected(int count);
+
+  /// No description provided for @clRulesMaxReached.
+  ///
+  /// In es, this message translates to:
+  /// **'Alcanzaste el máximo de 5 reglas'**
+  String get clRulesMaxReached;
+
+  /// No description provided for @clRulesEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'No agregar reglas (opcional)'**
+  String get clRulesEmpty;
+
+  /// No description provided for @clRulesHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Las reglas ayudan a establecer expectativas claras'**
+  String get clRulesHint;
 
   /// No description provided for @rmModeTitle.
   ///
@@ -7514,6 +8270,1650 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'{n, plural, =1{1 hora} other{{n} horas}}'**
   String rmHours(int n);
+
+  /// No description provided for @verifiedProfile.
+  ///
+  /// In es, this message translates to:
+  /// **'Perfil verificado'**
+  String get verifiedProfile;
+
+  /// No description provided for @verifiedTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Identidad verificada con KYC'**
+  String get verifiedTooltip;
+
+  /// No description provided for @profileHostKycTip.
+  ///
+  /// In es, this message translates to:
+  /// **'Te invitamos a verificarte — genera más confianza'**
+  String get profileHostKycTip;
+
+  /// No description provided for @profileHostKycVerifiedTip.
+  ///
+  /// In es, this message translates to:
+  /// **'Identidad verificada — generas más confianza'**
+  String get profileHostKycVerifiedTip;
+
+  /// No description provided for @onboardingPage1Eyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Espacios'**
+  String get onboardingPage1Eyebrow;
+
+  /// No description provided for @onboardingPage2Eyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Experiencias'**
+  String get onboardingPage2Eyebrow;
+
+  /// No description provided for @onboardingPage3Eyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Servicios'**
+  String get onboardingPage3Eyebrow;
+
+  /// No description provided for @homeBecomeHostEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'HOSTING'**
+  String get homeBecomeHostEyebrow;
+
+  /// No description provided for @homeBecomeHostBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'1% COMISIÓN'**
+  String get homeBecomeHostBadge;
+
+  /// No description provided for @homeBecomeHostHero.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu espacio,\ntu negocio.'**
+  String get homeBecomeHostHero;
+
+  /// No description provided for @homeBecomeHostDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Publica gratis y gana. Solo 1% de comisión las primeras 5 reservas.'**
+  String get homeBecomeHostDescription;
+
+  /// No description provided for @homeBecomeHostStatDirect.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago directo'**
+  String get homeBecomeHostStatDirect;
+
+  /// No description provided for @homeBecomeHostStatSupport.
+  ///
+  /// In es, this message translates to:
+  /// **'Soporte 24/7'**
+  String get homeBecomeHostStatSupport;
+
+  /// No description provided for @homeBecomeHostStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezar'**
+  String get homeBecomeHostStart;
+
+  /// No description provided for @listingHighlightsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Lo que destaca'**
+  String get listingHighlightsTitle;
+
+  /// No description provided for @listingHighlightTopRated.
+  ///
+  /// In es, this message translates to:
+  /// **'En el top de los mejor valorados'**
+  String get listingHighlightTopRated;
+
+  /// No description provided for @listingHighlightTopRatedDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Está entre los listados con calificaciones más altas.'**
+  String get listingHighlightTopRatedDesc;
+
+  /// No description provided for @listingHighlightFavorite.
+  ///
+  /// In es, this message translates to:
+  /// **'Favorito entre huéspedes'**
+  String get listingHighlightFavorite;
+
+  /// No description provided for @listingHighlightFavoriteDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Una de las publicaciones más queridas por la comunidad.'**
+  String get listingHighlightFavoriteDesc;
+
+  /// No description provided for @listingHighlightInstantDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmás sin esperar la aprobación del anfitrión.'**
+  String get listingHighlightInstantDesc;
+
+  /// No description provided for @listingHighlightPool.
+  ///
+  /// In es, this message translates to:
+  /// **'Sumérgete'**
+  String get listingHighlightPool;
+
+  /// No description provided for @listingHighlightPoolDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Es uno de los pocos lugares de la zona con piscina.'**
+  String get listingHighlightPoolDesc;
+
+  /// No description provided for @listingHighlightGym.
+  ///
+  /// In es, this message translates to:
+  /// **'Gimnasio en casa'**
+  String get listingHighlightGym;
+
+  /// No description provided for @listingHighlightGymDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta con equipo para entrenar sin salir.'**
+  String get listingHighlightGymDesc;
+
+  /// No description provided for @listingHighlightView.
+  ///
+  /// In es, this message translates to:
+  /// **'Vista destacada'**
+  String get listingHighlightView;
+
+  /// No description provided for @listingHighlightViewDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta con una vista que vale la pena.'**
+  String get listingHighlightViewDesc;
+
+  /// No description provided for @listingHighlightJacuzzi.
+  ///
+  /// In es, this message translates to:
+  /// **'Jacuzzi'**
+  String get listingHighlightJacuzzi;
+
+  /// No description provided for @listingHighlightJacuzziDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Para relajarte al final del día.'**
+  String get listingHighlightJacuzziDesc;
+
+  /// No description provided for @listingMeetHostTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Conoce al anfitrión'**
+  String get listingMeetHostTitle;
+
+  /// No description provided for @listingHostFallback.
+  ///
+  /// In es, this message translates to:
+  /// **'Anfitrión'**
+  String get listingHostFallback;
+
+  /// No description provided for @listingDirectContactLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'CONTACTO DIRECTO'**
+  String get listingDirectContactLabel;
+
+  /// No description provided for @listingHostYearsNew.
+  ///
+  /// In es, this message translates to:
+  /// **'Nuevo'**
+  String get listingHostYearsNew;
+
+  /// No description provided for @listingHostYearsUnitNew.
+  ///
+  /// In es, this message translates to:
+  /// **'anfitrión'**
+  String get listingHostYearsUnitNew;
+
+  /// No description provided for @listingHostYearsUnitOne.
+  ///
+  /// In es, this message translates to:
+  /// **'año como anfitrión'**
+  String get listingHostYearsUnitOne;
+
+  /// No description provided for @listingHostYearsUnitMany.
+  ///
+  /// In es, this message translates to:
+  /// **'años como anfitrión'**
+  String get listingHostYearsUnitMany;
+
+  /// No description provided for @listingHostBadgeSuperhost.
+  ///
+  /// In es, this message translates to:
+  /// **'Superanfitrión'**
+  String get listingHostBadgeSuperhost;
+
+  /// No description provided for @listingHostBadgeVerified.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificado'**
+  String get listingHostBadgeVerified;
+
+  /// No description provided for @listingHostBadgeHost.
+  ///
+  /// In es, this message translates to:
+  /// **'Anfitrión'**
+  String get listingHostBadgeHost;
+
+  /// No description provided for @listingHostStatReviewLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{reseña} other{reseñas}}'**
+  String listingHostStatReviewLabel(int count);
+
+  /// No description provided for @listingHostStatRating.
+  ///
+  /// In es, this message translates to:
+  /// **'calificación'**
+  String get listingHostStatRating;
+
+  /// No description provided for @listingHostAboutDecade.
+  ///
+  /// In es, this message translates to:
+  /// **'Nació en la década de los {decade}'**
+  String listingHostAboutDecade(String decade);
+
+  /// No description provided for @listingHostAboutProfession.
+  ///
+  /// In es, this message translates to:
+  /// **'Me dedico a: {profession}'**
+  String listingHostAboutProfession(String profession);
+
+  /// No description provided for @listingHostAboutLanguages.
+  ///
+  /// In es, this message translates to:
+  /// **'Habla: {langs}'**
+  String listingHostAboutLanguages(String langs);
+
+  /// No description provided for @listingHostInterests.
+  ///
+  /// In es, this message translates to:
+  /// **'Le interesa'**
+  String get listingHostInterests;
+
+  /// No description provided for @listingHostIsSuperhost.
+  ///
+  /// In es, this message translates to:
+  /// **'{name} es Superanfitrión'**
+  String listingHostIsSuperhost(String name);
+
+  /// No description provided for @listingHostAboutTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Sobre {name}'**
+  String listingHostAboutTitle(String name);
+
+  /// No description provided for @listingSuperhostDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Los Superanfitriones son anfitriones con experiencia, valoraciones excelentes y compromiso con sus huéspedes.'**
+  String get listingSuperhostDescription;
+
+  /// No description provided for @listingHostInfoTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Información del anfitrión'**
+  String get listingHostInfoTitle;
+
+  /// No description provided for @listingHostResponseRate.
+  ///
+  /// In es, this message translates to:
+  /// **'Índice de respuesta: {rate}%'**
+  String listingHostResponseRate(int rate);
+
+  /// No description provided for @listingHostResponseRateEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Índice de respuesta: —'**
+  String get listingHostResponseRateEmpty;
+
+  /// No description provided for @listingHostResponseTime1h.
+  ///
+  /// In es, this message translates to:
+  /// **'Suele responder en menos de 1 h'**
+  String get listingHostResponseTime1h;
+
+  /// No description provided for @listingHostResponseTimeFew.
+  ///
+  /// In es, this message translates to:
+  /// **'Suele responder en unas horas'**
+  String get listingHostResponseTimeFew;
+
+  /// No description provided for @listingHostResponseTimeDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Suele responder dentro del día'**
+  String get listingHostResponseTimeDay;
+
+  /// No description provided for @listingHostResponseTimeDays.
+  ///
+  /// In es, this message translates to:
+  /// **'Suele responder en uno o dos días'**
+  String get listingHostResponseTimeDays;
+
+  /// No description provided for @listingChatWithHost.
+  ///
+  /// In es, this message translates to:
+  /// **'Mensajea con el anfitrión'**
+  String get listingChatWithHost;
+
+  /// No description provided for @langPortuguese.
+  ///
+  /// In es, this message translates to:
+  /// **'Portugués'**
+  String get langPortuguese;
+
+  /// No description provided for @langFrench.
+  ///
+  /// In es, this message translates to:
+  /// **'Francés'**
+  String get langFrench;
+
+  /// No description provided for @langItalian.
+  ///
+  /// In es, this message translates to:
+  /// **'Italiano'**
+  String get langItalian;
+
+  /// No description provided for @langGerman.
+  ///
+  /// In es, this message translates to:
+  /// **'Alemán'**
+  String get langGerman;
+
+  /// No description provided for @qsEmptyNoRequests.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin solicitudes'**
+  String get qsEmptyNoRequests;
+
+  /// No description provided for @qsEmptyPostFirst.
+  ///
+  /// In es, this message translates to:
+  /// **'Publica la primera'**
+  String get qsEmptyPostFirst;
+
+  /// No description provided for @qsActiveRequests.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitudes activas'**
+  String get qsActiveRequests;
+
+  /// No description provided for @insightsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'TU NEGOCIO'**
+  String get insightsEyebrow;
+
+  /// No description provided for @insightsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Estadísticas'**
+  String get insightsTitle;
+
+  /// No description provided for @insightsSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo van tus publicaciones este mes'**
+  String get insightsSubtitle;
+
+  /// No description provided for @insightsThisMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Este mes'**
+  String get insightsThisMonth;
+
+  /// No description provided for @insightsTopListings.
+  ///
+  /// In es, this message translates to:
+  /// **'Top publicaciones'**
+  String get insightsTopListings;
+
+  /// No description provided for @insightsAllTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Histórico total'**
+  String get insightsAllTime;
+
+  /// No description provided for @insightsReviews.
+  ///
+  /// In es, this message translates to:
+  /// **'Reseñas'**
+  String get insightsReviews;
+
+  /// No description provided for @insightsKpiBookings.
+  ///
+  /// In es, this message translates to:
+  /// **'RESERVAS'**
+  String get insightsKpiBookings;
+
+  /// No description provided for @insightsKpiRevenue.
+  ///
+  /// In es, this message translates to:
+  /// **'INGRESOS'**
+  String get insightsKpiRevenue;
+
+  /// No description provided for @insightsKpiRating.
+  ///
+  /// In es, this message translates to:
+  /// **'CALIFICACIÓN'**
+  String get insightsKpiRating;
+
+  /// No description provided for @insightsKpiViews.
+  ///
+  /// In es, this message translates to:
+  /// **'VISTAS'**
+  String get insightsKpiViews;
+
+  /// No description provided for @insightsKpiActive.
+  ///
+  /// In es, this message translates to:
+  /// **'ACTIVAS'**
+  String get insightsKpiActive;
+
+  /// No description provided for @insightsKpiResponseRate.
+  ///
+  /// In es, this message translates to:
+  /// **'Tasa de respuesta'**
+  String get insightsKpiResponseRate;
+
+  /// No description provided for @insightsKpiResponseTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Tiempo de respuesta'**
+  String get insightsKpiResponseTime;
+
+  /// No description provided for @insightsNoData.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no hay datos'**
+  String get insightsNoData;
+
+  /// No description provided for @insightsNoDataSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando recibas reservas verás tus estadísticas aquí'**
+  String get insightsNoDataSubtitle;
+
+  /// No description provided for @insightsNoBookingsThisMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin reservas pagadas este mes. Tu primera reserva aparecerá acá.'**
+  String get insightsNoBookingsThisMonth;
+
+  /// No description provided for @insightsLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron cargar los datos.'**
+  String get insightsLoadError;
+
+  /// No description provided for @insightsReviewsLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudieron cargar las reseñas.'**
+  String get insightsReviewsLoadError;
+
+  /// No description provided for @insightsBookingsCompleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Reservas completadas'**
+  String get insightsBookingsCompleted;
+
+  /// No description provided for @insightsAvgRating.
+  ///
+  /// In es, this message translates to:
+  /// **'Rating promedio'**
+  String get insightsAvgRating;
+
+  /// No description provided for @insightsResponseRateStat.
+  ///
+  /// In es, this message translates to:
+  /// **'Tasa de respuesta'**
+  String get insightsResponseRateStat;
+
+  /// No description provided for @insightsTotalRevenue.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresos acumulados'**
+  String get insightsTotalRevenue;
+
+  /// No description provided for @insightsNoReviewsYet.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes reseñas. Aparecerán acá cuando un huésped califique.'**
+  String get insightsNoReviewsYet;
+
+  /// No description provided for @insightsRespondImprovesTrust.
+  ///
+  /// In es, this message translates to:
+  /// **'Responder mejora la confianza con futuros huéspedes.'**
+  String get insightsRespondImprovesTrust;
+
+  /// No description provided for @insightsReviewCheck.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa qué falló y mejora tu publicación.'**
+  String get insightsReviewCheck;
+
+  /// No description provided for @insightsReviewerAnonymous.
+  ///
+  /// In es, this message translates to:
+  /// **'Anónimo'**
+  String get insightsReviewerAnonymous;
+
+  /// No description provided for @insightsPendingResponse.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendiente de respuesta'**
+  String get insightsPendingResponse;
+
+  /// No description provided for @insightsAgoMin.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} min'**
+  String insightsAgoMin(int n);
+
+  /// No description provided for @insightsAgoHour.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} h'**
+  String insightsAgoHour(int n);
+
+  /// No description provided for @insightsAgoDay.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} d'**
+  String insightsAgoDay(int n);
+
+  /// No description provided for @insightsBookingsCountOne.
+  ///
+  /// In es, this message translates to:
+  /// **'reserva'**
+  String get insightsBookingsCountOne;
+
+  /// No description provided for @insightsBookingsCountMany.
+  ///
+  /// In es, this message translates to:
+  /// **'reservas'**
+  String get insightsBookingsCountMany;
+
+  /// No description provided for @insightsPendingReviews.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{{count} reseña sin responder} other{{count} reseñas sin responder}}'**
+  String insightsPendingReviews(int count);
+
+  /// No description provided for @insightsNegativeReviews.
+  ///
+  /// In es, this message translates to:
+  /// **'{count, plural, =1{{count} reseña negativa (≤ 3 ★)} other{{count} reseñas negativas (≤ 3 ★)}}'**
+  String insightsNegativeReviews(int count);
+
+  /// No description provided for @verifyAccountEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Identidad'**
+  String get verifyAccountEyebrow;
+
+  /// No description provided for @verifyAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica tu cuenta'**
+  String get verifyAccountTitle;
+
+  /// No description provided for @verifyAccountSteps.
+  ///
+  /// In es, this message translates to:
+  /// **'Pasos'**
+  String get verifyAccountSteps;
+
+  /// No description provided for @verifyAccountVerified.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta verificada'**
+  String get verifyAccountVerified;
+
+  /// No description provided for @verifyAccountSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Aumenta la confianza con anfitriones y huéspedes'**
+  String get verifyAccountSubtitle;
+
+  /// No description provided for @verifyAccountSubtitleCompleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Tienes acceso a todas las funciones'**
+  String get verifyAccountSubtitleCompleted;
+
+  /// No description provided for @verifyAccountSubtitlePending.
+  ///
+  /// In es, this message translates to:
+  /// **'Completa los pasos para activar tu cuenta'**
+  String get verifyAccountSubtitlePending;
+
+  /// No description provided for @verifyStepEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get verifyStepEmail;
+
+  /// No description provided for @verifyStepEmailDoneDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu email está verificado'**
+  String get verifyStepEmailDoneDesc;
+
+  /// No description provided for @verifyStepEmailPendingDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Te enviamos un código a tu correo'**
+  String get verifyStepEmailPendingDesc;
+
+  /// No description provided for @verifyStepPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Teléfono'**
+  String get verifyStepPhone;
+
+  /// No description provided for @verifyStepPhoneDoneDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu teléfono está verificado'**
+  String get verifyStepPhoneDoneDesc;
+
+  /// No description provided for @verifyStepPhonePendingDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica tu número con un código'**
+  String get verifyStepPhonePendingDesc;
+
+  /// No description provided for @verifyStepIdentity.
+  ///
+  /// In es, this message translates to:
+  /// **'Documento de identidad'**
+  String get verifyStepIdentity;
+
+  /// No description provided for @verifyStepIdentityApproved.
+  ///
+  /// In es, this message translates to:
+  /// **'Aprobado'**
+  String get verifyStepIdentityApproved;
+
+  /// No description provided for @verifyStepIdentityRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'Rechazado, intenta de nuevo'**
+  String get verifyStepIdentityRejected;
+
+  /// No description provided for @verifyStepIdentityDefault.
+  ///
+  /// In es, this message translates to:
+  /// **'Cédula y selfie de verificación'**
+  String get verifyStepIdentityDefault;
+
+  /// No description provided for @verifyStepProfile.
+  ///
+  /// In es, this message translates to:
+  /// **'Perfil completo'**
+  String get verifyStepProfile;
+
+  /// No description provided for @verifyStepStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Comenzar'**
+  String get verifyStepStart;
+
+  /// No description provided for @verifyStepReview.
+  ///
+  /// In es, this message translates to:
+  /// **'En revisión'**
+  String get verifyStepReview;
+
+  /// No description provided for @verifyStepDone.
+  ///
+  /// In es, this message translates to:
+  /// **'Completado'**
+  String get verifyStepDone;
+
+  /// No description provided for @verifyReviewSubmittedDefault.
+  ///
+  /// In es, this message translates to:
+  /// **'En revisión por nuestro equipo'**
+  String get verifyReviewSubmittedDefault;
+
+  /// No description provided for @verifyReviewSubmittedMin.
+  ///
+  /// In es, this message translates to:
+  /// **'En revisión · enviado hace {n} min'**
+  String verifyReviewSubmittedMin(int n);
+
+  /// No description provided for @verifyReviewSubmittedHour.
+  ///
+  /// In es, this message translates to:
+  /// **'En revisión · enviado hace {n} h'**
+  String verifyReviewSubmittedHour(int n);
+
+  /// No description provided for @verifyReviewSubmittedDay.
+  ///
+  /// In es, this message translates to:
+  /// **'En revisión · enviado hace {n} d'**
+  String verifyReviewSubmittedDay(int n);
+
+  /// No description provided for @verifyStatusInReview.
+  ///
+  /// In es, this message translates to:
+  /// **'EN REVISIÓN'**
+  String get verifyStatusInReview;
+
+  /// No description provided for @verifyStatusRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'REINTENTAR'**
+  String get verifyStatusRetry;
+
+  /// No description provided for @verifyStatusStart.
+  ///
+  /// In es, this message translates to:
+  /// **'EMPEZAR'**
+  String get verifyStatusStart;
+
+  /// No description provided for @verifyBenefitsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'BENEFICIOS'**
+  String get verifyBenefitsTitle;
+
+  /// No description provided for @verifyBenefit1Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Mayor confianza'**
+  String get verifyBenefit1Title;
+
+  /// No description provided for @verifyBenefit1Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Los anfitriones priorizan a usuarios verificados'**
+  String get verifyBenefit1Desc;
+
+  /// No description provided for @verifyBenefit2Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Reservas instantáneas'**
+  String get verifyBenefit2Title;
+
+  /// No description provided for @verifyBenefit2Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin esperar aprobación manual'**
+  String get verifyBenefit2Desc;
+
+  /// No description provided for @verifyBenefit3Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Más visibilidad'**
+  String get verifyBenefit3Title;
+
+  /// No description provided for @verifyBenefit3Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu perfil sale destacado en búsquedas'**
+  String get verifyBenefit3Desc;
+
+  /// No description provided for @verifyProfileLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar tu perfil'**
+  String get verifyProfileLoadError;
+
+  /// No description provided for @verifyStepsProgress.
+  ///
+  /// In es, this message translates to:
+  /// **'{done} de {total} pasos'**
+  String verifyStepsProgress(int done, int total);
+
+  /// No description provided for @kycHeroTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verifica tu\ndocumento'**
+  String get kycHeroTitle;
+
+  /// No description provided for @kycHeroSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Necesitamos confirmar quién eres antes de aprobar tu cuenta. Es rápido y seguro.'**
+  String get kycHeroSubtitle;
+
+  /// No description provided for @kycStepIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'INTRO'**
+  String get kycStepIntro;
+
+  /// No description provided for @kycStepLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'PASO {n} DE 3'**
+  String kycStepLabel(int n);
+
+  /// No description provided for @kycIntroBenefit1Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu privacidad está protegida'**
+  String get kycIntroBenefit1Title;
+
+  /// No description provided for @kycIntroBenefit1Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus documentos se guardan cifrados y solo nuestro equipo de verificación los ve.'**
+  String get kycIntroBenefit1Desc;
+
+  /// No description provided for @kycIntroBenefit2Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Toma ~3 minutos'**
+  String get kycIntroBenefit2Title;
+
+  /// No description provided for @kycIntroBenefit2Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Necesitamos foto del frente y reverso de tu cédula, y una selfie.'**
+  String get kycIntroBenefit2Desc;
+
+  /// No description provided for @kycIntroBenefit3Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Aprobación en 24-48 hs'**
+  String get kycIntroBenefit3Title;
+
+  /// No description provided for @kycIntroBenefit3Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Te avisamos por mail cuando esté listo.'**
+  String get kycIntroBenefit3Desc;
+
+  /// No description provided for @kycStepFront.
+  ///
+  /// In es, this message translates to:
+  /// **'Frente de tu cédula'**
+  String get kycStepFront;
+
+  /// No description provided for @kycStepFrontDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Asegúrate de que se vea nítido y completo. Sin reflejos, todos los datos legibles.'**
+  String get kycStepFrontDesc;
+
+  /// No description provided for @kycStepBack.
+  ///
+  /// In es, this message translates to:
+  /// **'Reverso de tu cédula'**
+  String get kycStepBack;
+
+  /// No description provided for @kycStepBackDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'La cara trasera, donde está el chip / código de barras.'**
+  String get kycStepBackDesc;
+
+  /// No description provided for @kycStepSelfie.
+  ///
+  /// In es, this message translates to:
+  /// **'Selfie con tu cédula'**
+  String get kycStepSelfie;
+
+  /// No description provided for @kycStepSelfieDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cara y la cédula visibles. Sin gorra, sin lentes oscuros.'**
+  String get kycStepSelfieDesc;
+
+  /// No description provided for @kycTapToCapture.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca para capturar'**
+  String get kycTapToCapture;
+
+  /// No description provided for @kycBtnStart.
+  ///
+  /// In es, this message translates to:
+  /// **'Empezar'**
+  String get kycBtnStart;
+
+  /// No description provided for @kycBtnTakePhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Tomar foto'**
+  String get kycBtnTakePhoto;
+
+  /// No description provided for @kycBtnTakeSelfie.
+  ///
+  /// In es, this message translates to:
+  /// **'Tomar selfie'**
+  String get kycBtnTakeSelfie;
+
+  /// No description provided for @kycBtnSend.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar'**
+  String get kycBtnSend;
+
+  /// No description provided for @kycBtnContinue.
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar'**
+  String get kycBtnContinue;
+
+  /// No description provided for @kycBtnRetake.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a tomar la foto'**
+  String get kycBtnRetake;
+
+  /// No description provided for @kycSubmitButton.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar a revisión'**
+  String get kycSubmitButton;
+
+  /// No description provided for @kycSubmitted.
+  ///
+  /// In es, this message translates to:
+  /// **'Documentos enviados'**
+  String get kycSubmitted;
+
+  /// No description provided for @kycSubmittedSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Vamos a revisar tus documentos en las próximas 24-48 hs. Te avisaremos por mail cuando esté listo.'**
+  String get kycSubmittedSubtitle;
+
+  /// No description provided for @kycBackHome.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al inicio'**
+  String get kycBackHome;
+
+  /// No description provided for @kycInReview.
+  ///
+  /// In es, this message translates to:
+  /// **'En revisión'**
+  String get kycInReview;
+
+  /// No description provided for @adminKycTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificación KYC'**
+  String get adminKycTitle;
+
+  /// No description provided for @adminKycSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Panel admin'**
+  String get adminKycSubtitle;
+
+  /// No description provided for @adminKycEmpty.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin pendientes'**
+  String get adminKycEmpty;
+
+  /// No description provided for @adminKycEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando un usuario envíe documentos aparecerá aquí.'**
+  String get adminKycEmptySubtitle;
+
+  /// No description provided for @adminKycRequest.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitud KYC'**
+  String get adminKycRequest;
+
+  /// No description provided for @adminKycActive.
+  ///
+  /// In es, this message translates to:
+  /// **'Solicitudes activas'**
+  String get adminKycActive;
+
+  /// No description provided for @adminKycApprove.
+  ///
+  /// In es, this message translates to:
+  /// **'Aprobar'**
+  String get adminKycApprove;
+
+  /// No description provided for @adminKycReject.
+  ///
+  /// In es, this message translates to:
+  /// **'Rechazar'**
+  String get adminKycReject;
+
+  /// No description provided for @adminKycReviewing.
+  ///
+  /// In es, this message translates to:
+  /// **'En revisión'**
+  String get adminKycReviewing;
+
+  /// No description provided for @adminKycPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Pendientes'**
+  String get adminKycPending;
+
+  /// No description provided for @adminKycApproved.
+  ///
+  /// In es, this message translates to:
+  /// **'Aprobadas'**
+  String get adminKycApproved;
+
+  /// No description provided for @adminKycRejected.
+  ///
+  /// In es, this message translates to:
+  /// **'Rechazadas'**
+  String get adminKycRejected;
+
+  /// No description provided for @adminKycListIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisa los documentos pendientes y aprueba o rechaza con motivo.'**
+  String get adminKycListIntro;
+
+  /// No description provided for @adminKycLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar la lista'**
+  String get adminKycLoadError;
+
+  /// No description provided for @adminKycRetry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get adminKycRetry;
+
+  /// No description provided for @adminKycBack.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver'**
+  String get adminKycBack;
+
+  /// No description provided for @adminKycNoName.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin nombre'**
+  String get adminKycNoName;
+
+  /// No description provided for @adminKycPendingBadge.
+  ///
+  /// In es, this message translates to:
+  /// **'PENDIENTE'**
+  String get adminKycPendingBadge;
+
+  /// No description provided for @adminKycEmailOk.
+  ///
+  /// In es, this message translates to:
+  /// **'Email OK'**
+  String get adminKycEmailOk;
+
+  /// No description provided for @adminKycEmailPending.
+  ///
+  /// In es, this message translates to:
+  /// **'Email pend.'**
+  String get adminKycEmailPending;
+
+  /// No description provided for @adminKycAccessRestricted.
+  ///
+  /// In es, this message translates to:
+  /// **'Acceso restringido'**
+  String get adminKycAccessRestricted;
+
+  /// No description provided for @adminKycAccessRestrictedDesc.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta sección es solo para administradores.'**
+  String get adminKycAccessRestrictedDesc;
+
+  /// No description provided for @adminKycTimeAgoMin.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} min'**
+  String adminKycTimeAgoMin(int n);
+
+  /// No description provided for @adminKycTimeAgoHour.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} h'**
+  String adminKycTimeAgoHour(int n);
+
+  /// No description provided for @adminKycTimeAgoDay.
+  ///
+  /// In es, this message translates to:
+  /// **'hace {n} d'**
+  String adminKycTimeAgoDay(int n);
+
+  /// No description provided for @adminKycApprovedToast.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificación aprobada'**
+  String get adminKycApprovedToast;
+
+  /// No description provided for @adminKycRejectedToast.
+  ///
+  /// In es, this message translates to:
+  /// **'Verificación rechazada'**
+  String get adminKycRejectedToast;
+
+  /// No description provided for @adminKycRejectReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Motivo del rechazo'**
+  String get adminKycRejectReason;
+
+  /// No description provided for @adminKycRejectHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. La foto del frente está borrosa'**
+  String get adminKycRejectHint;
+
+  /// No description provided for @adminKycEmailPendingChip.
+  ///
+  /// In es, this message translates to:
+  /// **'Email pendiente'**
+  String get adminKycEmailPendingChip;
+
+  /// No description provided for @adminKycSentAgo.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviado {when}'**
+  String adminKycSentAgo(String when);
+
+  /// No description provided for @adminKycDocuments.
+  ///
+  /// In es, this message translates to:
+  /// **'Documentos'**
+  String get adminKycDocuments;
+
+  /// No description provided for @adminKycDocFront.
+  ///
+  /// In es, this message translates to:
+  /// **'Frente de cédula'**
+  String get adminKycDocFront;
+
+  /// No description provided for @adminKycDocBack.
+  ///
+  /// In es, this message translates to:
+  /// **'Reverso de cédula'**
+  String get adminKycDocBack;
+
+  /// No description provided for @adminKycDocSelfie.
+  ///
+  /// In es, this message translates to:
+  /// **'Selfie con cédula'**
+  String get adminKycDocSelfie;
+
+  /// No description provided for @adminKycSectionReview.
+  ///
+  /// In es, this message translates to:
+  /// **'Revisión'**
+  String get adminKycSectionReview;
+
+  /// No description provided for @helpEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Soporte'**
+  String get helpEyebrow;
+
+  /// No description provided for @helpHowWeHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'CÓMO TE AYUDAMOS'**
+  String get helpHowWeHelp;
+
+  /// No description provided for @helpContactChannels.
+  ///
+  /// In es, this message translates to:
+  /// **'Canales de contacto'**
+  String get helpContactChannels;
+
+  /// No description provided for @helpFaqsTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Preguntas frecuentes'**
+  String get helpFaqsTitle;
+
+  /// No description provided for @helpEmailChannel.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get helpEmailChannel;
+
+  /// No description provided for @helpWhatsapp.
+  ///
+  /// In es, this message translates to:
+  /// **'WhatsApp'**
+  String get helpWhatsapp;
+
+  /// No description provided for @helpWhatsappSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Respuesta en horario hábil'**
+  String get helpWhatsappSubtitle;
+
+  /// No description provided for @helpSearchHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar en preguntas frecuentes'**
+  String get helpSearchHint;
+
+  /// No description provided for @helpHeroTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Escríbenos.\nTe contestamos rápido.'**
+  String get helpHeroTitle;
+
+  /// No description provided for @helpHeroSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nuestro equipo lee cada mensaje y suele responder en menos de 24 hs.'**
+  String get helpHeroSubtitle;
+
+  /// No description provided for @helpWriteTeam.
+  ///
+  /// In es, this message translates to:
+  /// **'Escribir al equipo'**
+  String get helpWriteTeam;
+
+  /// No description provided for @helpReportProblem.
+  ///
+  /// In es, this message translates to:
+  /// **'Reportar un problema'**
+  String get helpReportProblem;
+
+  /// No description provided for @helpReportProblemSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Un bug, un cobro extraño o algo urgente'**
+  String get helpReportProblemSubtitle;
+
+  /// No description provided for @helpNoResults.
+  ///
+  /// In es, this message translates to:
+  /// **'No encontramos respuesta para \"{query}\"'**
+  String helpNoResults(String query);
+
+  /// No description provided for @helpTryOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Prueba con otras palabras o escríbenos directamente.'**
+  String get helpTryOther;
+
+  /// No description provided for @helpCatPayments.
+  ///
+  /// In es, this message translates to:
+  /// **'PAGOS'**
+  String get helpCatPayments;
+
+  /// No description provided for @helpCatBookings.
+  ///
+  /// In es, this message translates to:
+  /// **'RESERVAS'**
+  String get helpCatBookings;
+
+  /// No description provided for @helpCatVerification.
+  ///
+  /// In es, this message translates to:
+  /// **'VERIFICACIÓN'**
+  String get helpCatVerification;
+
+  /// No description provided for @helpCatAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'CUENTA'**
+  String get helpCatAccount;
+
+  /// No description provided for @helpFaq1Q.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cómo se procesan los pagos?'**
+  String get helpFaq1Q;
+
+  /// No description provided for @helpFaq1A.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobramos directamente en la app con Mercado Pago. Aceptamos tarjetas de crédito, débito y prepagas (Visa, Mastercard y American Express). Tu tarjeta nunca se guarda en Atrio: solo se tokeniza para el cobro.'**
+  String get helpFaq1A;
+
+  /// No description provided for @helpFaq2Q.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuándo cobra el anfitrión?'**
+  String get helpFaq2Q;
+
+  /// No description provided for @helpFaq2A.
+  ///
+  /// In es, this message translates to:
+  /// **'El anfitrión recibe el monto en su saldo de Atrio una vez que tu reserva queda confirmada. Puede retirar el dinero a su cuenta bancaria desde el Dashboard.'**
+  String get helpFaq2A;
+
+  /// No description provided for @helpFaq3Q.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Puedo cancelar una reserva?'**
+  String get helpFaq3Q;
+
+  /// No description provided for @helpFaq3A.
+  ///
+  /// In es, this message translates to:
+  /// **'Sí. Cada anfitrión define su propia política (flexible, moderada o estricta). El detalle aparece en la pantalla de la publicación antes de pagar y luego en \"Mis Reservas\".'**
+  String get helpFaq3A;
+
+  /// No description provided for @helpFaq4Q.
+  ///
+  /// In es, this message translates to:
+  /// **'Mi pago fue rechazado, ¿qué hago?'**
+  String get helpFaq4Q;
+
+  /// No description provided for @helpFaq4A.
+  ///
+  /// In es, this message translates to:
+  /// **'En el 90% de los casos es la tarjeta. Prueba con otra tarjeta, revisa que el RUT del titular sea correcto y que tu banco no haya bloqueado la operación. Si el problema persiste escríbenos.'**
+  String get helpFaq4A;
+
+  /// No description provided for @helpFaq5Q.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Por qué necesito verificar mi identidad?'**
+  String get helpFaq5Q;
+
+  /// No description provided for @helpFaq5A.
+  ///
+  /// In es, this message translates to:
+  /// **'La verificación aumenta la confianza con anfitriones y huéspedes. Los usuarios verificados aparecen destacados en búsquedas y suelen obtener aprobación instantánea en las reservas.'**
+  String get helpFaq5A;
+
+  /// No description provided for @helpFaq6Q.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Cuánto tarda la verificación de documento?'**
+  String get helpFaq6Q;
+
+  /// No description provided for @helpFaq6A.
+  ///
+  /// In es, this message translates to:
+  /// **'Entre 24 y 48 horas hábiles. Cuando esté lista te avisamos por correo electrónico.'**
+  String get helpFaq6A;
+
+  /// No description provided for @helpFaq7Q.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Puedo cambiar mi correo electrónico?'**
+  String get helpFaq7Q;
+
+  /// No description provided for @helpFaq7A.
+  ///
+  /// In es, this message translates to:
+  /// **'Por ahora no. Si necesitas migrar a otro email, escríbenos y te ayudamos.'**
+  String get helpFaq7A;
+
+  /// No description provided for @helpFaq8Q.
+  ///
+  /// In es, this message translates to:
+  /// **'Quiero eliminar mi cuenta'**
+  String get helpFaq8Q;
+
+  /// No description provided for @helpFaq8A.
+  ///
+  /// In es, this message translates to:
+  /// **'Ve a Configuración → Cuenta → Eliminar cuenta. Ten en cuenta que no podrás recuperar tus reservas pasadas ni el historial de chat.'**
+  String get helpFaq8A;
+
+  /// No description provided for @privacyEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Privacidad'**
+  String get privacyEyebrow;
+
+  /// No description provided for @privacyIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Esto es lo que recolectamos, cómo lo usamos y los derechos que tienes sobre tus datos. Nada de letra chica: queremos que entiendas exactamente qué pasa con tu información.'**
+  String get privacyIntro;
+
+  /// No description provided for @privacySummarySection.
+  ///
+  /// In es, this message translates to:
+  /// **'En resumen'**
+  String get privacySummarySection;
+
+  /// No description provided for @privacyDetailsSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Detalle'**
+  String get privacyDetailsSection;
+
+  /// No description provided for @privacySummary1Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Cifrado'**
+  String get privacySummary1Title;
+
+  /// No description provided for @privacySummary1Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus datos sensibles van encriptados'**
+  String get privacySummary1Desc;
+
+  /// No description provided for @privacySummary2Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin venta'**
+  String get privacySummary2Title;
+
+  /// No description provided for @privacySummary2Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'No vendemos tu info a terceros'**
+  String get privacySummary2Desc;
+
+  /// No description provided for @privacySummary3Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Exportable'**
+  String get privacySummary3Title;
+
+  /// No description provided for @privacySummary3Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes pedir todos tus datos'**
+  String get privacySummary3Desc;
+
+  /// No description provided for @privacySummary4Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrable'**
+  String get privacySummary4Title;
+
+  /// No description provided for @privacySummary4Desc.
+  ///
+  /// In es, this message translates to:
+  /// **'Puedes eliminar tu cuenta cuando quieras'**
+  String get privacySummary4Desc;
+
+  /// No description provided for @privacyHowWeProtect.
+  ///
+  /// In es, this message translates to:
+  /// **'CÓMO PROTEGEMOS TUS DATOS'**
+  String get privacyHowWeProtect;
+
+  /// No description provided for @privacyExerciseRights.
+  ///
+  /// In es, this message translates to:
+  /// **'Ejercé tus derechos'**
+  String get privacyExerciseRights;
+
+  /// No description provided for @privacySectionsCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{n} secciones'**
+  String privacySectionsCount(int n);
+
+  /// No description provided for @termsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Legal'**
+  String get termsEyebrow;
+
+  /// No description provided for @termsIntro.
+  ///
+  /// In es, this message translates to:
+  /// **'Estos términos regulan la relación entre tú y Atrio Company cuando usas la app, ya sea como anfitrión o como huésped. Léelos con calma — son cortos y claros.'**
+  String get termsIntro;
+
+  /// No description provided for @termsContentSection.
+  ///
+  /// In es, this message translates to:
+  /// **'Contenido'**
+  String get termsContentSection;
+
+  /// No description provided for @termsAgreementOfUse.
+  ///
+  /// In es, this message translates to:
+  /// **'ACUERDO DE USO'**
+  String get termsAgreementOfUse;
+
+  /// No description provided for @checkoutEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'CONFIRMACIÓN'**
+  String get checkoutEyebrow;
+
+  /// No description provided for @checkoutCardPayment.
+  ///
+  /// In es, this message translates to:
+  /// **'Pago con tarjeta'**
+  String get checkoutCardPayment;
+
+  /// No description provided for @checkoutBookingConfirmed.
+  ///
+  /// In es, this message translates to:
+  /// **'Reserva confirmada'**
+  String get checkoutBookingConfirmed;
+
+  /// No description provided for @cardYourCard.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu tarjeta'**
+  String get cardYourCard;
+
+  /// No description provided for @cardNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'NÚMERO DE TARJETA'**
+  String get cardNumber;
+
+  /// No description provided for @cardHolder.
+  ///
+  /// In es, this message translates to:
+  /// **'NOMBRE DEL TITULAR'**
+  String get cardHolder;
+
+  /// No description provided for @cardHolderHint.
+  ///
+  /// In es, this message translates to:
+  /// **'COMO APARECE EN LA TARJETA'**
+  String get cardHolderHint;
+
+  /// No description provided for @cardExpiry.
+  ///
+  /// In es, this message translates to:
+  /// **'VENCIMIENTO'**
+  String get cardExpiry;
+
+  /// No description provided for @cardCvv.
+  ///
+  /// In es, this message translates to:
+  /// **'CVV'**
+  String get cardCvv;
+
+  /// No description provided for @cardRut.
+  ///
+  /// In es, this message translates to:
+  /// **'RUT DEL TITULAR'**
+  String get cardRut;
+
+  /// No description provided for @cardTrustStrip.
+  ///
+  /// In es, this message translates to:
+  /// **'Cifrado de extremo a extremo · Procesado por Mercado Pago'**
+  String get cardTrustStrip;
+
+  /// No description provided for @cardPayTotal.
+  ///
+  /// In es, this message translates to:
+  /// **'Pagar {total}'**
+  String cardPayTotal(String total);
+
+  /// No description provided for @cardToPayLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'A PAGAR'**
+  String get cardToPayLabel;
+
+  /// No description provided for @cardSandboxNotice.
+  ///
+  /// In es, this message translates to:
+  /// **'Modo prueba — Tarjeta: 5416 7526 0258 2580 · CVV 123 · 11/30'**
+  String get cardSandboxNotice;
+
+  /// No description provided for @cardInvalidNumber.
+  ///
+  /// In es, this message translates to:
+  /// **'Número inválido'**
+  String get cardInvalidNumber;
+
+  /// No description provided for @cardOnlyDigits.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo dígitos'**
+  String get cardOnlyDigits;
+
+  /// No description provided for @cardNotValid.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarjeta no válida'**
+  String get cardNotValid;
+
+  /// No description provided for @cardEnterName.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresá el nombre'**
+  String get cardEnterName;
+
+  /// No description provided for @cardInvalidMonth.
+  ///
+  /// In es, this message translates to:
+  /// **'Mes inválido'**
+  String get cardInvalidMonth;
+
+  /// No description provided for @cardExpired.
+  ///
+  /// In es, this message translates to:
+  /// **'Vencida'**
+  String get cardExpired;
+
+  /// No description provided for @cardInvalid.
+  ///
+  /// In es, this message translates to:
+  /// **'Inválido'**
+  String get cardInvalid;
+
+  /// No description provided for @cardPaymentError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error al procesar el pago'**
+  String get cardPaymentError;
 }
 
 class _AppLocalizationsDelegate

@@ -15,11 +15,13 @@ import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/profile/presentation/edit_profile_screen.dart';
 import '../../features/profile/presentation/favorites_screen.dart';
+import '../../features/profile/presentation/user_info_screen.dart';
 import '../../features/profile/presentation/about_screen.dart';
 import '../../features/profile/presentation/terms_screen.dart';
 import '../../features/profile/presentation/privacy_screen.dart';
 import '../../features/profile/presentation/payment_methods_screen.dart';
 import '../../features/profile/presentation/kyc_screen.dart';
+import '../../features/profile/presentation/verification_hub_screen.dart';
 import '../../features/profile/presentation/help_center_screen.dart';
 import '../../features/bookings/presentation/booking_detail_screen.dart';
 import '../../features/listing_detail/presentation/listing_detail_screen.dart';
@@ -29,7 +31,7 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/host_dashboard/presentation/dashboard_screen.dart';
 import '../../features/host_calendar/presentation/calendar_screen.dart';
 import '../../features/host_listings/presentation/host_listings_screen.dart';
-import '../../features/host_wallet/presentation/wallet_screen.dart';
+import '../../features/host_insights/presentation/insights_screen.dart';
 import '../../features/create_listing/presentation/create_listing_screen.dart';
 import '../../features/host_benefits/presentation/host_benefits_screen.dart';
 import '../../features/disputes/presentation/disputes_screen.dart';
@@ -42,6 +44,8 @@ import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/host_analytics/presentation/analytics_screen.dart';
+import '../../features/admin/presentation/admin_kyc_list_screen.dart';
+import '../../features/admin/presentation/admin_kyc_detail_screen.dart';
 import '../../shared/layouts/guest_shell.dart';
 import '../../shared/layouts/host_shell.dart';
 
@@ -205,7 +209,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/host/wallet',
-                builder: (context, state) => const WalletScreen(),
+                builder: (context, state) => const InsightsScreen(),
               ),
             ],
           ),
@@ -269,6 +273,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const FavoritesScreen(),
       ),
       GoRoute(
+        path: '/user-info',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const UserInfoScreen(),
+      ),
+      GoRoute(
         path: '/about',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AboutScreen(),
@@ -298,10 +307,33 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const PaymentMethodsScreen(),
       ),
+      // Identity verification hub (3 cards: email / phone / KYC)
       GoRoute(
         path: '/identity-verification',
         parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const VerificationHubScreen(),
+      ),
+      GoRoute(
+        path: '/verify/email',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const EmailVerificationScreen(),
+      ),
+      GoRoute(
+        path: '/verify/kyc',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const KycScreen(),
+      ),
+      GoRoute(
+        path: '/admin/kyc',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AdminKycListScreen(),
+      ),
+      GoRoute(
+        path: '/admin/kyc/:userId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => AdminKycDetailScreen(
+          userId: state.pathParameters['userId']!,
+        ),
       ),
       GoRoute(
         path: '/help-center',

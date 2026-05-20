@@ -44,7 +44,9 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final onboardingDone = prefs.getBool('onboarding_complete') ?? false;
+    // Bumped key so the redesigned onboarding (v2) shows once for users
+    // who already finished the previous version.
+    final onboardingDone = prefs.getBool('onboarding_v2_complete') ?? false;
 
     if (!mounted) return;
 
@@ -87,16 +89,12 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'ATRIO',
-                  style: GoogleFonts.inter(
-                    fontSize: 52,
-                    fontWeight: FontWeight.w900,
-                    color: AtrioColors.hostTextPrimary,
-                    letterSpacing: 8,
-                  ),
+                Image.asset(
+                  'assets/images/isotipo_atrio_blanco.png',
+                  height: 96,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Container(
                   width: 8,
                   height: 8,

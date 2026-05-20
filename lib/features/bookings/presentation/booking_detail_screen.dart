@@ -11,6 +11,7 @@ import '../../../core/services/database_service.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/verified_badge.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
   final String bookingId;
@@ -448,7 +449,7 @@ class BookingDetailScreen extends ConsumerWidget {
                                       if (hostVerified) ...[
                                         const SizedBox(width: 6),
                                         const Icon(Icons.verified,
-                                            size: 16, color: AtrioColors.neonLimeDark),
+                                            size: 16, color: verifiedBlue),
                                       ],
                                     ],
                                   ),

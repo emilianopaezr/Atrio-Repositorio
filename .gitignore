@@ -69,3 +69,19 @@ app.*.map.json
 # PowerShell helper scripts (contain Supabase service_role JWT keys)
 *.ps1
 supabase/*.ps1
+
+# Edge Function secrets — never commit
+supabase/functions/**/.env
+supabase/functions/**/.env.*
+
+# Other secret-bearing files
+*.pem
+*.p12
+*.p8
+service-account*.json
+firebase-adminsdk*.json
+
+# OS / editor noise
+Thumbs.db
+*.bak
+*.tmp

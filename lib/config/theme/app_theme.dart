@@ -67,7 +67,8 @@ class AtrioTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AtrioColors.electricViolet, width: 2),
+        borderSide:
+            const BorderSide(color: AtrioColors.guestTextPrimary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -157,6 +158,11 @@ class AtrioTheme {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       behavior: SnackBarBehavior.floating,
     ),
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: AtrioColors.guestTextPrimary,
+      selectionColor: Color(0x33D4FF00), // lime translucent
+      selectionHandleColor: AtrioColors.guestTextPrimary,
+    ),
   );
 
   // === Host Theme (Dark — lime green only as accent for CTAs/badges) ===
@@ -218,7 +224,7 @@ class AtrioTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AtrioColors.electricViolet, width: 2),
+        borderSide: const BorderSide(color: Colors.white, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -309,6 +315,11 @@ class AtrioTheme {
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       behavior: SnackBarBehavior.floating,
+    ),
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: Colors.white,
+      selectionColor: Color(0x33D4FF00), // lime translucent
+      selectionHandleColor: Colors.white,
     ),
   );
 }

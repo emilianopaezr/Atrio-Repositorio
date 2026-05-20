@@ -66,6 +66,19 @@ extension DoubleExtensions on double {
 extension NumCLP on num {
   static final _fmt = NumberFormat('#,##0', 'es_CL');
   String get toCLP => '\$${_fmt.format(this)}';
+
+  /// Standard guest service fee used for marketing/listing display. Real
+  /// checkout still respects promotional rates (1% for first 5 host bookings).
+  /// Keeping this in one place so listing cards, search results and detail
+  /// screens stay consistent — change here if pricing policy changes.
+  static const double guestDisplayFeeRate = 0.07;
+
+  /// CLP-formatted price with the display fee applied (`base * 1.07`).
+  /// Use this anywhere the guest sees a listing price BEFORE checkout.
+  String get toCLPWithFee {
+    final withFee = (this * (1 + guestDisplayFeeRate)).round();
+    return '\$${_fmt.format(withFee)}';
+  }
 }
 
 /// Haptic feedback helpers

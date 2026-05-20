@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../config/theme/app_typography.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/services/storage_service.dart';
@@ -598,14 +598,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               const SizedBox(height: 16),
               Text(
                 l.chatReport,
-                style: AtrioTypography.headingSmall.copyWith(
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
                   color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
+                  letterSpacing: -0.4,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 l.chatReportAnon,
-                style: AtrioTypography.caption.copyWith(
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                   color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary,
                 ),
               ),
@@ -698,82 +703,201 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         (_conversation?['listing'] as Map<String, dynamic>?)?['title'] as String? ??
             l.chatDefault;
 
+    final bg = isDark ? AtrioColors.hostBackground : AtrioColors.guestBackground;
+    final surface = isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface;
+    final border = isDark ? AtrioColors.hostCardBorder : AtrioColors.guestCardBorder;
+    final textPrimary = isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary;
+    final textSecondary = isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary;
+    final textTertiary = isDark ? AtrioColors.hostTextTertiary : AtrioColors.guestTextTertiary;
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: isDark ? AtrioColors.hostBackground : AtrioColors.guestBackground,
-        titleSpacing: 0,
-        title: Row(
+      backgroundColor: bg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: AtrioColors.neonLimeDark.withValues(alpha: 0.15),
-              child: const Icon(Icons.person, size: 18, color: AtrioColors.neonLimeDark),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // ─── EDITORIAL HEADER ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
                 children: [
-                  Text(
-                    listingTitle,
-                    style: AtrioTypography.labelMedium.copyWith(
-                      color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).maybePop(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: border),
+                      ),
+                      child: Icon(Icons.arrow_back_rounded, size: 18, color: textPrimary),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    AppLocalizations.of(context).chatOnline,
-                    style: AtrioTypography.caption.copyWith(
-                      color: AtrioColors.neonLimeDark,
+                  const SizedBox(width: 12),
+                  Stack(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AtrioColors.neonLime,
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.chat_bubble_rounded,
+                            size: 18, color: Colors.black),
+                      ),
+                      Positioned(
+                        bottom: -1,
+                        right: -1,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: AtrioColors.success,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: bg, width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          listingTitle,
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: textPrimary,
+                            letterSpacing: -0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: AtrioColors.success,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              l.chatOnline,
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AtrioColors.success,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _showConversationMenu,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: border),
+                      ),
+                      child: Icon(Icons.more_horiz_rounded, size: 20, color: textPrimary),
                     ),
                   ),
                 ],
               ),
             ),
+            Container(height: 1, color: border),
+            Expanded(
+              child: _buildBody(l, isDark, textPrimary, textSecondary, textTertiary, surface, border),
+            ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_vert,
-                color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary),
-            onPressed: _showConversationMenu,
-          ),
-        ],
       ),
-      body: Column(
+    );
+  }
+
+  Widget _buildBody(
+    AppLocalizations l,
+    bool isDark,
+    Color textPrimary,
+    Color textSecondary,
+    Color textTertiary,
+    Color surface,
+    Color border,
+  ) {
+    final hasText = _messageController.text.trim().isNotEmpty;
+    return Column(
         children: [
           // Messages list
           Expanded(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AtrioColors.neonLimeDark),
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: textPrimary,
+                      strokeWidth: 2.5,
+                    ),
                   )
                 : _messages.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble_outline,
-                                size: 48,
-                                color: isDark
-                                    ? AtrioColors.hostTextTertiary
-                                    : AtrioColors.guestTextTertiary),
-                            const SizedBox(height: 12),
-                            Text(
-                              l.chatStartConversation,
-                              style: AtrioTypography.bodyMedium.copyWith(
-                                color: isDark
-                                    ? AtrioColors.hostTextSecondary
-                                    : AtrioColors.guestTextSecondary,
+                        child: Padding(
+                          padding: const EdgeInsets.all(40),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(22),
+                                decoration: BoxDecoration(
+                                  color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 36,
+                                  color: textPrimary,
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 18),
+                              Text(
+                                l.chatStartConversation,
+                                style: GoogleFonts.inter(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: textPrimary,
+                                  letterSpacing: -0.4,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                l.chatMsgHint,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: textTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : ListView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final msg = _messages[index];
@@ -785,13 +909,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               ? '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}'
                               : '';
 
-                          // Show date separator
                           Widget? dateSeparator;
                           if (index == 0 ||
                               _isDifferentDay(
                                   _messages[index - 1]['sent_at'],
                                   msg['sent_at'])) {
-                            dateSeparator = _DateSeparator(date: createdAt);
+                            dateSeparator = _DateSeparator(date: createdAt, isDark: isDark);
                           }
 
                           if (isSystem) {
@@ -826,25 +949,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
           // Typing indicator
           if (_otherIsTyping)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-              alignment: Alignment.centerLeft,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    width: 16, height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 1.5,
-                      color: AtrioColors.neonLimeDark,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: border),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    l.chatTyping,
-                    style: AtrioTypography.caption.copyWith(
-                      color: isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary,
-                      fontStyle: FontStyle.italic,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const _TypingDots(),
+                        const SizedBox(width: 8),
+                        Text(
+                          l.chatTyping,
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: textSecondary,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -854,84 +985,118 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // Input area
           Container(
             padding: EdgeInsets.fromLTRB(
-                12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
+              16, 12, 16, MediaQuery.of(context).padding.bottom + 12,
+            ),
             decoration: BoxDecoration(
-              color: isDark ? AtrioColors.hostSurface : AtrioColors.guestBackground,
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? AtrioColors.hostCardBorder : AtrioColors.guestCardBorder,
-                ),
-              ),
+              color: isDark ? AtrioColors.hostBackground : AtrioColors.guestBackground,
+              border: Border(top: BorderSide(color: border)),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                IconButton(
-                  icon: Icon(Icons.image_rounded,
-                      color: isDark
-                          ? AtrioColors.hostTextSecondary
-                          : AtrioColors.guestTextSecondary),
-                  onPressed: _isSending ? null : _pickAndSendImage,
+                GestureDetector(
+                  onTap: _isSending ? null : _pickAndSendImage,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: surface,
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(color: border),
+                    ),
+                    child: Icon(
+                      Icons.add_photo_alternate_rounded,
+                      size: 19,
+                      color: textPrimary,
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    constraints: const BoxConstraints(minHeight: 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AtrioColors.hostSurfaceVariant
-                          : AtrioColors.guestSurface,
-                      borderRadius: BorderRadius.circular(24),
+                      color: surface,
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(color: border),
                     ),
                     child: TextField(
                       controller: _messageController,
-                      style: AtrioTypography.bodyMedium.copyWith(
-                        color: isDark
-                            ? AtrioColors.hostTextPrimary
-                            : AtrioColors.guestTextPrimary,
+                      cursorColor: textPrimary,
+                      style: GoogleFonts.inter(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                        color: textPrimary,
+                        letterSpacing: -0.2,
                       ),
                       decoration: InputDecoration(
                         hintText: l.chatMsgHint,
-                        hintStyle: AtrioTypography.bodyMedium.copyWith(
-                          color: isDark
-                              ? AtrioColors.hostTextTertiary
-                              : AtrioColors.guestTextTertiary,
+                        hintStyle: GoogleFonts.inter(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w500,
+                          color: textTertiary,
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        isCollapsed: false,
                       ),
-                      maxLines: 4,
+                      maxLines: 5,
                       minLines: 1,
                       textInputAction: TextInputAction.send,
-                      onChanged: (_) => _onTyping(),
+                      onChanged: (_) {
+                        _onTyping();
+                        setState(() {});
+                      },
                       onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
-                Container(
-                  decoration: const BoxDecoration(
-                    color: AtrioColors.neonLimeDark,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: _isSending
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: (hasText && !_isSending) ? _sendMessage : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: hasText
+                          ? AtrioColors.neonLime
+                          : (isDark ? AtrioColors.hostSurfaceVariant : AtrioColors.guestSurfaceVariant),
+                      borderRadius: BorderRadius.circular(13),
+                      boxShadow: hasText
+                          ? [
+                              BoxShadow(
+                                color: AtrioColors.neonLime.withValues(alpha: 0.35),
+                                blurRadius: 14,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: _isSending
+                        ? const Center(
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.black,
+                              ),
                             ),
                           )
-                        : const Icon(Icons.send, color: Colors.white, size: 20),
-                    onPressed: _sendMessage,
+                        : Icon(
+                            Icons.arrow_upward_rounded,
+                            color: hasText ? Colors.black : textTertiary,
+                            size: 20,
+                          ),
                   ),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
+      );
   }
 
   bool _isDifferentDay(String? a, String? b) {
@@ -967,31 +1132,42 @@ class _MessageBubble extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final isImage = !isDeleted && imageUrl != null && imageUrl!.isNotEmpty;
 
+    final bubbleColor = isMe
+        ? AtrioColors.neonLime
+        : (isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface);
+    final textColor = isMe
+        ? Colors.black
+        : (isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary);
+    final metaColor = isMe
+        ? Colors.black.withValues(alpha: 0.55)
+        : (isDark ? AtrioColors.hostTextTertiary : AtrioColors.guestTextTertiary);
+    final borderColor = isMe
+        ? Colors.transparent
+        : (isDark ? AtrioColors.hostCardBorder : AtrioColors.guestCardBorder);
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
         ),
         margin: const EdgeInsets.symmetric(vertical: 3),
         padding: isImage
             ? const EdgeInsets.all(4)
-            : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            : const EdgeInsets.fromLTRB(14, 10, 12, 9),
         decoration: BoxDecoration(
-          color: isMe
-              ? AtrioColors.neonLimeDark
-              : isDark
-                  ? AtrioColors.hostSurfaceVariant
-                  : AtrioColors.guestSurface,
+          color: bubbleColor,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(18),
             topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isMe ? 18 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 18),
+            bottomLeft: Radius.circular(isMe ? 18 : 6),
+            bottomRight: Radius.circular(isMe ? 6 : 18),
           ),
+          border: Border.all(color: borderColor, width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (isImage)
               GestureDetector(
@@ -1004,14 +1180,16 @@ class _MessageBubble extends StatelessWidget {
                     height: 220,
                     fit: BoxFit.cover,
                     placeholder: (_, _) => Container(
-                      width: 220, height: 220,
-                      color: Colors.grey[300],
+                      width: 220,
+                      height: 220,
+                      color: AtrioColors.guestSurfaceVariant,
                       child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                     ),
                     errorWidget: (_, _, _) => Container(
-                      width: 220, height: 220,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.broken_image, size: 40),
+                      width: 220,
+                      height: 220,
+                      color: AtrioColors.guestSurfaceVariant,
+                      child: const Icon(Icons.broken_image_rounded, size: 40),
                     ),
                   ),
                 ),
@@ -1019,46 +1197,51 @@ class _MessageBubble extends StatelessWidget {
             if (!isImage)
               Text(
                 isDeleted ? l.chatDeleted : text,
-                style: AtrioTypography.bodyMedium.copyWith(
-                  color: isMe
-                      ? Colors.white
-                      : isDark
-                          ? AtrioColors.hostTextPrimary
-                          : AtrioColors.guestTextPrimary,
+                style: GoogleFonts.inter(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w500,
+                  color: isDeleted ? metaColor : textColor,
+                  letterSpacing: -0.2,
+                  height: 1.35,
                   fontStyle: isDeleted ? FontStyle.italic : FontStyle.normal,
                 ),
               ),
             Padding(
-              padding: isImage ? const EdgeInsets.only(top: 4, right: 8, bottom: 2) : EdgeInsets.zero,
+              padding: isImage
+                  ? const EdgeInsets.only(top: 4, right: 8, bottom: 2)
+                  : const EdgeInsets.only(top: 3),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isEdited && !isDeleted) ...[
                     Text(
                       l.chatEdited,
-                      style: AtrioTypography.caption.copyWith(
-                        color: isMe
-                            ? Colors.white.withValues(alpha: 0.7)
-                            : isDark
-                                ? AtrioColors.hostTextTertiary
-                                : AtrioColors.guestTextTertiary,
-                        fontSize: 10,
+                      style: GoogleFonts.inter(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w600,
+                        color: metaColor,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                   ],
                   Text(
                     time,
-                    style: AtrioTypography.caption.copyWith(
-                      color: isMe
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : isDark
-                              ? AtrioColors.hostTextTertiary
-                              : AtrioColors.guestTextTertiary,
+                    style: GoogleFonts.inter(
                       fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: metaColor,
+                      letterSpacing: 0.3,
                     ),
                   ),
+                  if (isMe && !isDeleted) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.done_all_rounded,
+                      size: 12,
+                      color: metaColor,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1108,21 +1291,30 @@ class _SystemMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: AtrioColors.neonLimeDark.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
+            color: AtrioColors.neonLime.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            text,
-            style: AtrioTypography.caption.copyWith(
-              color: AtrioColors.neonLimeDark,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.shield_rounded, size: 12, color: Colors.black),
+              const SizedBox(width: 6),
+              Text(
+                text,
+                style: GoogleFonts.inter(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                  letterSpacing: 0.3,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       ),
@@ -1132,7 +1324,8 @@ class _SystemMessage extends StatelessWidget {
 
 class _DateSeparator extends StatelessWidget {
   final DateTime? date;
-  const _DateSeparator({this.date});
+  final bool isDark;
+  const _DateSeparator({this.date, this.isDark = false});
 
   String _format(BuildContext context, DateTime? dt) {
     if (dt == null) return '';
@@ -1167,18 +1360,94 @@ class _DateSeparator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lineColor = isDark ? AtrioColors.hostCardBorder : AtrioColors.guestCardBorder;
+    final pillBg = isDark ? AtrioColors.hostSurface : AtrioColors.guestSurface;
+    final textColor = isDark ? AtrioColors.hostTextSecondary : AtrioColors.guestTextSecondary;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: Text(
-          _format(context, date),
-          style: AtrioTypography.caption.copyWith(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AtrioColors.hostTextTertiary
-                : AtrioColors.guestTextTertiary,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      child: Row(
+        children: [
+          Expanded(child: Container(height: 1, color: lineColor)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: pillBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: lineColor),
+              ),
+              child: Text(
+                _format(context, date).toUpperCase(),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: textColor,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
           ),
-        ),
+          Expanded(child: Container(height: 1, color: lineColor)),
+        ],
       ),
+    );
+  }
+}
+
+/// Animated three-dot typing indicator.
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final phase = (_ctrl.value - i * 0.18).clamp(0.0, 1.0);
+            final t = (phase < 0.5 ? phase * 2 : (1 - phase) * 2).clamp(0.0, 1.0);
+            return Padding(
+              padding: EdgeInsets.only(right: i < 2 ? 3 : 0),
+              child: Opacity(
+                opacity: 0.35 + 0.65 * t,
+                child: Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    color: AtrioColors.neonLime,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

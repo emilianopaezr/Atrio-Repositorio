@@ -3,6 +3,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme/app_colors.dart';
 import '../../config/theme/app_typography.dart';
 import '../../core/models/listing_model.dart';
+import '../../core/utils/extensions.dart';
+import 'verified_badge.dart';
 
 class ListingCard extends StatelessWidget {
   final Listing listing;
@@ -95,7 +97,8 @@ class ListingCard extends StatelessWidget {
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text: '\$${listing.basePrice?.toStringAsFixed(0) ?? '0'}',
+                                // Show all-inclusive guest price (base + service fee).
+                                text: (listing.basePrice ?? 0).toCLPWithFee,
                                 style: AtrioTypography.priceMedium.copyWith(
                                   color: Colors.black,
                                   fontSize: 15,
@@ -260,6 +263,10 @@ class ListingCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                  if (listing.hostData?['is_verified'] == true || listing.hostData?['kyc_status'] == 'approved') ...[
+                    const SizedBox(height: 8),
+                    VerifiedProfilePill(dark: isDark, compact: true),
+                  ],
                 ],
               ),
             ),

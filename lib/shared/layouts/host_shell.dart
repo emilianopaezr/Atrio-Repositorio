@@ -59,9 +59,9 @@ class HostShell extends StatelessWidget {
                   onTap: () => navigationShell.goBranch(2),
                 ),
                 _NavItem(
-                  icon: Icons.account_balance_wallet_outlined,
-                  activeIcon: Icons.account_balance_wallet,
-                  label: l.navFinance,
+                  icon: Icons.insights_outlined,
+                  activeIcon: Icons.insights,
+                  label: 'Métricas',
                   isSelected: navigationShell.currentIndex == 3,
                   onTap: () => navigationShell.goBranch(3),
                 ),

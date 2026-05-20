@@ -2,15 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show FileOptions;
+
+import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/services/auth_service.dart';
-import '../../../core/services/database_service.dart';
-import '../../../core/utils/error_handler.dart';
 import '../../../l10n/app_localizations.dart';
 
+/// KYC document submission flow.
+///
+///   Step 0 — Intro (what we ask, why)
+///   Step 1 — Front of national ID (cédula)
+///   Step 2 — Back of national ID
+///   Step 3 — Selfie holding the ID
+///   Step 4 — Submit → uploads to `kyc/{user_id}/...` and calls RPC
+///            `kyc_submit(...)` which sets `kyc_status='pending'`.
+///
+/// After submit the user lands back on the hub; an admin reviews via the
+/// `kyc_approve(uuid)` / `kyc_reject(uuid, text)` RPCs (service_role only).
 class KycScreen extends ConsumerStatefulWidget {
   const KycScreen({super.key});
 
@@ -19,506 +31,474 @@ class KycScreen extends ConsumerStatefulWidget {
 }
 
 class _KycScreenState extends ConsumerState<KycScreen> {
-  final _phoneController = TextEditingController();
-  bool _phoneVerified = false;
-  bool _docUploaded = false;
-  bool _selfieUploaded = false;
-  bool _sendingPhone = false;
+  int _step = 0; // 0 = intro, 1 = front, 2 = back, 3 = selfie
+  Uint8List? _front;
+  Uint8List? _back;
+  Uint8List? _selfie;
+  bool _submitting = false;
 
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    super.dispose();
+  bool get _canSubmit => _front != null && _back != null && _selfie != null;
+
+  Future<void> _pick(int slot) async {
+    HapticFeedback.selectionClick();
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 82,
+      preferredCameraDevice:
+          slot == 3 ? CameraDevice.front : CameraDevice.rear,
+    );
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      if (slot == 1) {
+        _front = bytes;
+      } else if (slot == 2) {
+        _back = bytes;
+      } else {
+        _selfie = bytes;
+      }
+    });
+  }
+
+  Future<void> _submit() async {
+    if (!_canSubmit) return;
+    setState(() => _submitting = true);
+    HapticFeedback.mediumImpact();
+    try {
+      final user = AuthService.currentUser;
+      if (user == null) {
+        throw Exception('Sesión expirada. Inicia sesión de nuevo.');
+      }
+      final userId = user.id;
+      final storage = SupabaseConfig.client.storage.from('kyc');
+      const fileOptions =
+          FileOptions(upsert: true, contentType: 'image/jpeg');
+
+      final paths = <String, String>{};
+      Future<void> upload(String name, Uint8List bytes) async {
+        final p = '$userId/$name.jpg';
+        try {
+          await storage.uploadBinary(p, bytes, fileOptions: fileOptions);
+        } catch (e) {
+          // Surface bucket / RLS problems with a clearer message.
+          final msg = e.toString().toLowerCase();
+          if (msg.contains('bucket') && msg.contains('not found')) {
+            throw Exception(
+              'El bucket de verificación todavía no está creado en el servidor. '
+              'Avisa al equipo: aplicar migración 022.',
+            );
+          }
+          if (msg.contains('row-level security') ||
+              msg.contains('policy') ||
+              msg.contains('permission denied')) {
+            throw Exception(
+              'No tienes permiso para subir el documento. '
+              'Cierra sesión, vuelve a entrar e inténtalo de nuevo.',
+            );
+          }
+          if (msg.contains('mime') || msg.contains('content type')) {
+            throw Exception(
+              'El formato de imagen no es compatible. '
+              'Vuelve a tomar la foto.',
+            );
+          }
+          rethrow;
+        }
+        paths[name] = p;
+      }
+
+      await upload('id_front', _front!);
+      await upload('id_back', _back!);
+      await upload('selfie', _selfie!);
+
+      // RPC marks profile.kyc_status='pending' and stores the document paths.
+      try {
+        await SupabaseConfig.client.rpc('kyc_submit', params: {
+          'p_id_front_path': paths['id_front'],
+          'p_id_back_path': paths['id_back'],
+          'p_selfie_path': paths['selfie'],
+        });
+      } catch (e) {
+        final msg = e.toString().toLowerCase();
+        if (msg.contains('function') && msg.contains('does not exist')) {
+          throw Exception(
+            'El servidor no tiene la función de verificación instalada. '
+            'Avisa al equipo: aplicar migración 022.',
+          );
+        }
+        if (msg.contains('already approved')) {
+          throw Exception('Tu cuenta ya está verificada.');
+        }
+        if (msg.contains('already pending')) {
+          throw Exception(
+            'Ya tienes una solicitud en revisión. '
+            'Espera el resultado antes de enviar de nuevo.',
+          );
+        }
+        rethrow;
+      }
+
+      ref.invalidate(userProfileStreamProvider);
+      if (!mounted) return;
+      _showSuccess();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      // Trim the "Exception: " prefix when present.
+      final clean = e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+      _showError(clean);
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg,
+          style: GoogleFonts.inter(
+              fontWeight: FontWeight.w600, color: Colors.white)),
+      backgroundColor: AtrioColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
+  void _showSuccess() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: AtrioColors.guestBackground,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_rounded,
+                    color: Colors.black, size: 32),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                AppLocalizations.of(ctx).kycSubmitted,
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AtrioColors.guestTextPrimary,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                AppLocalizations.of(ctx).kycSubmittedSubtitle,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                  color: AtrioColors.guestTextSecondary,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    if (mounted) context.pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AtrioColors.neonLime,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text(
+                    AppLocalizations.of(ctx).kycBackHome,
+                    style: GoogleFonts.inter(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final userAsync = ref.watch(userProfileStreamProvider);
-
-    return userAsync.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, _) => _buildScaffold(context, null),
-      data: (profile) => _buildScaffold(context, profile),
-    );
-  }
-
-  Widget _buildScaffold(BuildContext context, dynamic profile) {
-    final l = AppLocalizations.of(context);
-    // Determine step statuses from real data
-    final emailVerified = true; // If they're logged in, email is verified
-    _phoneVerified = profile?.phone != null && (profile.phone as String).isNotEmpty;
-    final kycStatus = profile?.kycStatus ?? 'none';
-    _docUploaded = kycStatus == 'pending' || kycStatus == 'approved';
-    _selfieUploaded = kycStatus == 'approved';
-
-    int completedSteps = 0;
-    if (emailVerified) completedSteps++;
-    if (_phoneVerified) completedSteps++;
-    if (_docUploaded) completedSteps++;
-    if (_selfieUploaded) completedSteps++;
-
-    final statusLabel = completedSteps == 4
-        ? l.kycStatusComplete
-        : completedSteps == 0
-            ? l.kycStatusUnverified
-            : l.kycStatusPartial;
-    final statusColor = completedSteps == 4
-        ? AtrioColors.neonLimeDark
-        : completedSteps >= 2
-            ? AtrioColors.vibrantOrange
-            : const Color(0xFFF59E0B);
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FC),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AtrioColors.guestTextPrimary),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          l.kycTitle,
-          style: AtrioTypography.headingSmall.copyWith(
-            color: AtrioColors.guestTextPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: AtrioColors.guestBackground,
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // === STATUS BANNER ===
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [statusColor, statusColor.withValues(alpha: 0.8)],
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      completedSteps == 4 ? Icons.verified : Icons.shield_outlined,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          statusLabel,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          l.kycStepsProgress(completedSteps),
-                          style: AtrioTypography.bodySmall.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            _Header(
+              step: _step,
+              onBack: () {
+                if (_step > 0) {
+                  setState(() => _step = (_step - 1).clamp(0, 3));
+                } else {
+                  context.pop();
+                }
+              },
             ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: completedSteps / 4.0,
-                backgroundColor: AtrioColors.guestCardBorder,
-                color: statusColor,
-                minHeight: 4,
-              ),
+            Expanded(child: _body()),
+            _Footer(
+              step: _step,
+              submitting: _submitting,
+              canSubmit: _canSubmit,
+              onNext: () {
+                if (_step == 0) {
+                  setState(() => _step = 1);
+                } else if (_step == 1 && _front != null) {
+                  setState(() => _step = 2);
+                } else if (_step == 2 && _back != null) {
+                  setState(() => _step = 3);
+                } else if (_step == 3 && _selfie != null) {
+                  _submit();
+                }
+              },
+              onRetake: () {
+                if (_step == 1) _pick(1);
+                if (_step == 2) _pick(2);
+                if (_step == 3) _pick(3);
+              },
+              onPick: () => _pick(_step),
+              hasPhoto: _step == 1
+                  ? _front != null
+                  : _step == 2
+                      ? _back != null
+                      : _step == 3
+                          ? _selfie != null
+                          : false,
             ),
-            const SizedBox(height: 28),
-
-            // === WHY VERIFY? ===
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.kycWhyVerify,
-                    style: AtrioTypography.labelLarge.copyWith(
-                      color: AtrioColors.guestTextPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _BenefitRow(icon: Icons.verified_user_outlined, text: l.kycBenefit1),
-                  _BenefitRow(icon: Icons.speed_outlined, text: l.kycBenefit2),
-                  _BenefitRow(icon: Icons.workspace_premium_outlined, text: l.kycBenefit3),
-                  _BenefitRow(icon: Icons.security_outlined, text: l.kycBenefit4),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // === VERIFICATION STEPS ===
-            Text(
-              l.kycStepsTitle,
-              style: AtrioTypography.labelLarge.copyWith(
-                color: AtrioColors.guestTextPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 14),
-
-            // Step 1: Email (always completed if user is logged in)
-            _VerificationStep(
-              step: 1,
-              title: l.kycStep1Title,
-              subtitle: l.kycStep1Subtitle,
-              icon: Icons.email_outlined,
-              status: _StepStatus.completed,
-              doneLabel: l.kycDone,
-            ),
-
-            // Step 2: Phone
-            _VerificationStep(
-              step: 2,
-              title: l.kycStep2Title,
-              subtitle: _phoneVerified ? l.kycStep2SubtitleVerified : l.kycStep2SubtitlePending,
-              icon: Icons.phone_outlined,
-              status: _phoneVerified ? _StepStatus.completed : _StepStatus.pending,
-              onTap: !_phoneVerified ? () => _showPhoneDialog(context) : null,
-              doneLabel: l.kycDone,
-            ),
-
-            // Step 3: Document
-            _VerificationStep(
-              step: 3,
-              title: l.kycStep3Title,
-              subtitle: _docUploaded ? l.kycStep3SubtitleSent : l.kycStep3SubtitlePending,
-              icon: Icons.badge_outlined,
-              status: _docUploaded
-                  ? _StepStatus.completed
-                  : (_phoneVerified ? _StepStatus.pending : _StepStatus.locked),
-              onTap: !_docUploaded && _phoneVerified ? _pickDocument : null,
-              doneLabel: l.kycDone,
-            ),
-
-            // Step 4: Selfie
-            _VerificationStep(
-              step: 4,
-              title: l.kycStep4Title,
-              subtitle: _selfieUploaded ? l.kycStep4SubtitleVerified : l.kycStep4SubtitlePending,
-              icon: Icons.face_outlined,
-              status: _selfieUploaded
-                  ? _StepStatus.completed
-                  : (_docUploaded ? _StepStatus.pending : _StepStatus.locked),
-              onTap: !_selfieUploaded && _docUploaded ? _pickSelfie : null,
-              doneLabel: l.kycDone,
-            ),
-            const SizedBox(height: 28),
-
-            // === SECURITY INFO ===
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AtrioColors.neonLimeDark.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AtrioColors.neonLimeDark.withValues(alpha: 0.15),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lock_outline, color: AtrioColors.neonLimeDark, size: 24),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l.kycSecureInfo,
-                          style: AtrioTypography.labelMedium.copyWith(
-                            color: AtrioColors.neonLimeDark,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          l.kycSecureInfoDesc,
-                          style: AtrioTypography.caption.copyWith(
-                            color: AtrioColors.guestTextSecondary,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  // === PHONE VERIFICATION DIALOG ===
-  void _showPhoneDialog(BuildContext context) {
-    _phoneController.clear();
+  Widget _body() {
     final l = AppLocalizations.of(context);
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    l.kycPhoneDialogTitle,
-                    style: AtrioTypography.headingSmall.copyWith(
-                      color: AtrioColors.guestTextPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l.kycPhoneDialogSubtitle,
-                    style: AtrioTypography.bodySmall.copyWith(
-                      color: AtrioColors.guestTextSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s()]')),
-                    ],
-                    decoration: InputDecoration(
-                      labelText: l.kycPhoneLabel,
-                      hintText: l.kycPhoneHint,
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AtrioColors.neonLimeDark, width: 2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _sendingPhone
-                          ? null
-                          : () async {
-                              final phone = _phoneController.text.trim();
-                              final digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
-                              if (digits.length < 9 || digits.length > 15) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(l.kycInvalidPhone)),
-                                );
-                                return;
-                              }
-                              setSheetState(() => _sendingPhone = true);
-                              try {
-                                final userId = AuthService.currentUser?.id;
-                                if (userId != null) {
-                                  await DatabaseService.updateProfile(userId, {'phone': phone});
-                                  ref.invalidate(userProfileStreamProvider);
-                                  if (!context.mounted) return;
-                                  Navigator.of(ctx).pop();
-                                  setState(() => _phoneVerified = true);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(l.kycPhoneVerified),
-                                      backgroundColor: AtrioColors.neonLimeDark,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) ErrorHandler.showError(context, e);
-                              } finally {
-                                if (context.mounted) setSheetState(() => _sendingPhone = false);
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AtrioColors.neonLimeDark,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: _sendingPhone
-                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                          : Text(l.kycVerifyPhoneBtn, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // === DOCUMENT UPLOAD ===
-  Future<void> _pickDocument() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 80);
-    if (image == null) return;
-
-    setState(() {});
-    try {
-      final bytes = await image.readAsBytes();
-      final userId = AuthService.currentUser?.id;
-      if (userId == null) return;
-
-      final path = '$userId/id_document_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await DatabaseService.uploadImage(bucket: 'kyc', path: path, fileBytes: bytes, contentType: 'image/jpeg');
-
-      await DatabaseService.updateProfile(userId, {'kyc_status': 'pending'});
-      ref.invalidate(userProfileStreamProvider);
-
-      setState(() {
-        _docUploaded = true;
-      });
-
-      if (mounted) {
-        final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l.kycDocUploaded),
-            backgroundColor: AtrioColors.neonLimeDark,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+    switch (_step) {
+      case 0:
+        return const _IntroStep();
+      case 1:
+        return _PhotoStep(
+          title: l.kycStepFront,
+          subtitle: l.kycStepFrontDesc,
+          icon: Icons.credit_card_rounded,
+          photo: _front,
         );
-      }
-    } catch (e) {
-      setState(() {});
-      if (mounted) ErrorHandler.showError(context, e);
-    }
-  }
-
-  // === SELFIE UPLOAD ===
-  Future<void> _pickSelfie() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 1200, imageQuality: 80);
-    if (image == null) return;
-
-    setState(() {});
-    try {
-      final bytes = await image.readAsBytes();
-      final userId = AuthService.currentUser?.id;
-      if (userId == null) return;
-
-      final path = '$userId/selfie_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await DatabaseService.uploadImage(bucket: 'kyc', path: path, fileBytes: bytes, contentType: 'image/jpeg');
-
-      await DatabaseService.updateProfile(userId, {'kyc_status': 'approved'});
-      ref.invalidate(userProfileStreamProvider);
-
-      setState(() {
-        _selfieUploaded = true;
-      });
-
-      if (mounted) {
-        final l = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l.kycCompleted),
-            backgroundColor: AtrioColors.neonLimeDark,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+      case 2:
+        return _PhotoStep(
+          title: l.kycStepBack,
+          subtitle: l.kycStepBackDesc,
+          icon: Icons.credit_card_rounded,
+          photo: _back,
         );
-      }
-    } catch (e) {
-      setState(() {});
-      if (mounted) ErrorHandler.showError(context, e);
+      case 3:
+        return _PhotoStep(
+          title: l.kycStepSelfie,
+          subtitle: l.kycStepSelfieDesc,
+          icon: Icons.face_retouching_natural_rounded,
+          photo: _selfie,
+        );
+      default:
+        return const SizedBox.shrink();
     }
   }
 }
 
-class _BenefitRow extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  const _BenefitRow({required this.icon, required this.text});
+// ═══════════════════════════════════════════════════════════════
+// Header
+// ═══════════════════════════════════════════════════════════════
+class _Header extends StatelessWidget {
+  final int step;
+  final VoidCallback onBack;
+  const _Header({required this.step, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final stepLabel = switch (step) {
+      0 => l.kycStepIntro,
+      1 => l.kycStepLabel(1),
+      2 => l.kycStepLabel(2),
+      _ => l.kycStepLabel(3),
+    };
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AtrioColors.neonLimeDark),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: AtrioTypography.bodySmall.copyWith(
-                color: AtrioColors.guestTextSecondary,
+          IconButton(
+            onPressed: onBack,
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                size: 18, color: AtrioColors.guestTextPrimary),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                stepLabel,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AtrioColors.guestTextSecondary,
+                  letterSpacing: 1.4,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (step > 0)
+            Row(
+              children: List.generate(3, (i) {
+                final active = i < step;
+                return Expanded(
+                  child: Container(
+                    height: 3,
+                    margin: EdgeInsets.only(right: i < 2 ? 4 : 0),
+                    decoration: BoxDecoration(
+                      color: active
+                          ? AtrioColors.neonLime
+                          : AtrioColors.guestCardBorder,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                );
+              }),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Intro
+// ═══════════════════════════════════════════════════════════════
+class _IntroStep extends StatelessWidget {
+  const _IntroStep();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final items = [
+      (l.kycIntroBenefit1Title, l.kycIntroBenefit1Desc),
+      (l.kycIntroBenefit2Title, l.kycIntroBenefit2Desc),
+      (l.kycIntroBenefit3Title, l.kycIntroBenefit3Desc),
+    ];
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.kycHeroTitle,
+            style: GoogleFonts.inter(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: AtrioColors.guestTextPrimary,
+              letterSpacing: -1.0,
+              height: 1.05,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l.kycHeroSubtitle,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AtrioColors.guestTextSecondary,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 28),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+                decoration: BoxDecoration(
+                  color: AtrioColors.guestSurface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AtrioColors.guestCardBorder),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.check_rounded,
+                          size: 20, color: AtrioColors.neonLimeDark),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.$1,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AtrioColors.guestTextPrimary,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            item.$2,
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: AtrioColors.guestTextSecondary,
+                              height: 1.45,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -528,118 +508,236 @@ class _BenefitRow extends StatelessWidget {
   }
 }
 
-enum _StepStatus { completed, pending, locked }
-
-class _VerificationStep extends StatelessWidget {
-  final int step;
+// ═══════════════════════════════════════════════════════════════
+// Photo step
+// ═══════════════════════════════════════════════════════════════
+class _PhotoStep extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final _StepStatus status;
-  final VoidCallback? onTap;
-  final String doneLabel;
+  final Uint8List? photo;
 
-  const _VerificationStep({
-    required this.step,
+  const _PhotoStep({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.status,
-    this.onTap,
-    required this.doneLabel,
+    required this.photo,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = status == _StepStatus.completed;
-    final isLocked = status == _StepStatus.locked;
-
-    return GestureDetector(
-      onTap: isLocked ? null : onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isLocked ? Colors.white.withValues(alpha: 0.6) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: isCompleted
-              ? Border.all(color: AtrioColors.neonLimeDark.withValues(alpha: 0.3))
-              : null,
-          boxShadow: isLocked
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: AtrioColors.guestTextPrimary,
+              letterSpacing: -1.0,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+              color: AtrioColors.guestTextSecondary,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 28),
+          AspectRatio(
+            aspectRatio: 16 / 11,
+            child: Container(
               decoration: BoxDecoration(
-                color: isCompleted
-                    ? AtrioColors.neonLime.withValues(alpha: 0.15)
-                    : isLocked
-                        ? Colors.grey.withValues(alpha: 0.1)
-                        : AtrioColors.neonLimeDark.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                isCompleted ? Icons.check_circle : (isLocked ? Icons.lock : icon),
-                color: isCompleted
-                    ? AtrioColors.neonLimeDark
-                    : isLocked
-                        ? Colors.grey
-                        : AtrioColors.neonLimeDark,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AtrioTypography.labelLarge.copyWith(
-                      color: isLocked
-                          ? AtrioColors.guestTextTertiary
-                          : AtrioColors.guestTextPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: AtrioTypography.caption.copyWith(
-                      color: AtrioColors.guestTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isCompleted)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AtrioColors.neonLime.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                color:
+                    photo != null ? Colors.black : AtrioColors.guestSurface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: photo != null
+                      ? AtrioColors.neonLimeDark
+                      : AtrioColors.guestCardBorder,
+                  width: photo != null ? 2 : 1,
                 ),
-                child: Text(
-                  doneLabel,
-                  style: AtrioTypography.caption.copyWith(
-                    color: AtrioColors.neonLimeDark,
-                    fontWeight: FontWeight.w700,
-                  ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: photo != null
+                    ? Image.memory(photo!, fit: BoxFit.cover)
+                    : Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: AtrioColors.neonLime
+                                    .withValues(alpha: 0.18),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(icon,
+                                  size: 26,
+                                  color: AtrioColors.neonLimeDark),
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              AppLocalizations.of(context).kycTapToCapture,
+                              style: GoogleFonts.inter(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AtrioColors.guestTextPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Footer
+// ═══════════════════════════════════════════════════════════════
+class _Footer extends StatelessWidget {
+  final int step;
+  final bool submitting;
+  final bool canSubmit;
+  final bool hasPhoto;
+  final VoidCallback onNext;
+  final VoidCallback onRetake;
+  final VoidCallback onPick;
+
+  const _Footer({
+    required this.step,
+    required this.submitting,
+    required this.canSubmit,
+    required this.hasPhoto,
+    required this.onNext,
+    required this.onRetake,
+    required this.onPick,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 14, 20, 16 + bottomInset),
+      decoration: BoxDecoration(
+        color: AtrioColors.guestBackground,
+        border: Border(
+            top: BorderSide(color: AtrioColors.guestCardBorder, width: 1)),
+      ),
+      child: step == 0
+          ? _btnPrimary(
+              label: l.kycBtnStart,
+              icon: Icons.arrow_forward_rounded,
+              onTap: onNext,
+              loading: false,
+            )
+          : !hasPhoto
+              ? _btnPrimary(
+                  label: step == 3 ? l.kycBtnTakeSelfie : l.kycBtnTakePhoto,
+                  icon: Icons.camera_alt_rounded,
+                  onTap: onPick,
+                  loading: false,
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _btnPrimary(
+                      label: step == 3 ? l.kycBtnSend : l.kycBtnContinue,
+                      icon: step == 3
+                          ? Icons.upload_rounded
+                          : Icons.arrow_forward_rounded,
+                      onTap: submitting ? null : onNext,
+                      loading: submitting,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: TextButton(
+                        onPressed: submitting ? null : onRetake,
+                        child: Text(
+                          l.kycBtnRetake,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AtrioColors.guestTextSecondary,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+    );
+  }
+
+  Widget _btnPrimary({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onTap,
+    required bool loading,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AtrioColors.neonLime,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          disabledBackgroundColor:
+              AtrioColors.neonLime.withValues(alpha: 0.4),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  color: Colors.black,
+                  strokeWidth: 2.5,
                 ),
               )
-            else if (!isLocked)
-              const Icon(Icons.arrow_forward_ios, size: 14, color: AtrioColors.guestTextTertiary),
-          ],
-        ),
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(icon, size: 18, color: Colors.black),
+                ],
+              ),
       ),
     );
   }

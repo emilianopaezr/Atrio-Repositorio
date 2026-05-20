@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,10 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/services/storage_service.dart';
-import '../../../core/utils/extensions.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../l10n/app_localizations.dart';
-
+import '../../../shared/widgets/contact_phone_section.dart';
 
 class PublishServiceScreen extends ConsumerStatefulWidget {
   /// 'offer' = ofrecer servicio, 'request' = solicitar servicio
@@ -28,16 +27,35 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
 
-  // Internal category key (stable, used as UI state). DB stores Spanish value.
   String _selectedCategory = 'moving';
-  // Internal urgency key. Only used for UI state.
   String _selectedUrgency = 'flexible';
   bool _isLoading = false;
   final List<XFile> _pickedImages = [];
   final List<Uint8List> _imageBytes = [];
-  static const int _maxImages = 6;
+  static const int _maxImages = 15;
+  String? _userPhone;
+  bool _showHostPhone = false;
 
-  // (internalKey, dbValue, icon)
+  @override
+  void initState() {
+    super.initState();
+    _loadUserPhone();
+  }
+
+  Future<void> _loadUserPhone() async {
+    final user = SupabaseConfig.auth.currentUser;
+    if (user == null) return;
+    try {
+      final res = await SupabaseConfig.client
+          .from('profiles')
+          .select('phone')
+          .eq('id', user.id)
+          .maybeSingle();
+      if (!mounted || res == null) return;
+      setState(() => _userPhone = res['phone'] as String?);
+    } catch (_) {}
+  }
+
   static const _categories = <(String, String, IconData)>[
     ('moving', 'Mudanza', Icons.local_shipping_rounded),
     ('cleaning', 'Limpieza', Icons.cleaning_services_rounded),
@@ -107,53 +125,81 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
   Future<void> _pickImages() async {
     final l = AppLocalizations.of(context);
     if (_pickedImages.length >= _maxImages) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(l.psMaxPhotos(_maxImages), style: GoogleFonts.inter(color: Colors.white)),
-          backgroundColor: AtrioColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
-      }
+      _snack(l.psMaxPhotos(_maxImages), isError: true);
       return;
     }
 
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AtrioColors.hostSurface,
+      backgroundColor: AtrioColors.guestSurface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: Colors.grey[600], borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 16),
-            Text(l.psAddPhoto, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.photo_library_rounded, color: AtrioColors.neonLimeDark),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AtrioColors.guestCardBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              title: Text(l.psGallery, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AtrioColors.neonLimeDark.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.camera_alt_rounded, color: AtrioColors.neonLimeDark),
+              const SizedBox(height: 18),
+              Text(
+                l.psAddPhoto,
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: AtrioColors.guestTextPrimary,
+                  letterSpacing: -0.4,
+                ),
               ),
-              title: Text(l.psCamera, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-          ]),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.photo_library_rounded,
+                      color: AtrioColors.guestTextPrimary),
+                ),
+                title: Text(
+                  l.psGallery,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    color: AtrioColors.guestTextPrimary,
+                  ),
+                ),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded,
+                      color: AtrioColors.guestTextPrimary),
+                ),
+                title: Text(
+                  l.psCamera,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    color: AtrioColors.guestTextPrimary,
+                  ),
+                ),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -163,10 +209,15 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
     List<XFile> picked;
     final remaining = _maxImages - _pickedImages.length;
     if (source == ImageSource.gallery) {
-      picked = await picker.pickMultiImage(maxWidth: 1200, maxHeight: 1200, imageQuality: 85);
+      picked = await picker.pickMultiImage(
+          maxWidth: 1200, maxHeight: 1200, imageQuality: 85);
       if (picked.length > remaining) picked = picked.sublist(0, remaining);
     } else {
-      final photo = await picker.pickImage(source: ImageSource.camera, maxWidth: 1200, maxHeight: 1200, imageQuality: 85);
+      final photo = await picker.pickImage(
+          source: ImageSource.camera,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          imageQuality: 85);
       picked = photo != null ? [photo] : [];
     }
 
@@ -174,13 +225,7 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
       if (_pickedImages.length >= _maxImages) break;
       final bytes = await img.readAsBytes();
       if (bytes.lengthInBytes > 5 * 1024 * 1024) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(l.psImageTooLarge, style: GoogleFonts.inter(color: Colors.white)),
-            backgroundColor: AtrioColors.error,
-            behavior: SnackBarBehavior.floating,
-          ));
-        }
+        if (mounted) _snack(l.psImageTooLarge, isError: true);
         continue;
       }
       final ext = img.path.split('.').last.toLowerCase();
@@ -196,14 +241,13 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
     if (!_formKey.currentState!.validate()) return;
     final l = AppLocalizations.of(context);
 
-    Haptics.medium();
+    HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
 
     try {
       final userId = SupabaseConfig.auth.currentUser?.id;
       if (userId == null) throw Exception(l.psNotAuthenticated);
 
-      // Upload images first
       final imageUrls = <String>[];
       final tempListingId = DateTime.now().millisecondsSinceEpoch.toString();
       for (int i = 0; i < _pickedImages.length; i++) {
@@ -216,56 +260,33 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
         imageUrls.add(url);
       }
 
-      if (_isOffer) {
-        // Persist as a real service listing
-        await SupabaseConfig.client.from('listings').insert({
-          'host_id': userId,
-          'type': 'service',
-          'title': _titleController.text.trim(),
-          'description': _descriptionController.text.trim(),
-          'category': _selectedCategory,
-          'images': imageUrls,
-          'base_price': double.tryParse(_priceController.text.trim()) ?? 0,
-          'price_unit': 'hour',
-          'rental_mode': 'hours',
-          'cancellation_policy': 'flexible',
-          'instant_booking': false,
-          'status': 'published',
-          'tags': [_selectedCategory.toLowerCase()],
-        });
-      } else {
-        // Request: simulate (no quick_requests table yet)
-        await Future.delayed(const Duration(milliseconds: 600));
-      }
+      await SupabaseConfig.client.from('listings').insert({
+        'host_id': userId,
+        'type': 'service',
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'category': _selectedCategory,
+        'images': imageUrls,
+        'base_price': double.tryParse(_priceController.text.trim()) ?? 0,
+        'price_unit': 'hour',
+        'rental_mode': 'hours',
+        'cancellation_policy': 'flexible',
+        'instant_booking': false,
+        'status': 'published',
+        'tags': [_selectedCategory.toLowerCase()],
+        'is_request': !_isOffer,
+        if (!_isOffer) 'urgency': _selectedUrgency,
+        if (_userPhone != null && _userPhone!.trim().isNotEmpty)
+          'host_phone': _userPhone!.trim(),
+        'show_host_phone':
+            _showHostPhone && (_userPhone?.trim().isNotEmpty ?? false),
+      });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.black, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _isOffer
-                        ? l.psServicePublished
-                        : l.psRequestPublished,
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AtrioColors.neonLime,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-        context.pop();
+        _snack(_isOffer ? l.psServicePublished : l.psRequestPublished,
+            isError: false);
+        await Future.delayed(const Duration(milliseconds: 600));
+        if (mounted) context.pop();
       }
     } catch (e) {
       if (mounted) ErrorHandler.showError(context, e);
@@ -274,419 +295,657 @@ class _PublishServiceScreenState extends ConsumerState<PublishServiceScreen> {
     }
   }
 
+  void _snack(String msg, {required bool isError}) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline_rounded : Icons.check_circle_rounded,
+            size: 18,
+            color: isError ? Colors.white : Colors.black,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              msg,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                color: isError ? Colors.white : Colors.black,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: isError ? AtrioColors.error : AtrioColors.neonLime,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final eyebrow = _isOffer ? l.psEyebrowOffer : l.psEyebrowRequest;
+    final subtitle = _isOffer ? l.psSubtitleOffer : l.psSubtitleRequest;
+    final title = _isOffer ? l.psTitleOffer : l.psTitleRequest;
+
     return Scaffold(
-      backgroundColor: AtrioColors.hostBackground,
-      appBar: AppBar(
-        backgroundColor: AtrioColors.hostBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: AtrioColors.hostTextPrimary),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          _isOffer ? l.psTitleOffer : l.psTitleRequest,
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AtrioColors.hostTextPrimary,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: AtrioColors.guestBackground,
+      body: SafeArea(
+        bottom: false,
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Mode toggle
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AtrioColors.hostSurface,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    _ModeTab(
-                      label: l.psModeOffer,
-                      icon: Icons.volunteer_activism_rounded,
-                      isSelected: _isOffer,
-                      onTap: () {
-                        if (!_isOffer) {
-                          context.pushReplacement('/publish-service',
-                              extra: 'offer');
-                        }
-                      },
-                    ),
-                    _ModeTab(
-                      label: l.psModeRequest,
-                      icon: Icons.front_hand_rounded,
-                      isSelected: !_isOffer,
-                      onTap: () {
-                        if (_isOffer) {
-                          context.pushReplacement('/publish-service',
-                              extra: 'request');
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Title
-              _buildLabel(_isOffer ? l.psLabelServiceTitle : l.psLabelWhatYouNeed),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: _titleController,
-                hint: _isOffer ? l.psHintOfferTitle : l.psHintRequestTitle,
-                maxLength: 80,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? l.psRequired : null,
-              ),
-              const SizedBox(height: 20),
-
-              // Description
-              _buildLabel(l.psLabelDescription),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: _descriptionController,
-                hint: _isOffer ? l.psHintOfferDescription : l.psHintRequestDescription,
-                maxLines: 5,
-                maxLength: 500,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? l.psRequired : null,
-              ),
-              const SizedBox(height: 20),
-
-              // Photos (offers only, max 6)
-              if (_isOffer) ...[
-                _buildLabel(l.psPhotosLabel(_maxImages)),
-                const SizedBox(height: 4),
-                Text(
-                  l.psPhotosHint(_maxImages),
-                  style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 90,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _pickedImages.length + (_pickedImages.length < _maxImages ? 1 : 0),
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (ctx, index) {
-                      if (index == _pickedImages.length) {
-                        return GestureDetector(
-                          onTap: _pickImages,
-                          child: Container(
-                            width: 90,
-                            decoration: BoxDecoration(
-                              color: AtrioColors.hostSurface,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: AtrioColors.neonLimeDark.withValues(alpha: 0.5),
-                                style: BorderStyle.solid,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.add_a_photo_outlined, color: AtrioColors.neonLimeDark, size: 26),
-                                const SizedBox(height: 4),
-                                Text(l.psAdd, style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextSecondary, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                      return Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: Image.memory(
-                              _imageBytes[index],
-                              width: 90, height: 90, fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            top: 4, right: 4,
-                            child: GestureDetector(
-                              onTap: () => setState(() {
-                                _pickedImages.removeAt(index);
-                                _imageBytes.removeAt(index);
-                              }),
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(color: Colors.black87, shape: BoxShape.circle),
-                                child: const Icon(Icons.close, size: 14, color: Colors.white),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-
-              // Category
-              _buildLabel(l.psCategory),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _categories.map((cat) {
-                  final key = cat.$1;
-                  final icon = cat.$3;
-                  final isSelected = key == _selectedCategory;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedCategory = key),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AtrioColors.neonLime : AtrioColors.hostSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            icon,
-                            size: 16,
-                            color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _categoryLabel(l, key),
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
-
-              // Price
-              _buildLabel(_isOffer ? l.psPricePerHour : l.psBudget),
-              const SizedBox(height: 8),
-              _buildTextField(
-                controller: _priceController,
-                hint: _isOffer ? l.psHintPrice25 : l.psHintBudget50,
-                keyboardType: TextInputType.number,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return l.psRequired;
-                  if (double.tryParse(v) == null) return l.psNotANumber;
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // Urgency (only for requests)
-              if (!_isOffer) ...[
-                _buildLabel(l.psUrgency),
-                const SizedBox(height: 10),
-                Row(
-                  children: _urgencies.map((u) {
-                    final key = u.$1;
-                    final icon = u.$2;
-                    final isSelected = key == _selectedUrgency;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedUrgency = key),
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 6),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AtrioColors.neonLime : AtrioColors.hostSurface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder,
-                            ),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                icon,
-                                size: 20,
-                                color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _urgencyLabel(l, key),
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 20),
-              ],
-
-              // Tips
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AtrioColors.neonLime.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AtrioColors.neonLime.withValues(alpha: 0.2)),
-                ),
-                child: Row(
+              // ─── HEADER ───
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lightbulb_outline, size: 20, color: AtrioColors.neonLime),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l.psTip,
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AtrioColors.guestSurface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AtrioColors.guestCardBorder),
+                            ),
+                            child: const Icon(Icons.close_rounded,
+                                size: 18, color: AtrioColors.guestTextPrimary),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            title,
                             style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AtrioColors.neonLime,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                              color: AtrioColors.guestTextPrimary,
+                              letterSpacing: -0.4,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _isOffer ? l.psTipOffer : l.psTipRequest,
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: AtrioColors.hostTextSecondary,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      eyebrow,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AtrioColors.guestTextTertiary,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                        color: AtrioColors.guestTextPrimary,
+                        letterSpacing: -0.9,
+                        height: 1.05,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        color: AtrioColors.guestTextSecondary,
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
 
-              // Publish button
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _publish,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AtrioColors.neonLime,
-                    foregroundColor: Colors.black,
-                    disabledBackgroundColor: AtrioColors.neonLime.withValues(alpha: 0.3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.black,
-                          ),
-                        )
-                      : Text(
-                          _isOffer ? l.psPublishService : l.psPublishRequest,
+              // ─── CONTENT ───
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Mode toggle
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AtrioColors.guestSurfaceVariant,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            _ModeTab(
+                              label: l.psModeOffer,
+                              icon: Icons.volunteer_activism_rounded,
+                              isSelected: _isOffer,
+                              onTap: () {
+                                if (!_isOffer) {
+                                  HapticFeedback.selectionClick();
+                                  context.pushReplacement('/publish-service',
+                                      extra: 'offer');
+                                }
+                              },
+                            ),
+                            _ModeTab(
+                              label: l.psModeRequest,
+                              icon: Icons.front_hand_rounded,
+                              isSelected: !_isOffer,
+                              onTap: () {
+                                if (_isOffer) {
+                                  HapticFeedback.selectionClick();
+                                  context.pushReplacement('/publish-service',
+                                      extra: 'request');
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Title
+                      _SectionLabel(
+                          text: _isOffer
+                              ? l.psLabelServiceTitle.toUpperCase()
+                              : l.psLabelWhatYouNeed.toUpperCase()),
+                      const SizedBox(height: 8),
+                      _EditorialField(
+                        controller: _titleController,
+                        hint: _isOffer ? l.psHintOfferTitle : l.psHintRequestTitle,
+                        maxLength: 80,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? l.psRequired
+                            : null,
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Description
+                      _SectionLabel(text: l.psLabelDescription.toUpperCase()),
+                      const SizedBox(height: 8),
+                      _EditorialField(
+                        controller: _descriptionController,
+                        hint: _isOffer
+                            ? l.psHintOfferDescription
+                            : l.psHintRequestDescription,
+                        maxLines: 10,
+                        maxLength: 3000,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? l.psRequired
+                            : null,
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Photos (offers only)
+                      if (_isOffer) ...[
+                        _SectionLabel(text: l.psSectionPhotos),
+                        const SizedBox(height: 4),
+                        Text(
+                          l.psPhotosSubtitle(_maxImages),
                           style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AtrioColors.guestTextTertiary,
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 92,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _pickedImages.length +
+                                (_pickedImages.length < _maxImages ? 1 : 0),
+                            separatorBuilder: (_, _) => const SizedBox(width: 10),
+                            itemBuilder: (ctx, index) {
+                              if (index == _pickedImages.length) {
+                                return GestureDetector(
+                                  onTap: _pickImages,
+                                  child: Container(
+                                    width: 92,
+                                    decoration: BoxDecoration(
+                                      color: AtrioColors.guestSurface,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: AtrioColors.guestCardBorder,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          width: 36,
+                                          height: 36,
+                                          decoration: const BoxDecoration(
+                                            color: AtrioColors.neonLime,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                              Icons.add_rounded,
+                                              color: Colors.black,
+                                              size: 20),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          l.psAdd,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            color: AtrioColors.guestTextPrimary,
+                                            letterSpacing: -0.2,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                              return Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Image.memory(
+                                      _imageBytes[index],
+                                      width: 92,
+                                      height: 92,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        HapticFeedback.selectionClick();
+                                        setState(() {
+                                          _pickedImages.removeAt(index);
+                                          _imageBytes.removeAt(index);
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black87,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close_rounded,
+                                            size: 13, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                  if (index == 0)
+                                    Positioned(
+                                      bottom: 5,
+                                      left: 5,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AtrioColors.neonLime,
+                                          borderRadius: BorderRadius.circular(5),
+                                        ),
+                                        child: Text(
+                                          'COVER',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 8.5,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+
+                      // Category
+                      _SectionLabel(text: l.psSectionCategoryLabel),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _categories.map((cat) {
+                          final key = cat.$1;
+                          final icon = cat.$3;
+                          final isSelected = key == _selectedCategory;
+                          return GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _selectedCategory = key);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 9),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AtrioColors.guestTextPrimary
+                                    : AtrioColors.guestSurface,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AtrioColors.guestTextPrimary
+                                      : AtrioColors.guestCardBorder,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    icon,
+                                    size: 14,
+                                    color: isSelected
+                                        ? AtrioColors.neonLime
+                                        : AtrioColors.guestTextSecondary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _categoryLabel(l, key),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12.5,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w800
+                                          : FontWeight.w600,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AtrioColors.guestTextPrimary,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 22),
+
+                      // Price
+                      _SectionLabel(text: l.psSectionPriceLabel),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+                        decoration: BoxDecoration(
+                          color: AtrioColors.guestSurface,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: AtrioColors.guestCardBorder),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (_isOffer ? l.psPricePerHour : l.psBudget)
+                                  .toUpperCase(),
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: AtrioColors.guestTextTertiary,
+                                letterSpacing: 1.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '\$',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w800,
+                                    color: AtrioColors.guestTextPrimary,
+                                    letterSpacing: -0.8,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _priceController,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(decimal: true),
+                                    cursorColor: AtrioColors.guestTextPrimary,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 30,
+                                      fontWeight: FontWeight.w800,
+                                      color: AtrioColors.guestTextPrimary,
+                                      letterSpacing: -0.8,
+                                    ),
+                                    decoration: InputDecoration(
+                                      isCollapsed: true,
+                                      hintText: '0',
+                                      hintStyle: GoogleFonts.inter(
+                                        fontSize: 30,
+                                        fontWeight: FontWeight.w800,
+                                        color: AtrioColors.guestTextTertiary,
+                                        letterSpacing: -0.8,
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    validator: (v) {
+                                      if (v == null || v.trim().isEmpty) {
+                                        return l.psRequired;
+                                      }
+                                      if (double.tryParse(v) == null) {
+                                        return l.psNotANumber;
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+
+                      // Urgency (request only)
+                      if (!_isOffer) ...[
+                        _SectionLabel(text: l.psSectionUrgencyLabel),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: _urgencies.map((u) {
+                            final key = u.$1;
+                            final icon = u.$2;
+                            final isSelected = key == _selectedUrgency;
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() => _selectedUrgency = key);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  margin: const EdgeInsets.only(right: 6),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? AtrioColors.guestTextPrimary
+                                        : AtrioColors.guestSurface,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AtrioColors.guestTextPrimary
+                                          : AtrioColors.guestCardBorder,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        icon,
+                                        size: 20,
+                                        color: isSelected
+                                            ? AtrioColors.neonLime
+                                            : AtrioColors.guestTextSecondary,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _urgencyLabel(l, key),
+                                        textAlign: TextAlign.center,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w800
+                                              : FontWeight.w600,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : AtrioColors.guestTextPrimary,
+                                          height: 1.2,
+                                          letterSpacing: -0.2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 18),
+                      ],
+
+                      // Contact phone (offer + request: both can opt-in to show their phone)
+                      _SectionLabel(text: 'Contacto'),
+                      const SizedBox(height: 8),
+                      ContactPhoneSection(
+                        userPhone: _userPhone,
+                        showHostPhone: _showHostPhone,
+                        onShowChanged: (v) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _showHostPhone = v);
+                        },
+                      ),
+                      const SizedBox(height: 22),
+
+                      // Tip
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: const BoxDecoration(
+                                color: AtrioColors.neonLime,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.lightbulb_rounded,
+                                  size: 16, color: Colors.black),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l.psTip,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: AtrioColors.guestTextPrimary,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    _isOffer ? l.psTipOffer : l.psTipRequest,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: AtrioColors.guestTextSecondary,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 40),
+
+              // ─── PUBLISH BUTTON ───
+              Container(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  14,
+                  20,
+                  18 + MediaQuery.of(context).padding.bottom,
+                ),
+                decoration: const BoxDecoration(
+                  color: AtrioColors.guestBackground,
+                  border: Border(top: BorderSide(color: AtrioColors.guestCardBorder)),
+                ),
+                child: GestureDetector(
+                  onTap: _isLoading ? null : _publish,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: _isLoading
+                          ? AtrioColors.guestTextPrimary.withValues(alpha: 0.5)
+                          : AtrioColors.guestTextPrimary,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    alignment: Alignment.center,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _isOffer
+                                    ? l.psPublishService
+                                    : l.psPublishRequest,
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward_rounded,
+                                  size: 18, color: AtrioColors.neonLime),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: AtrioColors.hostTextPrimary,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    int maxLines = 1,
-    int? maxLength,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      maxLength: maxLength,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextPrimary),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextTertiary),
-        filled: true,
-        fillColor: AtrioColors.hostSurface,
-        counterStyle: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextTertiary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AtrioColors.hostCardBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AtrioColors.hostCardBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AtrioColors.neonLimeDark, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AtrioColors.error),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
@@ -710,30 +969,119 @@ class _ModeTab extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AtrioColors.neonLime : Colors.transparent,
+            color: isSelected
+                ? AtrioColors.guestTextPrimary
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon,
-                  size: 16,
-                  color: isSelected ? Colors.black : AtrioColors.hostTextSecondary),
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected
+                    ? AtrioColors.neonLime
+                    : AtrioColors.guestTextSecondary,
+              ),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : AtrioColors.guestTextSecondary,
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: GoogleFonts.inter(
+        fontSize: 10.5,
+        fontWeight: FontWeight.w800,
+        color: AtrioColors.guestTextTertiary,
+        letterSpacing: 1.4,
+      ),
+    );
+  }
+}
+
+class _EditorialField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final int maxLines;
+  final int? maxLength;
+  final String? Function(String?)? validator;
+
+  const _EditorialField({
+    required this.controller,
+    required this.hint,
+    this.maxLines = 1,
+    this.maxLength,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AtrioColors.guestCardBorder),
+      ),
+      child: TextFormField(
+        controller: controller,
+        maxLines: maxLines,
+        maxLength: maxLength,
+        validator: validator,
+        cursorColor: AtrioColors.guestTextPrimary,
+        style: GoogleFonts.inter(
+          fontSize: 14.5,
+          fontWeight: FontWeight.w600,
+          color: AtrioColors.guestTextPrimary,
+          letterSpacing: -0.2,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AtrioColors.guestTextTertiary,
+            height: 1.4,
+          ),
+          counterStyle: GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AtrioColors.guestTextTertiary,
+          ),
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );

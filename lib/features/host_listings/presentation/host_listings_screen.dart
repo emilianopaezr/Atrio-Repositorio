@@ -4,13 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../config/theme/app_typography.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/listings_provider.dart';
-import '../../../core/providers/host_stats_provider.dart';
 import '../../../core/services/database_service.dart';
-import '../../../shared/widgets/atrio_button.dart';
-import '../../../shared/widgets/level_badge.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -22,286 +18,245 @@ class HostListingsScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final userId = SupabaseConfig.auth.currentUser?.id ?? '';
     final listingsAsync = ref.watch(hostListingsProvider(userId));
-    final hostStatsAsync = ref.watch(hostStatsProvider);
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l.hostListingsHeader,
-                    style: AtrioTypography.displayMedium.copyWith(
-                      color: AtrioColors.hostTextPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AtrioColors.neonLimeDark,
-                        borderRadius: BorderRadius.circular(12),
+      backgroundColor: AtrioColors.hostBackground,
+      body: RefreshIndicator(
+        color: AtrioColors.neonLimeDark,
+        backgroundColor: AtrioColors.hostSurface,
+        onRefresh: () async {
+          ref.invalidate(hostListingsProvider(userId));
+        },
+        child: CustomScrollView(
+          slivers: [
+            // ─── HERO HEADER ───
+            SliverToBoxAdapter(
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 20, 0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l.hostListingsEyebrow,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AtrioColors.hostTextTertiary,
+                                letterSpacing: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              l.hostListingsHeader,
+                              style: GoogleFonts.inter(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                color: AtrioColors.hostTextPrimary,
+                                letterSpacing: -1.0,
+                                height: 1.05,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              l.hostListingsHeroSubtitle,
+                              style: GoogleFonts.inter(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w500,
+                                color: AtrioColors.hostTextSecondary,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 20),
-                    ),
-                    onPressed: () => context.push('/host/create-listing'),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () => context.push('/host/create-listing'),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: const BoxDecoration(
+                            color: AtrioColors.neonLime,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.add_rounded,
+                              size: 24, color: Colors.black),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-            // Commission badge under header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-              child: hostStatsAsync.when(
-                data: (stats) {
-                  if (stats == null) return const SizedBox.shrink();
-                  final keepRate = (100 - stats.currentCommissionRate * 100).toStringAsFixed(0);
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AtrioColors.neonLime.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AtrioColors.neonLime.withValues(alpha: 0.25),
-                      ),
-                    ),
+
+            // ─── STATS ROW ───
+            listingsAsync.when(
+              data: (listings) {
+                final published = listings
+                    .where((j) => j['status'] == 'published')
+                    .length;
+                final drafts =
+                    listings.where((j) => j['status'] == 'draft').length;
+                final paused =
+                    listings.where((j) => j['status'] == 'paused').length;
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
                     child: Row(
                       children: [
-                        const Icon(Icons.local_fire_department,
-                            size: 16, color: AtrioColors.neonLimeDark),
-                        const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            l.hostListingsKeepRate(keepRate),
-                            style: AtrioTypography.bodySmall.copyWith(
-                              color: AtrioColors.neonLimeDark,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: _StatCard(
+                            value: '$published',
+                            label: l.hostListingsStatPublished,
+                            accent: AtrioColors.neonLime,
                           ),
                         ),
-                        HostLevelBadge(
-                          level: stats.level,
-                          compact: true,
-                          showLabel: false,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCard(
+                            value: '$drafts',
+                            label: l.hostListingsStatDraft,
+                            accent: AtrioColors.hostTextSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatCard(
+                            value: '$paused',
+                            label: l.hostListingsStatPaused,
+                            accent: AtrioColors.vibrantOrange,
+                          ),
                         ),
                       ],
                     ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
-              ),
+                  ),
+                );
+              },
+              loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+              error: (_, _) =>
+                  const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: listingsAsync.when(
-                data: (listings) {
-                  if (listings.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+
+            const SliverToBoxAdapter(child: SizedBox(height: 28)),
+
+            // ─── LIST ───
+            listingsAsync.when(
+              data: (listings) {
+                if (listings.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _EmptyState(
+                      onCreate: () => context.push('/host/create-listing'),
+                    ),
+                  );
+                }
+                return SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Section header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(Icons.home_work_outlined,
-                              size: 64, color: AtrioColors.hostTextTertiary),
-                          const SizedBox(height: 16),
-                          Text(
-                            l.hostListingsNoListingsTitle,
-                            style: AtrioTypography.headingSmall.copyWith(
-                              color: AtrioColors.hostTextSecondary,
+                          Container(
+                            width: 6,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: AtrioColors.neonLime,
+                              borderRadius: BorderRadius.circular(2),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            l.hostListingsNoListingsSubtitle,
-                            style: AtrioTypography.bodyMedium.copyWith(
-                              color: AtrioColors.hostTextTertiary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            width: 200,
-                            child: AtrioButton(
-                              label: l.hostListingsCreateListingBtn,
-                              icon: Icons.add,
-                              onTap: () =>
-                                  context.push('/host/create-listing'),
-                              isExpanded: false,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l.hostListingsAllSection,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    color: AtrioColors.hostTextPrimary,
+                                    letterSpacing: -0.6,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  l.hostListingsAllSectionSubtitle(
+                                      listings.length),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: AtrioColors.hostTextTertiary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    );
-                  }
-
-                  return RefreshIndicator(
-                    color: AtrioColors.neonLimeDark,
-                    onRefresh: () async {
-                      ref.invalidate(hostListingsProvider(userId));
-                    },
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(24),
-                      itemCount: listings.length,
-                      itemBuilder: (context, index) {
-                        final listing = listings[index];
-                        final images = List<String>.from(listing['images'] ?? []);
-                        final status = listing['status'] as String? ?? 'draft';
-                        final rating =
-                            (listing['rating'] as num?)?.toDouble() ?? 0;
-                        final viewCount = listing['view_count'] ?? 0;
-                        final basePrice =
-                            (listing['base_price'] as num?)?.toDouble();
-
-                        return GestureDetector(
-                          onTap: () => context.push('/listing/${listing['id']}'),
-                          onLongPress: () => _showListingOptions(
-                            context, ref, listing, userId,
-                          ),
-                          child: Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: AtrioColors.hostSurface,
-                            borderRadius: BorderRadius.circular(20),
-                            border:
-                                Border.all(color: AtrioColors.hostCardBorder),
-                          ),
-                          child: Column(
-                            children: [
-                              // Image
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(20)),
-                                child: AspectRatio(
-                                  aspectRatio: 16 / 8,
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      images.isNotEmpty
-                                          ? CachedNetworkImage(
-                                              imageUrl: images.first,
-                                              fit: BoxFit.cover,
-                                              placeholder: (_, _) => Container(
-                                                  color: AtrioColors
-                                                      .hostSurfaceVariant),
-                                              errorWidget: (_, _, _) =>
-                                                  Container(
-                                                color:
-                                                    AtrioColors.hostSurfaceVariant,
-                                                child: const Icon(Icons.image,
-                                                    size: 32),
-                                              ),
-                                            )
-                                          : Container(
-                                              color: AtrioColors.hostSurfaceVariant,
-                                              child: const Icon(Icons.image,
-                                                  size: 32,
-                                                  color: AtrioColors
-                                                      .hostTextTertiary),
-                                            ),
-                                      // Price overlay
-                                      if (basePrice != null)
-                                        Positioned(
-                                          bottom: 8,
-                                          right: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 5),
-                                            decoration: BoxDecoration(
-                                              color: Colors.black.withValues(alpha: 0.7),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              basePrice.toCLP,
-                                              style: AtrioTypography.priceSmall.copyWith(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            listing['title'] ?? l.hostListingsNoTitle,
-                                            style: AtrioTypography.labelLarge
-                                                .copyWith(
-                                              color:
-                                                  AtrioColors.hostTextPrimary,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        _StatusBadge(status: status),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        if (rating > 0) ...[
-                                          const Icon(Icons.star_rounded,
-                                              size: 14,
-                                              color:
-                                                  AtrioColors.ratingGold),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            rating.toStringAsFixed(1),
-                                            style: AtrioTypography.caption
-                                                .copyWith(
-                                              color:
-                                                  AtrioColors.hostTextPrimary,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                        ],
-                                        Icon(Icons.visibility_outlined,
-                                            size: 14,
-                                            color:
-                                                AtrioColors.hostTextSecondary),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          l.hostListingsViewsCount(viewCount is int ? viewCount : (viewCount as num).toInt()),
-                                          style:
-                                              AtrioTypography.caption.copyWith(
-                                            color:
-                                                AtrioColors.hostTextSecondary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        );
-                      },
                     ),
-                  );
-                },
-                loading: () => const Center(
+                    const SizedBox(height: 14),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        l.hostListingsTapToManage,
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: AtrioColors.hostTextTertiary,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: listings
+                            .map((listing) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 18),
+                                  child: _HostListingCard(
+                                    listing: listing,
+                                    onTap: () => context
+                                        .push('/listing/${listing['id']}'),
+                                    onLongPress: () => _showListingOptions(
+                                        context, ref, listing, userId),
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 100),
+                  ]),
+                );
+              },
+              loading: () => const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
                   child: CircularProgressIndicator(
-                      color: AtrioColors.neonLimeDark),
+                    color: AtrioColors.neonLimeDark,
+                    strokeWidth: 2.5,
+                  ),
                 ),
-                error: (_, _) => Center(
-                  child: Text(l.hostListingsLoadError),
+              ),
+              error: (_, _) => SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    l.hostListingsLoadError,
+                    style: GoogleFonts.inter(
+                      color: AtrioColors.hostTextSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -329,32 +284,35 @@ class HostListingsScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: AtrioColors.hostBackground,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AtrioColors.hostCardBorder,
-                borderRadius: BorderRadius.circular(2),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AtrioColors.hostCardBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 22),
             Text(
               title,
               style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
                 color: AtrioColors.hostTextPrimary,
+                letterSpacing: -0.4,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 20),
-            // View listing
+            const SizedBox(height: 22),
             _OptionTile(
               icon: Icons.visibility_outlined,
               label: l.hostListingsViewListing,
@@ -364,7 +322,6 @@ class HostListingsScreen extends ConsumerWidget {
                 context.push('/listing/$listingId');
               },
             ),
-            // Toggle publish/pause
             if (status == 'published')
               _OptionTile(
                 icon: Icons.pause_circle_outline,
@@ -372,7 +329,8 @@ class HostListingsScreen extends ConsumerWidget {
                 color: AtrioColors.vibrantOrange,
                 onTap: () async {
                   Navigator.pop(ctx);
-                  await DatabaseService.updateListing(listingId, {'status': 'paused'});
+                  await DatabaseService.updateListing(
+                      listingId, {'status': 'paused'});
                   ref.invalidate(hostListingsProvider(userId));
                 },
               )
@@ -383,11 +341,11 @@ class HostListingsScreen extends ConsumerWidget {
                 color: AtrioColors.neonLimeDark,
                 onTap: () async {
                   Navigator.pop(ctx);
-                  await DatabaseService.updateListing(listingId, {'status': 'published'});
+                  await DatabaseService.updateListing(
+                      listingId, {'status': 'published'});
                   ref.invalidate(hostListingsProvider(userId));
                 },
               ),
-            // Delete
             _OptionTile(
               icon: Icons.delete_outline,
               label: l.hostListingsDeleteListing,
@@ -398,26 +356,33 @@ class HostListingsScreen extends ConsumerWidget {
                   context: context,
                   builder: (dialogCtx) => AlertDialog(
                     backgroundColor: AtrioColors.hostBackground,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
                     title: Text(
                       l.hostListingsDeleteListing,
                       style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: AtrioColors.hostTextPrimary,
                       ),
                     ),
                     content: Text(
                       l.hostListingsDeleteConfirm(title),
-                      style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary),
+                      style: GoogleFonts.inter(
+                          color: AtrioColors.hostTextSecondary),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(dialogCtx, false),
-                        child: Text(l.btnCancel, style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
+                        child: Text(l.btnCancel,
+                            style: GoogleFonts.inter(
+                                color: AtrioColors.hostTextSecondary)),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(dialogCtx, true),
-                        child: Text(l.btnDelete, style: GoogleFonts.inter(color: AtrioColors.error, fontWeight: FontWeight.w700)),
+                        child: Text(l.btnDelete,
+                            style: GoogleFonts.inter(
+                                color: AtrioColors.error,
+                                fontWeight: FontWeight.w800)),
                       ),
                     ],
                   ),
@@ -431,7 +396,8 @@ class HostListingsScreen extends ConsumerWidget {
                         content: Text(l.hostListingsDeletedSnack),
                         backgroundColor: AtrioColors.hostTextPrimary,
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                     );
                   }
@@ -446,6 +412,306 @@ class HostListingsScreen extends ConsumerWidget {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// STAT CARD
+// ═══════════════════════════════════════════════════════════════════
+class _StatCard extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color accent;
+  const _StatCard({
+    required this.value,
+    required this.label,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: AtrioColors.hostSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AtrioColors.hostCardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: accent,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: AtrioColors.hostTextPrimary,
+              letterSpacing: -0.8,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: AtrioColors.hostTextSecondary,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HOST LISTING CARD (full-width)
+// ═══════════════════════════════════════════════════════════════════
+class _HostListingCard extends StatelessWidget {
+  final Map<String, dynamic> listing;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  const _HostListingCard({
+    required this.listing,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final images = List<String>.from(listing['images'] ?? []);
+    final status = listing['status'] as String? ?? 'draft';
+    final title = listing['title'] as String? ?? l.hostListingsNoTitle;
+    final rating = (listing['rating'] as num?)?.toDouble() ?? 0;
+    final viewCount = (listing['view_count'] as num?)?.toInt() ?? 0;
+    final basePrice = (listing['base_price'] as num?)?.toDouble();
+    final city = listing['city'] as String?;
+
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AtrioColors.hostSurface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AtrioColors.hostCardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(22)),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    images.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: images.first,
+                            fit: BoxFit.cover,
+                            placeholder: (_, _) => Container(
+                                color: AtrioColors.hostSurfaceVariant),
+                            errorWidget: (_, _, _) => Container(
+                              color: AtrioColors.hostSurfaceVariant,
+                              child: const Icon(Icons.image,
+                                  size: 36,
+                                  color: AtrioColors.hostTextTertiary),
+                            ),
+                          )
+                        : Container(
+                            color: AtrioColors.hostSurfaceVariant,
+                            child: const Icon(Icons.image,
+                                size: 36,
+                                color: AtrioColors.hostTextTertiary),
+                          ),
+                    // Status pill top-left
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: _StatusPill(status: status),
+                    ),
+                    // Price pill bottom-right
+                    if (basePrice != null)
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            basePrice.toCLP,
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AtrioColors.hostTextPrimary,
+                      letterSpacing: -0.3,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (city != null) ...[
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 13,
+                            color: AtrioColors.hostTextTertiary),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            city,
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: AtrioColors.hostTextSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      if (rating > 0) ...[
+                        const Icon(Icons.star_rounded,
+                            size: 14, color: AtrioColors.ratingGold),
+                        const SizedBox(width: 4),
+                        Text(
+                          rating.toStringAsFixed(1),
+                          style: GoogleFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: AtrioColors.hostTextPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                      ],
+                      const Icon(Icons.visibility_outlined,
+                          size: 13, color: AtrioColors.hostTextSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        l.hostListingsViewsCount(viewCount),
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AtrioColors.hostTextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// STATUS PILL
+// ═══════════════════════════════════════════════════════════════════
+class _StatusPill extends StatelessWidget {
+  final String status;
+  const _StatusPill({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    Color bg;
+    Color fg;
+    String label;
+    IconData icon;
+    switch (status) {
+      case 'published':
+        bg = AtrioColors.neonLime;
+        fg = Colors.black;
+        label = l.hostListingsStatusPublished;
+        icon = Icons.check_circle_rounded;
+      case 'draft':
+        bg = Colors.white.withValues(alpha: 0.92);
+        fg = AtrioColors.hostBackground;
+        label = l.hostListingsStatusDraft;
+        icon = Icons.edit_note_rounded;
+      case 'paused':
+        bg = AtrioColors.vibrantOrange;
+        fg = Colors.white;
+        label = l.hostListingsStatusPaused;
+        icon = Icons.pause_rounded;
+      default:
+        bg = Colors.white.withValues(alpha: 0.92);
+        fg = AtrioColors.hostBackground;
+        label = status;
+        icon = Icons.circle_outlined;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: fg),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: fg,
+              letterSpacing: 0.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// OPTION TILE
+// ═══════════════════════════════════════════════════════════════════
 class _OptionTile extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -465,26 +731,36 @@ class _OptionTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
           color: AtrioColors.hostSurface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AtrioColors.hostCardBorder),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: color),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
             const SizedBox(width: 14),
             Text(
               label,
               style: GoogleFonts.inter(
                 fontSize: 15,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
                 color: color,
+                letterSpacing: -0.2,
               ),
             ),
             const Spacer(),
-            Icon(Icons.chevron_right, size: 20, color: AtrioColors.hostTextTertiary),
+            const Icon(Icons.chevron_right_rounded,
+                size: 22, color: AtrioColors.hostTextTertiary),
           ],
         ),
       ),
@@ -492,41 +768,83 @@ class _OptionTile extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
+// ═══════════════════════════════════════════════════════════════════
+// EMPTY STATE
+// ═══════════════════════════════════════════════════════════════════
+class _EmptyState extends StatelessWidget {
+  final VoidCallback onCreate;
+  const _EmptyState({required this.onCreate});
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    Color color;
-    String label;
-    switch (status) {
-      case 'published':
-        color = AtrioColors.neonLimeDark;
-        label = l.hostListingsStatusPublished;
-      case 'draft':
-        color = AtrioColors.hostTextSecondary;
-        label = l.hostListingsStatusDraft;
-      case 'paused':
-        color = AtrioColors.vibrantOrange;
-        label = l.hostListingsStatusPaused;
-      default:
-        color = AtrioColors.hostTextSecondary;
-        label = status;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: AtrioTypography.caption.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                color: AtrioColors.hostSurface,
+                shape: BoxShape.circle,
+                border: Border.all(color: AtrioColors.hostCardBorder),
+              ),
+              child: const Icon(Icons.home_work_outlined,
+                  size: 36, color: AtrioColors.neonLime),
+            ),
+            const SizedBox(height: 22),
+            Text(
+              l.hostListingsNoListingsTitle,
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AtrioColors.hostTextPrimary,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l.hostListingsNoListingsSubtitle,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AtrioColors.hostTextTertiary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 26),
+            GestureDetector(
+              onTap: onCreate,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.add_rounded,
+                        size: 20, color: Colors.black),
+                    const SizedBox(width: 8),
+                    Text(
+                      l.hostListingsCreateListingBtn,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -22,6 +22,9 @@ _Listing _$ListingFromJson(Map<String, dynamic> json) => _Listing(
   amenities:
       (json['amenities'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
+  rules:
+      (json['rules'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
   address: json['address'] as String?,
   city: json['city'] as String?,
   country: json['country'] as String?,
@@ -56,6 +59,8 @@ _Listing _$ListingFromJson(Map<String, dynamic> json) => _Listing(
   checkInTime: json['check_in_time'] as String?,
   checkOutTime: json['check_out_time'] as String?,
   cancellationPolicy: json['cancellation_policy'] as String? ?? 'flexible',
+  hostPhone: json['host_phone'] as String?,
+  showHostPhone: json['show_host_phone'] as bool? ?? false,
   createdAt: json['created_at'] == null
       ? null
       : DateTime.parse(json['created_at'] as String),
@@ -76,6 +81,7 @@ Map<String, dynamic> _$ListingToJson(_Listing instance) => <String, dynamic>{
   'category': instance.category,
   'tags': instance.tags,
   'amenities': instance.amenities,
+  'rules': instance.rules,
   'address': instance.address,
   'city': instance.city,
   'country': instance.country,
@@ -106,6 +112,8 @@ Map<String, dynamic> _$ListingToJson(_Listing instance) => <String, dynamic>{
   'check_in_time': instance.checkInTime,
   'check_out_time': instance.checkOutTime,
   'cancellation_policy': instance.cancellationPolicy,
+  'host_phone': instance.hostPhone,
+  'show_host_phone': instance.showHostPhone,
   'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
   'host': instance.hostData,

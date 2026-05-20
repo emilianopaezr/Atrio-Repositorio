@@ -57,6 +57,7 @@ dependencies:
 
   # Sharing
   share_plus: any
+  url_launcher: any
 
   # Payments
   http: any

@@ -1,496 +1,632 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../config/theme/app_colors.dart';
-import '../../../config/theme/app_typography.dart';
-import '../../../l10n/app_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class PaymentMethodsScreen extends StatefulWidget {
+import '../../../config/theme/app_colors.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/services/mercadopago_service.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/section_eyebrow.dart';
+
+/// Payment methods — refreshed editorial design.
+///
+/// In Atrio, every guest pays through the in-app card form
+/// (`/checkout/card`) which routes to the `mp-create-payment` Edge
+/// Function — there's no "saved card" wallet (yet). This screen is
+/// therefore a transparent **payments overview**:
+///
+///   • Hero card explaining how payments work
+///   • Mercado Pago badge (the only processor right now)
+///   • For hosts: a separate "Cobros" card with their MP linking state
+///   • Security + privacy explainers
+///   • Support entry
+///
+/// As soon as we add saved-card tokens we plug a list above the hero.
+class PaymentMethodsScreen extends ConsumerWidget {
   const PaymentMethodsScreen({super.key});
 
   @override
-  State<PaymentMethodsScreen> createState() => _PaymentMethodsScreenState();
-}
-
-class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
-  bool _stripeConnected = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final profileAsync = ref.watch(userProfileStreamProvider);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FC),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AtrioColors.guestTextPrimary),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          l.paymentMethodsTitle,
-          style: AtrioTypography.headingSmall.copyWith(
-            color: AtrioColors.guestTextPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: AtrioColors.guestBackground,
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // === STRIPE INTEGRATION BANNER ===
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(22),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF635BFF), Color(0xFF8B5CF6)],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.bolt, color: Colors.white, size: 24),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l.pmStripePayments,
-                              style: GoogleFonts.inter(
-                                fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              l.pmStripeTagline,
-                              style: GoogleFonts.inter(
-                                fontSize: 13, color: Colors.white.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_stripeConnected)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AtrioColors.neonLime.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.check_circle, size: 14, color: AtrioColors.neonLime),
-                              const SizedBox(width: 4),
-                              Text(l.pmActive, style: GoogleFonts.inter(
-                                fontSize: 12, fontWeight: FontWeight.w700, color: AtrioColors.neonLime,
-                              )),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                  if (!_stripeConnected) ...[
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() => _stripeConnected = true);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Row(children: [
-                              const Icon(Icons.check_circle, color: Colors.black, size: 20),
-                              const SizedBox(width: 10),
-                              Text(l.pmStripeConnected, style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.black)),
-                            ]),
-                            backgroundColor: AtrioColors.neonLime,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF635BFF),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
-                        child: Text(l.pmConnectStripe, style: GoogleFonts.inter(
-                          fontSize: 15, fontWeight: FontWeight.w700,
-                        )),
-                      ),
+            _Header(onBack: () => context.pop(), title: l.paymentMethodsTitle),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _HeroPaymentCard(),
+                    const SizedBox(height: 22),
+                    const SectionEyebrow(text: 'Procesador'),
+                    const SizedBox(height: 12),
+                    const _MpRow(),
+                    const SizedBox(height: 22),
+                    profileAsync.when(
+                      data: (profile) => (profile?.isHost ?? false)
+                          ? _HostPayoutSection(profile: profile!)
+                          : const SizedBox.shrink(),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
                     ),
+                    const SectionEyebrow(text: 'Cómo funciona'),
+                    const SizedBox(height: 12),
+                    const _HowItWorks(),
+                    const SizedBox(height: 22),
+                    const SectionEyebrow(text: 'Seguridad'),
+                    const SizedBox(height: 12),
+                    const _SecurityNote(),
+                    const SizedBox(height: 22),
+                    _SupportCard(onContact: () => context.push('/help-center')),
                   ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // === SAVED CARDS (empty state — no real payment integration yet) ===
-            Text(
-              l.pmSavedCards,
-              style: AtrioTypography.labelLarge.copyWith(
-                color: AtrioColors.guestTextPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.grey.shade200,
                 ),
               ),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF635BFF).withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.credit_card_off_outlined, size: 40, color: Color(0xFF635BFF)),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    l.pmNoSavedCards,
-                    style: AtrioTypography.labelLarge.copyWith(
-                      color: AtrioColors.guestTextPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    l.pmNoSavedCardsDesc,
-                    style: AtrioTypography.bodySmall.copyWith(
-                      color: AtrioColors.guestTextSecondary,
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    height: 46,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showAddCardSheet(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF635BFF),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        elevation: 0,
-                      ),
-                      icon: const Icon(Icons.add, size: 18),
-                      label: Text(l.pmAddCard, style: GoogleFonts.inter(
-                        fontSize: 14, fontWeight: FontWeight.w600,
-                      )),
-                    ),
-                  ),
-                ],
-              ),
             ),
-            const SizedBox(height: 28),
-
-            // === OTHER METHODS ===
-            Text(
-              l.pmOtherMethods,
-              style: AtrioTypography.labelLarge.copyWith(
-                color: AtrioColors.guestTextPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 14),
-            _PaymentOption(
-              icon: Icons.account_balance,
-              title: l.pmBankTransfer,
-              subtitle: l.pmBankTransferDesc,
-              badge: l.pmSoon,
-            ),
-            _PaymentOption(
-              icon: Icons.apple,
-              title: l.pmApplePay,
-              subtitle: l.pmApplePayDesc,
-              badge: l.pmSoon,
-            ),
-            _PaymentOption(
-              icon: Icons.g_mobiledata_rounded,
-              title: l.pmGooglePay,
-              subtitle: l.pmGooglePayDesc,
-              badge: l.pmSoon,
-            ),
-            const SizedBox(height: 28),
-
-            // === SECURITY INFO ===
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF635BFF).withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFF635BFF).withValues(alpha: 0.15),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lock_outline, color: Color(0xFF635BFF), size: 24),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l.pmSecure100,
-                          style: AtrioTypography.labelMedium.copyWith(
-                            color: const Color(0xFF635BFF),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          l.pmSecureDesc,
-                          style: AtrioTypography.caption.copyWith(
-                            color: AtrioColors.guestTextSecondary,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
+}
 
-  void _showAddCardSheet(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final numberCtrl = TextEditingController();
-    final expiryCtrl = TextEditingController();
-    final cvcCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
+// ─── Header ───────────────────────────────────────────────────
+class _Header extends StatelessWidget {
+  final VoidCallback onBack;
+  final String title;
+  const _Header({required this.onBack, required this.title});
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconButton(
+            onPressed: onBack,
+            icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                size: 18, color: AtrioColors.guestTextPrimary),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+          const SizedBox(height: 6),
+          const PageEyebrow(text: 'Cobros y pagos'),
+          const SizedBox(height: 10),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: AtrioColors.guestTextPrimary,
+                letterSpacing: -0.8,
+                height: 1.05,
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  const Icon(Icons.credit_card, color: Color(0xFF635BFF), size: 24),
-                  const SizedBox(width: 10),
-                  Text(l.pmAddCardTitle, style: GoogleFonts.inter(
-                    fontSize: 20, fontWeight: FontWeight.w800,
-                    color: AtrioColors.guestTextPrimary,
-                  )),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                l.pmAddCardDesc,
-                style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.guestTextSecondary),
-              ),
-              const SizedBox(height: 20),
-              _cardField(numberCtrl, l.pmFieldCardNumber, '4242 4242 4242 4242', Icons.credit_card),
-              const SizedBox(height: 12),
-              _cardField(nameCtrl, l.pmFieldCardHolder, l.pmFieldCardHolderHint, Icons.person_outline),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(child: _cardField(expiryCtrl, l.pmFieldExpiry, '12/27', Icons.calendar_today_outlined)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _cardField(cvcCtrl, l.pmFieldCvc, '123', Icons.lock_outline)),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Row(children: [
-                        const Icon(Icons.check_circle, color: Colors.black, size: 20),
-                        const SizedBox(width: 10),
-                        Text(l.pmCardAdded, style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600, color: Colors.black,
-                        )),
-                      ]),
-                      backgroundColor: AtrioColors.neonLime,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ));
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF635BFF),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  icon: const Icon(Icons.bolt, size: 20),
-                  label: Text(l.pmSaveWithStripe, style: GoogleFonts.inter(
-                    fontSize: 16, fontWeight: FontWeight.w700,
-                  )),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.lock_outline, size: 12, color: AtrioColors.guestTextTertiary),
-                    const SizedBox(width: 4),
-                    Text(l.pmProcessedByStripe, style: GoogleFonts.inter(
-                      fontSize: 11, color: AtrioColors.guestTextTertiary,
-                    )),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
 
-  Widget _cardField(TextEditingController ctrl, String label, String hint, IconData icon) {
-    return TextField(
-      controller: ctrl,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, size: 20),
-        filled: true,
-        fillColor: const Color(0xFFF8F7FC),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+// ─── Hero payment card ───────────────────────────────────────
+class _HeroPaymentCard extends StatelessWidget {
+  const _HeroPaymentCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A1A1A), Color(0xFF000000)],
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF635BFF), width: 2),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'PAGO SEGURO',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white.withValues(alpha: 0.55),
+                  letterSpacing: 1.4,
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.shield_outlined,
+                  size: 18, color: AtrioColors.neonLime),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Pagás con tarjeta\ndirecto en Atrio',
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.8,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Sin salir de la app. Cada pago se cifra de extremo a extremo y lo procesa Mercado Pago.',
+            style: GoogleFonts.inter(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.72),
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 22),
+          // Accepted cards row — Wrap so it never overflows on narrow phones.
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _CardBadge(label: 'VISA'),
+              _CardBadge(label: 'Mastercard'),
+              _CardBadge(label: 'AMEX'),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.bolt_rounded,
+                        size: 13, color: Colors.black),
+                    const SizedBox(width: 3),
+                    Text(
+                      'INSTANTÁNEO',
+                      style: GoogleFonts.inter(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardBadge extends StatelessWidget {
+  final String label;
+  const _CardBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+          letterSpacing: 1.2,
         ),
       ),
     );
   }
 }
 
-class _PaymentOption extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String? badge;
-
-  const _PaymentOption({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    this.badge,
-  });
+// ─── Processor row (Mercado Pago) ────────────────────────────
+class _MpRow extends StatelessWidget {
+  const _MpRow();
 
   @override
   Widget build(BuildContext context) {
+    final isSandbox = MercadoPagoService.isSandbox;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AtrioColors.guestCardBorder),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F7FC),
+              color: const Color(0xFF009EE3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 22, color: AtrioColors.guestTextSecondary),
+            alignment: Alignment.center,
+            child: const Icon(Icons.payments_rounded,
+                color: Colors.white, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AtrioTypography.labelLarge.copyWith(
-                  color: AtrioColors.guestTextPrimary, fontWeight: FontWeight.w600,
-                )),
-                Text(subtitle, style: AtrioTypography.caption.copyWith(
-                  color: AtrioColors.guestTextSecondary,
-                )),
+                Text(
+                  'Mercado Pago',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AtrioColors.guestTextPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Procesador oficial · Crédito, débito y prepagas',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AtrioColors.guestTextSecondary,
+                    height: 1.35,
+                  ),
+                ),
               ],
             ),
           ),
-          if (badge != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AtrioColors.neonLimeDark.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(badge!, style: AtrioTypography.caption.copyWith(
-                color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600,
-              )),
-            )
-          else
-            const Icon(Icons.arrow_forward_ios, size: 14, color: AtrioColors.guestTextTertiary),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: BoxDecoration(
+              color: isSandbox
+                  ? const Color(0xFFFFF3CD)
+                  : AtrioColors.neonLime.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isSandbox
+                      ? Icons.science_outlined
+                      : Icons.check_circle_rounded,
+                  size: 11,
+                  color: isSandbox
+                      ? const Color(0xFF8C6D00)
+                      : AtrioColors.neonLimeDark,
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  isSandbox ? 'TEST' : 'ACTIVO',
+                  style: GoogleFonts.inter(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    color: isSandbox
+                        ? const Color(0xFF8C6D00)
+                        : AtrioColors.neonLimeDark,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Host payout state ───────────────────────────────────────
+class _HostPayoutSection extends StatelessWidget {
+  final dynamic profile;
+  const _HostPayoutSection({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionEyebrow(text: 'Cobros como host'),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AtrioColors.guestSurface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AtrioColors.guestCardBorder),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.account_balance_wallet_rounded,
+                    color: Colors.black, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tus ganancias',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AtrioColors.guestTextPrimary,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Cada reserva aprobada se acredita a tu saldo en Atrio. '
+                      'Configura tu cuenta bancaria desde el Dashboard para retirar.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: AtrioColors.guestTextSecondary,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+      ],
+    );
+  }
+}
+
+// ─── How it works ────────────────────────────────────────────
+class _HowItWorks extends StatelessWidget {
+  const _HowItWorks();
+
+  static const _steps = [
+    (Icons.touch_app_rounded, 'Tocás "Pagar"',
+        'Se abre el formulario seguro de Atrio'),
+    (Icons.credit_card_rounded, 'Ingresás tu tarjeta',
+        'Numeración + vencimiento + CVV + RUT'),
+    (Icons.lock_rounded, 'Atrio cifra y envía a MP',
+        'Tus datos NUNCA se guardan en la app'),
+    (Icons.check_circle_rounded, 'Reserva confirmada',
+        'Tu reserva queda agendada al instante'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AtrioColors.guestCardBorder),
+      ),
+      child: Column(
+        children: List.generate(_steps.length, (i) {
+          final step = _steps[i];
+          final isLast = i == _steps.length - 1;
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: isLast ? 12 : 0)
+                .add(EdgeInsets.only(top: i == 0 ? 12 : 0, bottom: 12)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(step.$1,
+                      size: 18, color: AtrioColors.neonLimeDark),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        step.$2,
+                        style: GoogleFonts.inter(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: AtrioColors.guestTextPrimary,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        step.$3,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AtrioColors.guestTextSecondary,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+// ─── Security note ───────────────────────────────────────────
+class _SecurityNote extends StatelessWidget {
+  const _SecurityNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AtrioColors.guestCardBorder),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.lock_rounded,
+              size: 16, color: AtrioColors.guestTextSecondary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cifrado de extremo a extremo',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AtrioColors.guestTextPrimary,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Nunca almacenamos tu número de tarjeta. Cada transacción usa un token único '
+                  'emitido por Mercado Pago. Cumple PCI DSS.',
+                  style: GoogleFonts.inter(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: AtrioColors.guestTextSecondary,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Support card ────────────────────────────────────────────
+class _SupportCard extends StatelessWidget {
+  final VoidCallback onContact;
+  const _SupportCard({required this.onContact});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onContact();
+        },
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AtrioColors.guestSurface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AtrioColors.guestCardBorder),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AtrioColors.guestSurfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.headset_mic_rounded,
+                    size: 20, color: AtrioColors.guestTextPrimary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '¿Tienes un problema con un pago?',
+                      style: GoogleFonts.inter(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: AtrioColors.guestTextPrimary,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Escríbenos al centro de ayuda',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AtrioColors.guestTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 22, color: AtrioColors.guestTextTertiary),
+            ],
+          ),
+        ),
       ),
     );
   }

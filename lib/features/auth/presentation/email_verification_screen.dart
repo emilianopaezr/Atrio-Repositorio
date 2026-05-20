@@ -261,179 +261,187 @@ class _EmailVerificationScreenState
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: SingleChildScrollView(
-            padding:
-                EdgeInsets.fromLTRB(28, 0, 28, bottomInset > 0 ? 16 : 0),
+            padding: EdgeInsets.fromLTRB(24, 8, 24, bottomInset > 0 ? 16 : 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 60),
-                // Logo
-                Image.asset(
-                  'assets/images/logo_negro.png',
+                const SizedBox(height: 96),
+                // Lime envelope mark
+                Container(
+                  width: 72,
                   height: 72,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => Text(
-                    'ATRIO',
-                    style: GoogleFonts.inter(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      color: AtrioColors.guestTextPrimary,
-                      letterSpacing: 6,
-                    ),
+                  decoration: BoxDecoration(
+                    color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.mark_email_unread_rounded,
+                    size: 32,
+                    color: AtrioColors.guestTextPrimary,
                   ),
                 ),
-                const SizedBox(height: 40),
-                // Envelope icon
-                const Icon(
-                  Icons.mark_email_unread_outlined,
-                  size: 72,
-                  color: AtrioColors.electricViolet,
-                ),
-                const SizedBox(height: 32),
-                // Title
+                const SizedBox(height: 28),
                 Text(
                   l.verifyTitle,
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 32,
                     fontWeight: FontWeight.w800,
                     color: AtrioColors.guestTextPrimary,
-                    height: 1.1,
+                    letterSpacing: -1.0,
+                    height: 1.05,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 10),
-                // Subtitle
-                Text(
-                  l.verifySubtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: AtrioColors.guestTextSecondary,
+                const SizedBox(height: 8),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AtrioColors.guestTextSecondary,
+                      height: 1.4,
+                    ),
+                    children: [
+                      TextSpan(text: '${l.verifySubtitle} '),
+                      TextSpan(
+                        text: _userEmail,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AtrioColors.guestTextPrimary,
+                        ),
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _userEmail,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AtrioColors.guestTextPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 36),
-                // OTP fields with shake animation
+                const SizedBox(height: 32),
+
+                // OTP fields
                 AnimatedBuilder(
                   animation: _shakeAnimation,
                   builder: (context, child) {
-                    final offset =
-                        sin(_shakeAnimation.value * pi * 4) * 8;
-                    return Transform.translate(
-                      offset: Offset(offset, 0),
-                      child: child,
-                    );
+                    final offset = sin(_shakeAnimation.value * pi * 4) * 8;
+                    return Transform.translate(offset: Offset(offset, 0), child: child);
                   },
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(6, (index) {
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          left: index == 0 ? 0 : 8,
-                        ),
-                        child: _OtpField(
-                          controller: _controllers[index],
-                          focusNode: _focusNodes[index],
-                          onChanged: (value) =>
-                              _onDigitEntered(index, value),
-                          onKeyEvent: (event) =>
-                              _onKeyEvent(index, event),
-                        ),
+                      return _OtpField(
+                        controller: _controllers[index],
+                        focusNode: _focusNodes[index],
+                        onChanged: (value) => _onDigitEntered(index, value),
+                        onKeyEvent: (event) => _onKeyEvent(index, event),
                       );
                     }),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
+
                 // Verify button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _verifyCode,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AtrioColors.neonLime,
-                      foregroundColor: Colors.black,
-                      disabledBackgroundColor:
-                          AtrioColors.neonLime.withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 0,
+                GestureDetector(
+                  onTap: _isLoading ? null : _verifyCode,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    height: 56,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: _isLoading
+                          ? AtrioColors.neonLime.withValues(alpha: 0.5)
+                          : AtrioColors.neonLime,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: _isLoading
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: AtrioColors.neonLime.withValues(alpha: 0.4),
+                                blurRadius: 18,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                     ),
+                    alignment: Alignment.center,
                     child: _isLoading
                         ? const SizedBox(
-                            width: 24,
-                            height: 24,
+                            width: 22,
+                            height: 22,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
+                              strokeWidth: 2.4,
                               color: Colors.black,
                             ),
                           )
                         : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 l.verifyButton,
                                 style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
                                   color: Colors.black,
+                                  letterSpacing: -0.3,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(Icons.verified_outlined,
-                                  size: 20),
+                              const Icon(Icons.check_circle_rounded,
+                                  size: 18, color: Colors.black),
                             ],
                           ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                // Resend code link
-                TextButton(
-                  onPressed: (_resendCooldown > 0 || _isResending)
-                      ? null
-                      : () => _requestVerificationCode(),
-                  child: _isResending
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AtrioColors.guestTextTertiary,
+                const SizedBox(height: 22),
+
+                // Resend
+                Center(
+                  child: TextButton(
+                    onPressed: (_resendCooldown > 0 || _isResending)
+                        ? null
+                        : () => _requestVerificationCode(),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: _isResending
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AtrioColors.guestTextTertiary,
+                            ),
+                          )
+                        : Text(
+                            _resendCooldown > 0
+                                ? l.verifyResendCooldown(_resendCooldown)
+                                : l.verifyResend,
+                            style: GoogleFonts.inter(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: _resendCooldown > 0
+                                  ? AtrioColors.guestTextTertiary
+                                  : AtrioColors.guestTextPrimary,
+                              decoration: _resendCooldown > 0
+                                  ? null
+                                  : TextDecoration.underline,
+                              decorationThickness: 1.5,
+                            ),
                           ),
-                        )
-                      : Text(
-                          _resendCooldown > 0
-                              ? l.verifyResendCooldown(_resendCooldown)
-                              : l.verifyResend,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _resendCooldown > 0
-                                ? AtrioColors.guestTextTertiary
-                                : AtrioColors.neonLimeDark,
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 12),
-                // Expiry notice
-                Text(
-                  l.verifyExpire,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AtrioColors.guestTextTertiary,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    l.verifyExpire,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AtrioColors.guestTextTertiary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
               ],
             ),
           ),
@@ -443,7 +451,7 @@ class _EmailVerificationScreenState
   }
 }
 
-class _OtpField extends StatelessWidget {
+class _OtpField extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final ValueChanged<String> onChanged;
@@ -457,47 +465,81 @@ class _OtpField extends StatelessWidget {
   });
 
   @override
+  State<_OtpField> createState() => _OtpFieldState();
+}
+
+class _OtpFieldState extends State<_OtpField> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onChange);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onChange);
+    super.dispose();
+  }
+
+  void _onChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final hasValue = widget.controller.text.isNotEmpty;
     return SizedBox(
-      width: 52,
-      height: 56,
+      width: 48,
+      height: 60,
       child: KeyboardListener(
         focusNode: FocusNode(),
-        onKeyEvent: onKeyEvent,
+        onKeyEvent: widget.onKeyEvent,
         child: TextField(
-          controller: controller,
-          focusNode: focusNode,
+          controller: widget.controller,
+          focusNode: widget.focusNode,
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 1,
-          onChanged: onChanged,
+          onChanged: widget.onChanged,
+          cursorColor: AtrioColors.guestTextPrimary,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(1),
           ],
           style: GoogleFonts.inter(
             fontSize: 24,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: AtrioColors.guestTextPrimary,
+            letterSpacing: -0.6,
           ),
           decoration: InputDecoration(
             counterText: '',
             filled: true,
-            fillColor: AtrioColors.guestSurfaceVariant,
+            fillColor: hasValue
+                ? AtrioColors.neonLime.withValues(alpha: 0.18)
+                : AtrioColors.guestSurface,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: AtrioColors.guestCardBorder),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: hasValue
+                    ? AtrioColors.neonLime
+                    : AtrioColors.guestCardBorder,
+                width: hasValue ? 1.5 : 1,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: AtrioColors.guestCardBorder),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: hasValue
+                    ? AtrioColors.neonLime
+                    : AtrioColors.guestCardBorder,
+                width: hasValue ? 1.5 : 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(
-                color: AtrioColors.neonLimeDark,
+                color: AtrioColors.guestTextPrimary,
                 width: 1.5,
               ),
             ),

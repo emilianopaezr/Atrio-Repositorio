@@ -13,11 +13,12 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/pricing_engine_service.dart';
 import '../../../core/services/mercadopago_service.dart';
 import '../../../shared/widgets/availability_calendar.dart';
+import '../../../shared/widgets/price_breakdown_card.dart';
 import '../../../shared/widgets/time_slot_picker.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../l10n/app_localizations.dart';
-import 'payment_webview_screen.dart';
+import 'card_payment_screen.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   final String listingId;
@@ -229,6 +230,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         guests: _guests,
         isPerPerson: _isPerPerson(listing),
         feeRate: _feeRate,
+        cleaningFee: clean,
       );
       if (!isValid) {
         if (mounted) _snack(l.checkoutCalcError, isError: true);
@@ -301,11 +303,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
-  /// Process payment via Mercado Pago Checkout Pro.
+  /// Process payment via the in-app Card form (Checkout API server-side).
   ///
-  /// 1. Creates MP preference with booking details
-  /// 2. Opens WebView for user to pay
-  /// 3. Handles result: approved → update booking, rejected → show error
+  /// 1. Pushes [CardPaymentScreen] which collects card data + RUT.
+  /// 2. The screen calls the Edge Function `mp-create-payment` which
+  ///    tokenizes server-side with the access token (avoids public_key
+  ///    live_mode mismatch), pays, and returns the result.
+  /// 3. Handles the [PaymentResult] returned via Navigator.pop.
   Future<void> _processPayment({
     required Listing listing,
     required String bookingId,
@@ -313,45 +317,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     required double serviceFee,
   }) async {
     try {
-      // Create Mercado Pago preference
-      final userEmail = AuthService.currentUser?.email ?? 'guest@atrio.app';
-      final preference = await MercadoPagoService.createPreference(
-        title: 'Reserva: ${listing.title}',
-        description: '${listing.city ?? 'Atrio'} - ${listing.type}',
-        amount: total,
-        payerEmail: userEmail,
-        externalReference: bookingId,
-      );
-
-      // Store preference ID in booking
-      await DatabaseService.updateBookingPaymentStatus(
-        bookingId,
-        paymentStatus: 'pending',
-        mpPreferenceId: preference.id,
-      );
-
-      if (!mounted) return;
-
-      // Open Mercado Pago Checkout in WebView
       final paymentResult = await Navigator.of(context).push<PaymentResult>(
         MaterialPageRoute(
-          builder: (_) => PaymentWebViewScreen(
-            checkoutUrl: preference.initPoint,
+          fullscreenDialog: true,
+          builder: (_) => CardPaymentScreen(
             bookingId: bookingId,
+            total: total,
+            listingTitle: listing.title,
           ),
         ),
       );
 
       if (!mounted) return;
 
-      if (paymentResult == null || paymentResult.isCancelled) {
-        // User closed the WebView without paying
+      if (paymentResult == null) {
+        // User closed the form without submitting.
         _snack(
           AppLocalizations.of(context).checkoutPaymentPending,
           isError: false,
         );
-        await Future.delayed(const Duration(milliseconds: 800));
-        if (mounted) context.pushReplacement('/guest/bookings');
         return;
       }
 
@@ -383,43 +367,41 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     required double serviceFee,
     String? paymentId,
   }) async {
-    // Verify with MP API if we have a payment ID
+    // Verify against the DB (kept fresh by the mp-webhook edge function).
+    // We re-read after a short delay so the webhook has time to land —
+    // typically MP fires within 1–2s of redirect.
     if (paymentId != null && paymentId.isNotEmpty) {
       try {
-        final status = await MercadoPagoService.getPaymentStatus(paymentId);
-        if (!status.isApproved) {
-          // MP says it's not really approved - handle accordingly
+        await Future.delayed(const Duration(seconds: 2));
+        final status =
+            await MercadoPagoService.getBookingPaymentStatus(bookingId);
+        if (status != null && !status.isApproved) {
           if (status.isPending) {
             await _handlePaymentPending(bookingId, paymentId);
             return;
           }
           if (mounted) {
-            _snack(AppLocalizations.of(context).checkoutPaymentNotApproved(status.statusLabel),
-                isError: true);
+            _snack(
+              AppLocalizations.of(context)
+                  .checkoutPaymentNotApproved(status.status),
+              isError: true,
+            );
           }
           return;
         }
       } catch (_) {
-        // Verification failed but redirect said approved - trust redirect
+        // Best-effort. Trust the previous result if DB lookup fails.
       }
     }
 
-    // Update booking payment status to paid
-    await DatabaseService.updateBookingPaymentStatus(
-      bookingId,
-      paymentStatus: 'paid',
-      mpPaymentId: paymentId,
-    );
-
-    // Create transaction records (host earning + platform fee)
-    await DatabaseService.createPaymentTransaction(
-      bookingId: bookingId,
-      hostId: hostId,
-      amount: total,
-      serviceFee: serviceFee,
-      mpPaymentId: paymentId,
-    );
-
+    // The Edge Function `mp-create-payment` already updated payment_status
+    // server-side, and the DB trigger `trg_booking_payment_paid` already
+    // inserted the host earning + platform fee transactions and bumped
+    // host_profiles.pending_balance. Doing it again from the client fails
+    // with "permission denied" (RLS denies guest writes to transactions
+    // and host_profiles), which surfaces as the red snackbar.
+    //
+    // Nothing to do here besides UX feedback.
     if (mounted) {
       _snack(AppLocalizations.of(context).checkoutPaymentApproved);
       await Future.delayed(const Duration(milliseconds: 600));
@@ -427,44 +409,29 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
-  /// Payment pending → update status, redirect to bookings.
+  /// Payment pending → redirect to bookings. Edge Function already updated
+  /// the booking server-side.
   Future<void> _handlePaymentPending(
       String bookingId, String? paymentId) async {
-    await DatabaseService.updateBookingPaymentStatus(
-      bookingId,
-      paymentStatus: 'pending',
-      mpPaymentId: paymentId,
-    );
-
     if (mounted) {
       _snack(AppLocalizations.of(context).checkoutPaymentInProcess);
       await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted) context.pushReplacement('/guest/bookings');
+      if (mounted) context.go('/guest/bookings');
     }
   }
 
-  /// Payment rejected → show error, allow retry.
+  /// Payment rejected → show error, allow retry. Edge Function already set
+  /// payment_status='failed' server-side.
   Future<void> _handlePaymentRejected(
       String bookingId, PaymentResult result) async {
-    await DatabaseService.updateBookingPaymentStatus(
-      bookingId,
-      paymentStatus: 'failed',
-      mpPaymentId: result.paymentId,
-    );
 
     if (mounted) {
       final l = AppLocalizations.of(context);
       // Try to get specific rejection reason
       String errorMsg = l.checkoutPaymentRejected;
-      if (result.paymentId != null && result.paymentId!.isNotEmpty) {
-        try {
-          final status =
-              await MercadoPagoService.getPaymentStatus(result.paymentId!);
-          if (status.rejectionReason != null) {
-            errorMsg = status.rejectionReason!;
-          }
-        } catch (_) {}
-      }
+      // Detailed rejection reason can be inspected later via MP dashboard;
+      // we keep a generic localized message here to avoid exposing the
+      // access token from the client.
 
       if (!mounted) return;
       _snack(errorMsg, isError: true);
@@ -480,43 +447,117 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final l = AppLocalizations.of(context);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.error_outline, color: AtrioColors.error),
-            const SizedBox(width: 10),
-            Text(l.checkoutRejectedTitle,
-                style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-          ],
+      barrierColor: Colors.black54,
+      builder: (ctx) => Dialog(
+        backgroundColor: AtrioColors.guestBackground,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Editorial eyebrow + lime accent bar
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: AtrioColors.error,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'PAGO RECHAZADO',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AtrioColors.error,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                l.checkoutRejectedTitle,
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AtrioColors.guestTextPrimary,
+                  letterSpacing: -0.6,
+                  height: 1.15,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                l.checkoutRejectedDesc,
+                style: GoogleFonts.inter(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                  color: AtrioColors.guestTextSecondary,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Primary: retry (lime CTA)
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  icon: const Icon(Icons.refresh_rounded, size: 18, color: Colors.black),
+                  label: Text(
+                    l.checkoutRetryBtn,
+                    style: GoogleFonts.inter(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AtrioColors.neonLime,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Secondary: go to bookings (ghost)
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.go('/guest/bookings');
+                  },
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: AtrioColors.guestCardBorder),
+                    ),
+                  ),
+                  child: Text(
+                    l.checkoutGoToBookings,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AtrioColors.guestTextPrimary,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        content: Text(l.checkoutRejectedDesc),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              context.pushReplacement('/guest/bookings');
-            },
-            child: Text(
-              l.checkoutGoToBookings,
-              style: GoogleFonts.inter(color: AtrioColors.guestTextSecondary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              // Stay on checkout to retry (booking already exists)
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AtrioColors.neonLime,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(l.checkoutRetryBtn,
-                style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-          ),
-        ],
       ),
     );
   }
@@ -574,9 +615,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final clean = mode == 'hours' ? 0.0 : listing.cleaningFee;
     final fee = _calcServiceFee(sub, clean);
     final total = sub + clean + fee;
-    final feePercent = (_feeRate * 100).toStringAsFixed(0);
-    final feeLabel = '$feePercent%';
-    final host = listing.hostData;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     String modeLabel;
@@ -597,65 +635,91 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
-      appBar: AppBar(
-        backgroundColor: AtrioColors.guestBackground,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: AtrioColors.guestTextPrimary),
-        ),
-        title: Text(
-          l.checkoutConfirmTitle,
-          style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary),
-        ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ─── Editorial header ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        size: 18, color: AtrioColors.guestTextPrimary),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                        minWidth: 32, minHeight: 32),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l.checkoutEyebrow,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AtrioColors.guestTextTertiary,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      l.checkoutTitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: AtrioColors.guestTextPrimary,
+                        letterSpacing: -0.8,
+                        height: 1.05,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ─── Listing card ───
                   _buildListingCard(listing, base),
-                  const SizedBox(height: 16),
-
-                  // ─── Rental mode badge ───
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AtrioColors.neonLime.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          mode == 'hours' ? Icons.access_time : mode == 'full_day' ? Icons.today : Icons.nightlight_round,
-                          size: 16, color: AtrioColors.neonLimeDark,
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        mode == 'hours'
+                            ? Icons.access_time_rounded
+                            : mode == 'full_day'
+                                ? Icons.today_rounded
+                                : Icons.nightlight_round,
+                        size: 14,
+                        color: AtrioColors.guestTextSecondary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        modeLabel,
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AtrioColors.guestTextSecondary,
                         ),
-                        const SizedBox(width: 6),
-                        Text(modeLabel, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.neonLimeDark)),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-
-                  // ─── Host info ───
-                  if (host != null) ...[
-                    _buildHostInfo(host),
-                    const SizedBox(height: 20),
-                    const Divider(height: 1, color: AtrioColors.guestCardBorder),
-                    const SizedBox(height: 20),
-                  ],
+                  const SizedBox(height: 22),
+                  _hairline(),
+                  const SizedBox(height: 22),
 
                   // ─── Date/Time selection (mode-specific) ───
                   if (mode == 'nights') ...[
-                    Text(l.checkoutDatesLabel, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    _sectionTitle(l.checkoutDatesLabel),
                     const SizedBox(height: 12),
                     AvailabilityCalendar(
                       listingId: widget.listingId,
@@ -676,7 +740,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       _buildDateSummary(listing),
                     ],
                   ] else if (mode == 'full_day') ...[
-                    Text(l.checkoutSelectDayLabel, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    _sectionTitle(l.checkoutSelectDayLabel),
                     const SizedBox(height: 12),
                     AvailabilityCalendar(
                       listingId: widget.listingId,
@@ -709,7 +773,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ],
                   ] else ...[
                     // Hours mode
-                    Text(l.checkoutSelectDateLabel, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                    _sectionTitle(l.checkoutSelectDateLabel),
                     const SizedBox(height: 12),
                     AvailabilityCalendar(
                       listingId: widget.listingId,
@@ -765,108 +829,107 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     ],
                   ],
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 22),
+                  _hairline(),
+                  const SizedBox(height: 22),
 
                   // ─── Guests section ───
                   _buildGuestsSection(listing),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 22),
+                  _hairline(),
+                  const SizedBox(height: 22),
 
-                  // ─── Price breakdown ───
-                  Text(l.checkoutPriceSummary, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                  // ─── Total + desglose colapsable (estilo Airbnb) ───
+                  _sectionTitle(l.checkoutPriceSummary),
                   const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AtrioColors.guestSurface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AtrioColors.guestCardBorder),
-                    ),
-                    child: Column(
-                      children: [
-                        _priceRow(
-                          _isPerPerson(listing)
-                              ? (mode == 'hours'
-                                  ? l.checkoutPriceBasePersonHours(base.toCLP, _guests, blocks)
-                                  : l.checkoutPriceBasePerson(base.toCLP, _guests))
-                              : mode == 'hours'
-                                  ? l.checkoutPriceBaseHoursSimple(base.toCLP, blocks, blockH)
-                                  : l.checkoutPriceBaseUnit(base.toCLP, unitSuffix),
-                          sub,
-                        ),
-                        if (clean > 0) _priceRow(l.checkoutCleaning, clean),
-                        _priceRow(
-                          _isPromoRate
-                              ? l.checkoutPromoFeeLabel(feeLabel)
-                              : (fee >= 90000
-                                  ? l.checkoutServiceFeeCapped(feeLabel)
-                                  : l.checkoutServiceFeeLabel(feeLabel)),
-                          fee,
-                        ),
-                        if (_isPromoRate)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6, bottom: 2),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AtrioColors.neonLime.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.local_offer, size: 14, color: AtrioColors.neonLimeDark),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      l.checkoutPromoRemaining(PricingEngineService.promoBookingThreshold - (_hostBookingsCount ?? 0)),
-                                      style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                  PriceBreakdownCard(
+                    // Caption uses the all-inclusive per-unit price so the
+                    // guest never sees the without-fee number outside the
+                    // breakdown sheet.
+                    caption: _isPerPerson(listing)
+                        ? (mode == 'hours'
+                            ? l.checkoutPriceBasePersonHours(base.toCLPWithFee, _guests, blocks)
+                            : l.checkoutPriceBasePerson(base.toCLPWithFee, _guests))
+                        : mode == 'hours'
+                            ? l.checkoutPriceBaseHoursSimple(base.toCLPWithFee, blocks, blockH)
+                            : l.checkoutPriceBaseUnit(base.toCLPWithFee, unitSuffix),
+                    totalLabel: l.bookingTotal,
+                    total: total,
+                    // Inside the breakdown sheet we show the real math:
+                    // host's subtotal, optional cleaning, Atrio fee, total.
+                    items: [
+                      PriceBreakdownItem(l.qsServicePrice, sub),
+                      if (clean > 0) PriceBreakdownItem(l.checkoutCleaning, clean),
+                      PriceBreakdownItem(
+                        _isPromoRate
+                            ? l.checkoutPromoFeeLabel('${(_feeRate * 100).toStringAsFixed(0)}%')
+                            : (fee >= 90000
+                                ? l.checkoutServiceFeeCapped('${(_feeRate * 100).toStringAsFixed(0)}%')
+                                : l.checkoutServiceFeeLabel('${(_feeRate * 100).toStringAsFixed(0)}%')),
+                        fee,
+                      ),
+                    ],
+                    footer: _isPromoRate
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AtrioColors.neonLime.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 10),
-                          child: Divider(height: 1, color: AtrioColors.guestCardBorder),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(l.bookingTotal, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
-                            Text(total.toCLP, style: AtrioTypography.priceLarge.copyWith(color: AtrioColors.guestTextPrimary)),
-                          ],
-                        ),
-                      ],
-                    ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.local_offer, size: 14, color: AtrioColors.neonLimeDark),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    l.checkoutPromoRemaining(PricingEngineService.promoBookingThreshold - (_hostBookingsCount ?? 0)),
+                                    style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : null,
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 22),
+                  _hairline(),
+                  const SizedBox(height: 22),
 
                   // ─── Payment method (Mercado Pago) ───
-                  Text(l.checkoutPaymentMethodTitle, style: AtrioTypography.headingSmall.copyWith(color: AtrioColors.guestTextPrimary)),
+                  _sectionTitle(l.checkoutPaymentMethodTitle),
                   const SizedBox(height: 12),
                   _buildPaymentMethodCard(),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 22),
+                  _hairline(),
+                  const SizedBox(height: 22),
 
                   // ─── Cancellation policy ───
                   _buildCancellationPolicy(listing),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 22),
 
-                  // ─── Security (MP branding) ───
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.lock_outline, size: 13, color: Color(0xFF009EE3)),
-                      const SizedBox(width: 6),
-                      Text(
-                        l.checkoutPaySecureBadge,
-                        style: GoogleFonts.inter(fontSize: 10, color: AtrioColors.guestTextTertiary, letterSpacing: 1, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(width: 6),
-                      const Icon(Icons.verified_user_outlined, size: 11, color: Color(0xFF009EE3)),
-                    ],
+                  // ─── Security badge ───
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.lock_outline_rounded,
+                            size: 12,
+                            color: AtrioColors.guestTextTertiary),
+                        const SizedBox(width: 5),
+                        Text(
+                          l.checkoutPaySecureBadge,
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            color: AtrioColors.guestTextTertiary,
+                            letterSpacing: 1,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -874,47 +937,104 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ),
           ),
 
-          // ─── Bottom bar ───
+          // ─── Bottom bar (minimal, white) ───
           Container(
             padding: EdgeInsets.fromLTRB(20, 14, 20, 14 + bottomPadding),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AtrioColors.guestSurface,
-              border: const Border(top: BorderSide(color: AtrioColors.guestCardBorder)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, -4)),
-              ],
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: MaterialButton(
-                onPressed: _isBooking ? null : () => _confirm(listing),
-                color: AtrioColors.neonLime,
-                disabledColor: AtrioColors.neonLime.withValues(alpha: 0.4),
-                elevation: 0, highlightElevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: _isBooking
-                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.lock_outline, size: 16, color: Colors.black54),
-                          const SizedBox(width: 6),
-                          Text(
-                            l.checkoutPayAmount(total.toCLP),
-                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.black),
-                          ),
-                        ],
-                      ),
+              border: Border(
+                top: BorderSide(
+                    color: AtrioColors.guestCardBorder, width: 1),
               ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        total.toCLP,
+                        style: GoogleFonts.inter(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: AtrioColors.guestTextPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Total',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AtrioColors.guestTextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _isBooking ? null : () => _confirm(listing),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Ink(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 26, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: _isBooking
+                            ? AtrioColors.guestTextPrimary.withValues(alpha: 0.5)
+                            : AtrioColors.guestTextPrimary,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: _isBooking
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Pagar',
+                              style: GoogleFonts.inter(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
       ),
     );
   }
 
   // ─── Sub-widgets ───
+
+  Widget _hairline() => Container(
+        height: 1,
+        color: AtrioColors.guestCardBorder,
+      );
+
+  Widget _sectionTitle(String text) => Text(
+        text,
+        style: GoogleFonts.inter(
+          fontSize: 17,
+          fontWeight: FontWeight.w800,
+          color: AtrioColors.guestTextPrimary,
+          letterSpacing: -0.4,
+        ),
+      );
 
   Widget _buildListingCard(Listing listing, double base) {
     return Container(
@@ -950,7 +1070,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   ]),
                 const SizedBox(height: 6),
                 Row(children: [
-                  Text(base.toCLP, style: AtrioTypography.priceMedium.copyWith(color: AtrioColors.guestTextPrimary)),
+                  // All-inclusive (base + 7% fee).
+                  Text(base.toCLPWithFee, style: AtrioTypography.priceMedium.copyWith(color: AtrioColors.guestTextPrimary)),
                   Text(' / ${_unitLabel(listing.priceUnit)}', style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextSecondary)),
                   const Spacer(),
                   if (listing.rating > 0) ...[
@@ -965,26 +1086,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildHostInfo(Map<String, dynamic> host) {
-    final l = AppLocalizations.of(context);
-    return Row(children: [
-      CircleAvatar(
-        radius: 22,
-        backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.2),
-        backgroundImage: host['photo_url'] != null ? CachedNetworkImageProvider(host['photo_url'] as String) : null,
-        child: host['photo_url'] == null ? const Icon(Icons.person, size: 22, color: AtrioColors.neonLimeDark) : null,
-      ),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(host['display_name'] as String? ?? l.checkoutHostFallback, style: AtrioTypography.labelMedium.copyWith(color: AtrioColors.guestTextPrimary)),
-          if (host['is_verified'] == true) ...[const SizedBox(width: 5), const Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark)],
-        ]),
-        Text(l.checkoutHostLabel, style: AtrioTypography.caption.copyWith(color: AtrioColors.guestTextTertiary)),
-      ])),
-    ]);
   }
 
   Widget _buildDateSummary(Listing listing) {
@@ -1088,14 +1189,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ]),
     );
   }
-
-  Widget _priceRow(String label, double amount) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(label, style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.guestTextSecondary)),
-      Text(amount.toCLP, style: AtrioTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AtrioColors.guestTextPrimary)),
-    ]),
-  );
 
   Widget _counterBtn(IconData icon, VoidCallback? onTap) {
     final ok = onTap != null;

@@ -1,209 +1,175 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../../config/theme/app_colors.dart';
-import '../../../config/theme/app_typography.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../shared/widgets/atrio_card.dart';
 
+import '../../../config/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/section_eyebrow.dart';
+
+/// "Sobre Atrio" — editorial redesign.
+///
+/// Sections:
+///   • Inline header (PageEyebrow + INTER 800 title, no lime bar)
+///   • Black hero card with logo + version pill + tagline
+///   • Stats strip (3 columns)
+///   • "Lo que ofrecemos" — feature list with lime accent
+///   • "Legal" — links list (terms · privacy · licenses)
+///   • Share + copyright footer
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
+  static const _version = 'v0.3.0-beta';
+
+  Future<void> _share(AppLocalizations l) async {
+    HapticFeedback.selectionClick();
+    await SharePlus.instance.share(ShareParams(text: l.aboutShareText));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l.aboutHeader,
-          style: AtrioTypography.headingSmall.copyWith(
-            color: isDark ? AtrioColors.hostTextPrimary : AtrioColors.guestTextPrimary,
-          ),
-        ),
-        backgroundColor: isDark ? AtrioColors.hostBackground : AtrioColors.guestBackground,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+      backgroundColor: AtrioColors.guestBackground,
+      body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 24),
-
-            // Logo
-            Image.asset(
-              isDark ? 'assets/images/logo_blanco.png' : 'assets/images/logo_negro.png',
-              height: 72,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'v0.1.0-beta',
-              style: AtrioTypography.caption.copyWith(
-                color: isDark
-                    ? AtrioColors.hostTextTertiary
-                    : AtrioColors.guestTextTertiary,
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // Description
-            AtrioCard(
-              padding: const EdgeInsets.all(20),
+            // ─── Header (no lime bar) ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l.aboutPremiumMarket,
-                    style: AtrioTypography.headingSmall.copyWith(
-                      color: isDark
-                          ? AtrioColors.hostTextPrimary
-                          : AtrioColors.guestTextPrimary,
-                    ),
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        size: 18, color: AtrioColors.guestTextPrimary),
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l.aboutDescription,
-                    style: AtrioTypography.bodyMedium.copyWith(
-                      color: isDark
-                          ? AtrioColors.hostTextSecondary
-                          : AtrioColors.guestTextSecondary,
-                      height: 1.6,
+                  const SizedBox(height: 6),
+                  const PageEyebrow(text: 'Atrio'),
+                  const SizedBox(height: 10),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      l.aboutHeader,
+                      style: GoogleFonts.inter(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: AtrioColors.guestTextPrimary,
+                        letterSpacing: -0.8,
+                        height: 1.05,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 36),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _HeroCard(version: _version, premiumLabel: l.aboutPremiumMarket, description: l.aboutDescription),
+                    const SizedBox(height: 22),
 
-            // Features
-            AtrioCard(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  _FeatureRow(
-                    icon: Icons.home_work_outlined,
-                    title: l.aboutFeatSpaces,
-                    description: l.aboutFeatSpacesDesc,
-                    isDark: isDark,
-                  ),
-                  const Divider(height: 24),
-                  _FeatureRow(
-                    icon: Icons.auto_awesome_outlined,
-                    title: l.aboutFeatExperiences,
-                    description: l.aboutFeatExperiencesDesc,
-                    isDark: isDark,
-                  ),
-                  const Divider(height: 24),
-                  _FeatureRow(
-                    icon: Icons.build_circle_outlined,
-                    title: l.aboutFeatServices,
-                    description: l.aboutFeatServicesDesc,
-                    isDark: isDark,
-                  ),
-                  const Divider(height: 24),
-                  _FeatureRow(
-                    icon: Icons.chat_outlined,
-                    title: l.aboutFeatChat,
-                    description: l.aboutFeatChatDesc,
-                    isDark: isDark,
-                  ),
-                  const Divider(height: 24),
-                  _FeatureRow(
-                    icon: Icons.verified_user_outlined,
-                    title: l.aboutFeatKyc,
-                    description: l.aboutFeatKycDesc,
-                    isDark: isDark,
-                  ),
-                  const Divider(height: 24),
-                  _FeatureRow(
-                    icon: Icons.notifications_active_outlined,
-                    title: l.aboutFeatNotifications,
-                    description: l.aboutFeatNotificationsDesc,
-                    isDark: isDark,
-                  ),
-                ],
+                    // ─── Stats ───
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatBox(
+                            value: '7%',
+                            label: l.aboutStatCommission,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatBox(
+                            value: '\$90.000',
+                            label: l.aboutStatMaxFee,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatBox(
+                            value: '24/7',
+                            label: l.aboutStatSupport,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 26),
+
+                    // ─── Features ───
+                    const SectionEyebrow(text: 'Lo que ofrecemos'),
+                    const SizedBox(height: 12),
+                    _FeaturesCard(items: [
+                      _FeatureItem(Icons.home_work_outlined, l.aboutFeatSpaces, l.aboutFeatSpacesDesc),
+                      _FeatureItem(Icons.auto_awesome_outlined, l.aboutFeatExperiences, l.aboutFeatExperiencesDesc),
+                      _FeatureItem(Icons.build_circle_outlined, l.aboutFeatServices, l.aboutFeatServicesDesc),
+                      _FeatureItem(Icons.chat_outlined, l.aboutFeatChat, l.aboutFeatChatDesc),
+                      _FeatureItem(Icons.verified_user_outlined, l.aboutFeatKyc, l.aboutFeatKycDesc),
+                      _FeatureItem(Icons.notifications_active_outlined, l.aboutFeatNotifications, l.aboutFeatNotificationsDesc),
+                    ]),
+                    const SizedBox(height: 26),
+
+                    // ─── Legal ───
+                    const SectionEyebrow(text: 'Legal y compartir'),
+                    const SizedBox(height: 12),
+                    _LinkTile(
+                      icon: Icons.description_outlined,
+                      title: l.aboutLinkTerms,
+                      onTap: () => context.push('/terms'),
+                    ),
+                    const SizedBox(height: 10),
+                    _LinkTile(
+                      icon: Icons.privacy_tip_outlined,
+                      title: l.aboutLinkPrivacy,
+                      onTap: () => context.push('/privacy'),
+                    ),
+                    const SizedBox(height: 10),
+                    _LinkTile(
+                      icon: Icons.gavel_outlined,
+                      title: l.aboutLinkLicenses,
+                      onTap: () => showLicensePage(
+                        context: context,
+                        applicationName: 'Atrio',
+                        applicationVersion: _version,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _LinkTile(
+                      icon: Icons.share_outlined,
+                      title: l.aboutLinkShare,
+                      accent: true,
+                      onTap: () => _share(l),
+                    ),
+
+                    const SizedBox(height: 28),
+                    Center(
+                      child: Text(
+                        l.aboutCopyright,
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: AtrioColors.guestTextTertiary,
+                          letterSpacing: 0.1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Stats
-            Row(
-              children: [
-                Expanded(
-                  child: _StatBox(
-                    value: '7%',
-                    label: l.aboutStatCommission,
-                    isDark: isDark,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatBox(
-                    value: '\$90.000',
-                    label: l.aboutStatMaxFee,
-                    isDark: isDark,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _StatBox(
-                    value: '24/7',
-                    label: l.aboutStatSupport,
-                    isDark: isDark,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Links
-            _LinkTile(
-              icon: Icons.description_outlined,
-              title: l.aboutLinkTerms,
-              isDark: isDark,
-              onTap: () => context.push('/terms'),
-            ),
-            _LinkTile(
-              icon: Icons.privacy_tip_outlined,
-              title: l.aboutLinkPrivacy,
-              isDark: isDark,
-              onTap: () => context.push('/privacy'),
-            ),
-            _LinkTile(
-              icon: Icons.gavel_outlined,
-              title: l.aboutLinkLicenses,
-              isDark: isDark,
-              onTap: () => showLicensePage(
-                context: context,
-                applicationName: 'Atrio',
-                applicationVersion: '0.1.0-beta',
-              ),
-            ),
-            _LinkTile(
-              icon: Icons.share_outlined,
-              title: l.aboutLinkShare,
-              isDark: isDark,
-              onTap: () {
-                SharePlus.instance.share(
-                  ShareParams(
-                    text: l.aboutShareText,
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 32),
-            Text(
-              l.aboutCopyright,
-              style: AtrioTypography.caption.copyWith(
-                color: isDark
-                    ? AtrioColors.hostTextTertiary
-                    : AtrioColors.guestTextTertiary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -211,92 +177,112 @@ class AboutScreen extends StatelessWidget {
   }
 }
 
-class _FeatureRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
+// ─── Hero card ───────────────────────────────────────────────
+class _HeroCard extends StatelessWidget {
+  final String version;
+  final String premiumLabel;
   final String description;
-  final bool isDark;
-
-  const _FeatureRow({
-    required this.icon,
-    required this.title,
+  const _HeroCard({
+    required this.version,
+    required this.premiumLabel,
     required this.description,
-    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AtrioColors.neonLime.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: AtrioColors.neonLimeDark, size: 22),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A1A1A), Color(0xFF000000)],
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text(
-                title,
-                style: AtrioTypography.labelMedium.copyWith(
-                  color: isDark
-                      ? AtrioColors.hostTextPrimary
-                      : AtrioColors.guestTextPrimary,
+              Container(
+                width: 6,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
+              const SizedBox(width: 10),
               Text(
-                description,
-                style: AtrioTypography.bodySmall.copyWith(
-                  color: isDark
-                      ? AtrioColors.hostTextSecondary
-                      : AtrioColors.guestTextSecondary,
+                'MARKETPLACE PREMIUM',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white.withValues(alpha: 0.55),
+                  letterSpacing: 1.4,
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatBox extends StatelessWidget {
-  final String value;
-  final String label;
-  final bool isDark;
-
-  const _StatBox({
-    required this.value,
-    required this.label,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AtrioCard(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      child: Column(
-        children: [
+          const SizedBox(height: 18),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Image.asset(
+                  'assets/images/logo_blanco.png',
+                  height: 38,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.centerLeft,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  version,
+                  style: GoogleFonts.inter(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
           Text(
-            value,
-            style: AtrioTypography.priceMedium.copyWith(
-              color: AtrioColors.neonLimeDark,
+            premiumLabel,
+            style: GoogleFonts.inter(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.6,
+              height: 1.15,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 10),
           Text(
-            label,
-            style: AtrioTypography.caption.copyWith(
-              color: isDark
-                  ? AtrioColors.hostTextSecondary
-                  : AtrioColors.guestTextSecondary,
+            description,
+            style: GoogleFonts.inter(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.72),
+              height: 1.5,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -304,35 +290,208 @@ class _StatBox extends StatelessWidget {
   }
 }
 
+// ─── Stat box ────────────────────────────────────────────────
+class _StatBox extends StatelessWidget {
+  final String value;
+  final String label;
+  const _StatBox({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AtrioColors.guestCardBorder),
+      ),
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AtrioColors.guestTextPrimary,
+                letterSpacing: -0.6,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: AtrioColors.guestTextSecondary,
+              height: 1.25,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Features ────────────────────────────────────────────────
+class _FeatureItem {
+  final IconData icon;
+  final String title;
+  final String description;
+  const _FeatureItem(this.icon, this.title, this.description);
+}
+
+class _FeaturesCard extends StatelessWidget {
+  final List<_FeatureItem> items;
+  const _FeaturesCard({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AtrioColors.guestCardBorder),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        children: List.generate(items.length, (i) {
+          final last = i == items.length - 1;
+          final it = items[i];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Icon(it.icon,
+                            size: 19, color: AtrioColors.neonLimeDark),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              it.title,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: AtrioColors.guestTextPrimary,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              it.description,
+                              style: GoogleFonts.inter(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                                color: AtrioColors.guestTextSecondary,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!last)
+                  Container(
+                    height: 1,
+                    color: AtrioColors.guestDivider,
+                  ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+// ─── Link tile ───────────────────────────────────────────────
 class _LinkTile extends StatelessWidget {
   final IconData icon;
   final String title;
-  final bool isDark;
   final VoidCallback onTap;
-
+  final bool accent;
   const _LinkTile({
     required this.icon,
     required this.title,
-    required this.isDark,
     required this.onTap,
+    this.accent = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: AtrioColors.neonLimeDark,
-        size: 22,
+    final iconBg = accent
+        ? AtrioColors.neonLime.withValues(alpha: 0.22)
+        : AtrioColors.guestSurfaceVariant;
+    final iconColor =
+        accent ? AtrioColors.neonLimeDark : AtrioColors.guestTextSecondary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+          decoration: BoxDecoration(
+            color: AtrioColors.guestSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AtrioColors.guestCardBorder),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, size: 17, color: iconColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AtrioColors.guestTextPrimary,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 20, color: AtrioColors.guestTextTertiary),
+            ],
+          ),
+        ),
       ),
-      title: Text(title, style: AtrioTypography.bodyLarge),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 14,
-        color: isDark ? AtrioColors.hostTextTertiary : AtrioColors.guestTextTertiary,
-      ),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 }

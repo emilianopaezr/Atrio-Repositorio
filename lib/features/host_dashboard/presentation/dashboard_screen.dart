@@ -234,6 +234,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildHeader(AsyncValue<dynamic> userAsync) {
     final l = AppLocalizations.of(context);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: userAsync.when(
@@ -243,20 +244,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${_getGreeting()},',
+                    _getGreeting().toUpperCase(),
                     style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: AtrioColors.hostTextSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AtrioColors.hostTextTertiary,
+                      letterSpacing: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 12),
                   Text(
                     l.dashboardGreeting(name),
                     style: GoogleFonts.inter(
-                      fontSize: 24,
+                      fontSize: 28,
                       fontWeight: FontWeight.w800,
                       color: AtrioColors.hostTextPrimary,
+                      letterSpacing: -0.8,
+                      height: 1.05,
                     ),
                   ),
                 ],
@@ -265,9 +269,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             loading: () => Text(
               l.dashboardGreeting(l.dashboardHostFallback),
               style: GoogleFonts.inter(
-                fontSize: 24,
+                fontSize: 28,
                 fontWeight: FontWeight.w800,
                 color: AtrioColors.hostTextPrimary,
+                letterSpacing: -0.8,
               ),
             ),
             error: (_, _) => const SizedBox.shrink(),
@@ -674,14 +679,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l.dashboardUpcomingBookings,
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AtrioColors.hostTextPrimary,
-          ),
-        ),
+        _SectionHeader(title: l.dashboardUpcomingBookings),
         const SizedBox(height: 14),
         bookingsAsync.when(
           data: (bookings) {
@@ -860,14 +858,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l.dashboardRecentActivity,
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: AtrioColors.hostTextPrimary,
-          ),
-        ),
+        _SectionHeader(title: l.dashboardRecentActivity),
         const SizedBox(height: 14),
         notifsAsync.when(
           data: (notifs) {
@@ -1080,6 +1071,39 @@ class _MiniBalance extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 6,
+          height: 22,
+          decoration: BoxDecoration(
+            color: AtrioColors.neonLime,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: AtrioColors.hostTextPrimary,
+            letterSpacing: -0.6,
+            height: 1.1,
+          ),
         ),
       ],
     );

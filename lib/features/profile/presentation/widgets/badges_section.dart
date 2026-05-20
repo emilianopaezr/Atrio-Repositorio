@@ -4,6 +4,7 @@ import '../../../../config/theme/app_typography.dart';
 import '../../../../core/models/user_model.dart';
 import '../../../../core/models/host_stats_model.dart';
 import '../../../../core/models/guest_stats_model.dart';
+import '../../../../shared/widgets/verified_badge.dart';
 
 class BadgesSection extends StatelessWidget {
   final bool isDark;
@@ -152,16 +153,9 @@ class BadgesSection extends StatelessWidget {
       earned.add(const _BadgeData(icon: Icons.mark_email_read_rounded, label: 'Email Verificado', color: Color(0xFF22C55E)));
     }
 
-    final hasPhone = profile?.phone != null && profile!.phone!.isNotEmpty;
-    if (hasPhone) {
-      earned.add(const _BadgeData(icon: Icons.phone_android_rounded, label: 'Telefono Verificado', color: Color(0xFF3B82F6)));
-    } else {
-      locked.add(const _BadgeData(icon: Icons.phone_android_rounded, label: 'Verifica Telefono', color: Color(0xFF6B7280), isEarned: false));
-    }
-
     final kycApproved = profile?.kycStatus == 'approved';
     if (kycApproved) {
-      earned.add(const _BadgeData(icon: Icons.verified_user_rounded, label: 'Identidad Verificada', color: Color(0xFF8B5CF6)));
+      earned.add(const _BadgeData(icon: Icons.verified_user_rounded, label: 'Identidad Verificada', color: verifiedBlue));
     } else {
       locked.add(const _BadgeData(icon: Icons.verified_user_rounded, label: 'Verifica Identidad', color: Color(0xFF6B7280), isEarned: false));
     }

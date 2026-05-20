@@ -99,7 +99,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const selectedColor = Color(0xFF9BBF00); // neonLimeDark
+    const selectedColor = Color(0xFF0A0A0A); // guestTextPrimary
     final unselectedColor = const Color(0xFF999999);
 
     return GestureDetector(

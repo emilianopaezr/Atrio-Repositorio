@@ -419,33 +419,87 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           return SafeArea(
             child: Column(
               children: [
-                // ─── Header ───
+                // ─── Editorial header ───
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: Row(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l.calendarTitle, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: _goToToday,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AtrioColors.hostSurface,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AtrioColors.hostCardBorder),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: AtrioColors.neonLime,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
-                          child: Text(l.calendarToday, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.neonLime)),
-                        ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'DISPONIBILIDAD',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: AtrioColors.hostTextSecondary,
+                              letterSpacing: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l.calendarTitle,
+                              style: GoogleFonts.inter(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w800,
+                                color: AtrioColors.hostTextPrimary,
+                                letterSpacing: -1.0,
+                                height: 1.05,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: _goToToday,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                              decoration: BoxDecoration(
+                                color: AtrioColors.neonLime,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.today_rounded, size: 14, color: Colors.black),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    l.calendarToday,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 18),
 
                 // ─── Listing selector chips ───
                 SizedBox(
-                  height: 44,
+                  height: 40,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -469,12 +523,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             _setupRealtime(id);
                             _loadBookedDates(id);
                           },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                             decoration: BoxDecoration(
-                              color: selected ? AtrioColors.neonLime : AtrioColors.hostSurface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: selected ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder),
+                              color: selected ? Colors.white : AtrioColors.hostSurface,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: selected ? Colors.white : AtrioColors.hostCardBorder,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -502,100 +559,127 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
                 // ─── Stats row ───
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     children: [
-                      _statChip(Icons.event_available, '$_totalBookings', l.calendarStatReservations, Colors.green),
+                      _statChip(Icons.event_available_rounded, '$_totalBookings', l.calendarStatReservations, const Color(0xFF22C55E)),
                       const SizedBox(width: 8),
-                      _statChip(Icons.block, '$_blockedCount', l.calendarStatBlocked, Colors.red[400]!),
+                      _statChip(Icons.block_rounded, '$_blockedCount', l.calendarStatBlocked, const Color(0xFFEF4444)),
                       const SizedBox(width: 8),
                       _statChip(
-                        Icons.calendar_today,
+                        Icons.event_rounded,
                         '${_daysInMonth() - _totalBookings - _blockedCount}',
                         l.calendarStatAvailable,
-                        AtrioColors.neonLimeDark,
+                        AtrioColors.neonLime,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
-                // ─── Mode toggle: single day / range ───
+                // ─── Hero month card with nav + mode toggle ───
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
-                    padding: const EdgeInsets.all(3),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                     decoration: BoxDecoration(
-                      color: AtrioColors.hostSurface,
-                      borderRadius: BorderRadius.circular(10),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF1A1A1C),
+                          Color(0xFF101012),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        _modeButton(l.calendarModeDay, !_isRangeMode, () {
-                          setState(() {
-                            _isRangeMode = false;
-                            _rangeStart = null;
-                            _rangeEnd = null;
-                          });
-                        }),
-                        _modeButton(l.calendarModeRange, _isRangeMode, () {
-                          setState(() {
-                            _isRangeMode = true;
-                            _selectedDay = null;
-                          });
-                        }),
+                        // Month nav
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                setState(() => _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1));
+                                if (_selectedListingId != null) _loadBookedDates(_selectedListingId!);
+                              },
+                              child: Container(
+                                width: 36, height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 22),
+                              ),
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      _months(l)[_focusedMonth.month - 1],
+                                      style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.3),
+                                    ),
+                                    Text(
+                                      '${_focusedMonth.year}',
+                                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AtrioColors.hostTextTertiary, letterSpacing: 1),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() => _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1));
+                                if (_selectedListingId != null) _loadBookedDates(_selectedListingId!);
+                              },
+                              child: Container(
+                                width: 36, height: 36,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 22),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Mode toggle
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              _modeButton(l.calendarModeDay, !_isRangeMode, () {
+                                setState(() {
+                                  _isRangeMode = false;
+                                  _rangeStart = null;
+                                  _rangeEnd = null;
+                                });
+                              }),
+                              _modeButton(l.calendarModeRange, _isRangeMode, () {
+                                setState(() {
+                                  _isRangeMode = true;
+                                  _selectedDay = null;
+                                });
+                              }),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // ─── Month navigation ───
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1));
-                          if (_selectedListingId != null) _loadBookedDates(_selectedListingId!);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AtrioColors.hostSurface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.chevron_left, color: Colors.white, size: 20),
-                        ),
-                      ),
-                      Text(
-                        '${_months(l)[_focusedMonth.month - 1]} ${_focusedMonth.year}',
-                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1));
-                          if (_selectedListingId != null) _loadBookedDates(_selectedListingId!);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AtrioColors.hostSurface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.chevron_right, color: Colors.white, size: 20),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
 
                 // ─── Day headers ───
                 Padding(
@@ -603,12 +687,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   child: Row(
                     children: _dayHeaders(l).map((d) => Expanded(
                       child: Center(
-                        child: Text(d, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextTertiary)),
+                        child: Text(d.toUpperCase(), style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AtrioColors.hostTextTertiary, letterSpacing: 1)),
                       ),
                     )).toList(),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
 
                 // ─── Calendar grid ───
                 Expanded(
@@ -663,22 +747,31 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget _statChip(IconData icon, String value, String label, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
         decoration: BoxDecoration(
           color: AtrioColors.hostSurface,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AtrioColors.hostCardBorder),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 6),
+            Container(
+              width: 28, height: 28,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 15, color: color),
+            ),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(value, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
-                  Text(label, style: GoogleFonts.inter(fontSize: 10, color: AtrioColors.hostTextTertiary)),
+                  Text(value, style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, height: 1.0)),
+                  const SizedBox(height: 2),
+                  Text(label, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: AtrioColors.hostTextTertiary, letterSpacing: 0.4), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -747,63 +840,61 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           Color bgColor = Colors.transparent;
           Color textColor = Colors.white;
           BoxBorder? border;
+          Color? statusDot;
 
           if (selected || isRangeEndpoint) {
             bgColor = AtrioColors.neonLime;
             textColor = Colors.black;
           } else if (inRange) {
-            bgColor = AtrioColors.neonLime.withValues(alpha: 0.2);
+            bgColor = AtrioColors.neonLime.withValues(alpha: 0.18);
             textColor = AtrioColors.neonLime;
           } else if (booked) {
-            bgColor = Colors.green.withValues(alpha: 0.2);
-            textColor = Colors.green[300]!;
+            bgColor = const Color(0xFF22C55E).withValues(alpha: 0.16);
+            textColor = const Color(0xFF4ADE80);
+            statusDot = const Color(0xFF22C55E);
           } else if (blocked) {
-            bgColor = Colors.red.withValues(alpha: 0.15);
-            textColor = Colors.red[300]!;
+            bgColor = const Color(0xFFEF4444).withValues(alpha: 0.14);
+            textColor = const Color(0xFFFCA5A5);
+            statusDot = const Color(0xFFEF4444);
           } else if (isPast) {
-            textColor = AtrioColors.hostTextTertiary;
+            textColor = AtrioColors.hostTextTertiary.withValues(alpha: 0.5);
           }
 
           if (isToday && !selected && !isRangeEndpoint) {
-            border = Border.all(color: AtrioColors.neonLimeDark, width: 1.5);
+            border = Border.all(color: AtrioColors.neonLime, width: 1.5);
           }
 
           return GestureDetector(
             onTap: isPast ? null : () => _onDayTap(date),
             onLongPress: isPast ? null : () => _showDayDetail(date),
-            child: Container(
-              margin: const EdgeInsets.all(2),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              margin: const EdgeInsets.all(3),
               decoration: BoxDecoration(
                 color: bgColor,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(12),
                 border: border,
               ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$dayNum',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: (selected || isRangeEndpoint || isToday) ? FontWeight.w700 : FontWeight.w500,
-                        color: textColor,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Text(
+                    '$dayNum',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: (selected || isRangeEndpoint || isToday) ? FontWeight.w800 : FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                  if (statusDot != null && !selected && !isRangeEndpoint)
+                    Positioned(
+                      bottom: 5,
+                      child: Container(
+                        width: 4, height: 4,
+                        decoration: BoxDecoration(color: statusDot, shape: BoxShape.circle),
                       ),
                     ),
-                    if (booked && !selected && !isRangeEndpoint)
-                      Container(
-                        width: 4, height: 4,
-                        margin: const EdgeInsets.only(top: 1),
-                        decoration: BoxDecoration(color: Colors.green[400], shape: BoxShape.circle),
-                      ),
-                    if (blocked && !selected && !isRangeEndpoint)
-                      Container(
-                        width: 4, height: 4,
-                        margin: const EdgeInsets.only(top: 1),
-                        decoration: BoxDecoration(color: Colors.red[400], shape: BoxShape.circle),
-                      ),
-                  ],
-                ),
+                ],
               ),
             ),
           );

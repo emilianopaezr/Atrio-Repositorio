@@ -15,6 +15,7 @@ abstract class Listing with _$Listing {
     String? category,
     @Default([]) List<String> tags,
     @Default([]) List<String> amenities,
+    @Default([]) List<String> rules,
     String? address,
     String? city,
     String? country,
@@ -46,6 +47,8 @@ abstract class Listing with _$Listing {
     @JsonKey(name: 'check_in_time') String? checkInTime,
     @JsonKey(name: 'check_out_time') String? checkOutTime,
     @JsonKey(name: 'cancellation_policy') @Default('flexible') String cancellationPolicy,
+    @JsonKey(name: 'host_phone') String? hostPhone,
+    @JsonKey(name: 'show_host_phone') @Default(false) bool showHostPhone,
     @JsonKey(name: 'created_at') DateTime? createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
     // Joined data

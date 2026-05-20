@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../config/theme/app_colors.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/services/mercadopago_service.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/price_breakdown_card.dart';
+import '../../../shared/widgets/verified_badge.dart';
+import '../../checkout/presentation/card_payment_screen.dart';
 
-/// Quick Services - casual gig marketplace
-/// Flow:
-///   1. Browse services (tab "Disponibles") or requests (tab "Solicitudes")
-///   2. Tap a service → detail with "Contratar" button
-///   3. Tap a request → detail with "Hacer oferta" button
-///   4. Once accepted → chat + milestones tracker
+/// Quick Services — guest-facing, light theme.
 class QuickServicesScreen extends ConsumerStatefulWidget {
   const QuickServicesScreen({super.key});
 
@@ -29,26 +30,26 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   late TabController _tabController;
   String _selectedCategory = 'all';
   List<Map<String, dynamic>> _realServices = [];
+  List<Map<String, dynamic>> _realRequests = [];
   bool _isLoading = true;
   String? _error;
 
-  // (value, DB match term). value 'all' means no filter.
-  final _categories = const <(String, String)>[
-    ('all', ''),
-    ('moving', 'mudanza'),
-    ('cleaning', 'limpieza'),
-    ('assembly', 'armado'),
-    ('events', 'eventos'),
-    ('gardening', 'jardinería'),
-    ('repairs', 'reparaciones'),
-    ('painting', 'pintura'),
-    ('plumbing', 'plomería'),
-    ('electrical', 'electricidad'),
-    ('tech', 'tecnología'),
-    ('pets', 'mascotas'),
-    ('beauty', 'belleza'),
-    ('classes', 'clases'),
-    ('cooking', 'cocina'),
+  final _categories = const <(String, String, IconData)>[
+    ('all', '', Icons.apps_rounded),
+    ('moving', 'mudanza', Icons.local_shipping_rounded),
+    ('cleaning', 'limpieza', Icons.cleaning_services_rounded),
+    ('assembly', 'armado', Icons.handyman_rounded),
+    ('events', 'eventos', Icons.celebration_rounded),
+    ('gardening', 'jardinería', Icons.local_florist_rounded),
+    ('repairs', 'reparaciones', Icons.build_rounded),
+    ('painting', 'pintura', Icons.format_paint_rounded),
+    ('plumbing', 'plomería', Icons.plumbing_rounded),
+    ('electrical', 'electricidad', Icons.electrical_services_rounded),
+    ('tech', 'tecnología', Icons.computer_rounded),
+    ('pets', 'mascotas', Icons.pets_rounded),
+    ('beauty', 'belleza', Icons.face_retouching_natural_rounded),
+    ('classes', 'clases', Icons.school_rounded),
+    ('cooking', 'cocina', Icons.restaurant_rounded),
   ];
 
   String _categoryLabel(AppLocalizations l, String value) {
@@ -75,7 +76,10 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this)
+      ..addListener(() {
+        if (mounted) setState(() {});
+      });
     _loadServices();
   }
 
@@ -89,7 +93,15 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     setState(() { _isLoading = true; _error = null; });
     try {
       final data = await DatabaseService.getPublishedListings(type: 'service', limit: 50);
-      if (mounted) setState(() { _realServices = data; _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _realServices =
+              data.where((s) => s['is_request'] != true).toList();
+          _realRequests =
+              data.where((s) => s['is_request'] == true).toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       if (mounted) {
         final l = AppLocalizations.of(context);
@@ -113,115 +125,306 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Scaffold(
-      backgroundColor: AtrioColors.hostBackground,
-      appBar: AppBar(
-        backgroundColor: AtrioColors.hostBackground,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AtrioColors.hostTextPrimary),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(l.qsTitle, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
-        actions: [
-          GestureDetector(
-            onTap: () => context.push('/publish-service', extra: 'offer'),
-            child: Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.add, size: 16, color: AtrioColors.neonLime),
-                const SizedBox(width: 4),
-                Text(l.qsPublish, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.neonLime)),
-              ]),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Tab bar
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14)),
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(10)),
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent,
-              labelColor: Colors.black,
-              unselectedLabelColor: AtrioColors.hostTextSecondary,
-              labelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
-              unselectedLabelStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
-              tabs: [Tab(text: l.qsTabAvailable), Tab(text: l.qsTabRequests)],
-            ),
-          ),
-          // Categories
-          SizedBox(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final cat = _categories[index];
-                final isSelected = cat.$1 == _selectedCategory;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedCategory = cat.$1),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AtrioColors.neonLime : AtrioColors.hostSurface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: isSelected ? AtrioColors.neonLimeDark : AtrioColors.hostCardBorder),
+      backgroundColor: AtrioColors.guestBackground,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ─── EDITORIAL HEADER ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 16, 8),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AtrioColors.guestSurface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AtrioColors.guestCardBorder),
+                      ),
+                      child: const Icon(Icons.arrow_back_rounded,
+                          size: 18, color: AtrioColors.guestTextPrimary),
                     ),
-                    child: Text(_categoryLabel(l, cat.$1), style: GoogleFonts.inter(fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500, color: isSelected ? Colors.black : AtrioColors.hostTextSecondary)),
                   ),
-                );
-              },
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => context.push('/publish-service', extra: 'offer'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: AtrioColors.guestTextPrimary,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                          const SizedBox(width: 4),
+                          Text(
+                            l.qsPublish,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 6, 24, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.qsEyebrow,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AtrioColors.guestTextTertiary,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l.qsTitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: AtrioColors.guestTextPrimary,
+                      letterSpacing: -1.0,
+                      height: 1.05,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    l.qsHeroSubtitle,
+                    style: GoogleFonts.inter(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                      color: AtrioColors.guestTextSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ─── TAB BAR ───
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AtrioColors.guestSurfaceVariant,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: AtrioColors.neonLime,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  labelColor: Colors.black,
+                  unselectedLabelColor: AtrioColors.guestTextSecondary,
+                  labelStyle: GoogleFonts.inter(
+                      fontSize: 13.5, fontWeight: FontWeight.w800, letterSpacing: -0.2),
+                  unselectedLabelStyle: GoogleFonts.inter(
+                      fontSize: 13.5, fontWeight: FontWeight.w600, letterSpacing: -0.2),
+                  tabs: [Tab(text: l.qsTabAvailable), Tab(text: l.qsTabRequests)],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // ─── CATEGORIES ───
+            SizedBox(
+              height: 38,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: _categories.length,
+                itemBuilder: (context, index) {
+                  final cat = _categories[index];
+                  final isSelected = cat.$1 == _selectedCategory;
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _selectedCategory = cat.$1);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AtrioColors.guestTextPrimary
+                            : AtrioColors.guestSurface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? AtrioColors.guestTextPrimary
+                              : AtrioColors.guestCardBorder,
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(cat.$3,
+                              size: 14,
+                              color: isSelected ? AtrioColors.neonLime : AtrioColors.guestTextSecondary),
+                          const SizedBox(width: 6),
+                          Text(
+                            _categoryLabel(l, cat.$1),
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                              color: isSelected ? Colors.white : AtrioColors.guestTextPrimary,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // ─── CONTENT ───
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildAvailableTab(l),
+                  _buildRequestsTab(l),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvailableTab(AppLocalizations l) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AtrioColors.neonLimeDark, strokeWidth: 2.5),
+      );
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_rounded, size: 40, color: AtrioColors.guestTextTertiary),
+            const SizedBox(height: 12),
+            Text(_error!, style: GoogleFonts.inter(color: AtrioColors.guestTextSecondary)),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _loadServices,
+              child: Text(
+                l.btnRetry,
+                style: GoogleFonts.inter(color: AtrioColors.guestTextPrimary, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    final services = _filteredServices;
+    if (services.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.handyman_rounded, size: 36, color: AtrioColors.neonLimeDark),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l.qsEmptyTitle,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AtrioColors.guestTextPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l.qsEmptySubtitle,
+              style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.guestTextTertiary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      color: AtrioColors.guestTextPrimary,
+      backgroundColor: AtrioColors.guestSurface,
+      onRefresh: _loadServices,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 14),
+              child: Row(
+                children: [
+                  Text(
+                    l.qsAvailableSection,
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AtrioColors.guestTextPrimary,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    l.qsResultsCount(services.length),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AtrioColors.guestTextTertiary,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          // Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AtrioColors.neonLime))
-                  : _error != null
-                    ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        Text(_error!, style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
-                        const SizedBox(height: 12),
-                        TextButton(onPressed: _loadServices, child: Text(l.btnRetry, style: GoogleFonts.inter(color: AtrioColors.neonLime))),
-                      ]))
-                    : _filteredServices.isEmpty
-                      ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.handyman_rounded, size: 48, color: AtrioColors.hostTextTertiary),
-                          const SizedBox(height: 12),
-                          Text(l.qsEmptyTitle, style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextSecondary)),
-                          const SizedBox(height: 4),
-                          Text(l.qsEmptySubtitle, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
-                        ]))
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: _filteredServices.length,
-                          itemBuilder: (context, index) {
-                            final s = _filteredServices[index];
-                            return _RealServiceCard(service: s, onTap: () => _showRealServiceDetail(s));
-                          },
-                        ),
-                // Solicitudes tab - coming soon
-                Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.campaign_rounded, size: 48, color: AtrioColors.hostTextTertiary),
-                  const SizedBox(height: 12),
-                  Text(l.qsRequestsSoonTitle, style: GoogleFonts.inter(fontSize: 15, color: AtrioColors.hostTextSecondary)),
-                  const SizedBox(height: 4),
-                  Text(l.qsRequestsSoonSubtitle, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
-                ])),
-              ],
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            sliver: SliverList.separated(
+              itemCount: services.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (context, i) => _ServiceCard(
+                service: services[i],
+                onTap: () => _showServiceDetail(services[i]),
+              ),
             ),
           ),
         ],
@@ -229,7 +432,103 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     );
   }
 
-  void _showRealServiceDetail(Map<String, dynamic> service) {
+  Widget _buildRequestsTab(AppLocalizations l) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+            color: AtrioColors.guestTextPrimary, strokeWidth: 2.5),
+      );
+    }
+    final reqs = _realRequests;
+    if (reqs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AtrioColors.guestSurfaceVariant,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.campaign_rounded,
+                  size: 36, color: AtrioColors.guestTextSecondary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l.qsEmptyNoRequests,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AtrioColors.guestTextPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l.qsEmptyPostFirst,
+              style: GoogleFonts.inter(
+                  fontSize: 13, color: AtrioColors.guestTextTertiary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      color: AtrioColors.guestTextPrimary,
+      backgroundColor: AtrioColors.guestSurface,
+      onRefresh: _loadServices,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 14),
+              child: Row(
+                children: [
+                  Text(
+                    l.qsActiveRequests,
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AtrioColors.guestTextPrimary,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    l.qsResultsCount(reqs.length),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AtrioColors.guestTextTertiary,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            sliver: SliverList.separated(
+              itemCount: reqs.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              itemBuilder: (context, i) => _RequestCard(
+                request: reqs[i],
+                onTap: () => _showServiceDetail(reqs[i]),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SERVICE DETAIL SHEET
+  // ─────────────────────────────────────────────────────────────
+  void _showServiceDetail(Map<String, dynamic> service) {
     final l = AppLocalizations.of(context);
     final title = service['title'] ?? l.qsServiceDefault;
     final description = service['description'] ?? '';
@@ -241,76 +540,321 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     final host = service['host'] as Map<String, dynamic>?;
     final hostName = host?['display_name'] ?? l.qsProviderDefault;
     final hostVerified = host?['is_verified'] == true;
+    final hostPhoto = host?['photo_url'] as String?;
     final category = service['category'] ?? service['type'] ?? '';
 
     showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.85, maxChildSize: 0.95, minChildSize: 0.5,
+        initialChildSize: 0.85,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
         builder: (_, scrollCtrl) => Container(
-          decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          decoration: const BoxDecoration(
+            color: AtrioColors.guestBackground,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
           child: ListView(
-            controller: scrollCtrl, padding: const EdgeInsets.all(24),
+            controller: scrollCtrl,
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AtrioColors.guestCardBorder,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
-              Row(children: [
-                Container(width: 56, height: 56, decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.handyman_rounded, color: AtrioColors.neonLime, size: 28)),
-                const SizedBox(width: 16),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
-                  const SizedBox(height: 4),
-                  Text(category, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
-                ])),
-                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text(price.toCLP, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
-                  Text('/$priceUnit', style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
-                ]),
-              ]),
-              const SizedBox(height: 20),
-              if (description.isNotEmpty)
-                Text(description, style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.5)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AtrioColors.guestSurfaceVariant,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(Icons.handyman_rounded,
+                        color: AtrioColors.guestTextPrimary, size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.inter(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w800,
+                            color: AtrioColors.guestTextPrimary,
+                            letterSpacing: -0.6,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          category.toString().toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: AtrioColors.guestTextTertiary,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              // Price tag
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AtrioColors.guestTextPrimary,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'PRECIO'.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white60,
+                            letterSpacing: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          // All-inclusive price (base + 7% fee). The fee is
+                          // shown separately only inside the breakdown sheet.
+                          price.toCLPWithFee,
+                          style: GoogleFonts.inter(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Text(
+                      '/$priceUnit',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(
+                  description,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AtrioColors.guestTextSecondary,
+                    height: 1.55,
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               // Provider card
               Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
-                child: Row(children: [
-                  CircleAvatar(radius: 22, backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.15), child: Text(hostName[0], style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: AtrioColors.neonLime, fontSize: 18))),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Text(hostName, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
-                      if (hostVerified) ...[const SizedBox(width: 6), Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark)],
-                    ]),
-                    const SizedBox(height: 2),
-                    Row(children: [
-                      const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3),
-                      Text(rating.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-                      Text(l.qsDotReviewsCount(reviewCount), style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextTertiary)),
-                    ]),
-                  ])),
-                  GestureDetector(
-                    onTap: () { Navigator.pop(ctx); _openChatWith(hostId); },
-                    child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)), child: Icon(Icons.chat_outlined, size: 20, color: AtrioColors.neonLime)),
-                  ),
-                ]),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AtrioColors.guestSurface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AtrioColors.guestCardBorder),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: AtrioColors.neonLime.withValues(alpha: 0.2),
+                      backgroundImage: hostPhoto != null
+                          ? CachedNetworkImageProvider(hostPhoto)
+                          : null,
+                      child: hostPhoto == null
+                          ? Text(
+                              hostName.toString().substring(0, 1).toUpperCase(),
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w800,
+                                color: AtrioColors.guestTextPrimary,
+                                fontSize: 18,
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  hostName,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: AtrioColors.guestTextPrimary,
+                                    letterSpacing: -0.3,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (hostVerified) ...[
+                                const SizedBox(width: 6),
+                                const Icon(Icons.verified, size: 16, color: verifiedBlue),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded, size: 13, color: AtrioColors.ratingGold),
+                              const SizedBox(width: 3),
+                              Text(
+                                rating.toStringAsFixed(1),
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AtrioColors.guestTextPrimary,
+                                ),
+                              ),
+                              Text(
+                                l.qsDotReviewsCount(reviewCount),
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.5,
+                                  color: AtrioColors.guestTextTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _openChatWith(hostId);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AtrioColors.guestSurfaceVariant,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.chat_bubble_outline_rounded,
+                            size: 18, color: AtrioColors.guestTextPrimary),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              Text(l.qsHowItWorks, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: AtrioColors.neonLime,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    l.qsHowItWorks,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AtrioColors.guestTextPrimary,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 14),
               _StepItem(step: '1', title: l.qsStep1Title, subtitle: l.qsStep1Subtitle),
               _StepItem(step: '2', title: l.qsStep2Title, subtitle: l.qsStep2Subtitle),
               _StepItem(step: '3', title: l.qsStep3Title, subtitle: l.qsStep3Subtitle),
-              const SizedBox(height: 24),
-              SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-                onPressed: () { Navigator.pop(ctx); _showRealHireConfirmation(service); },
-                style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-                child: Text(l.qsHireFor(price.toCLP, priceUnit), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
-              )),
-              const SizedBox(height: 12),
-              Center(child: Text(l.qsSecurePayment, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary))),
               const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showHireConfirmation(service);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AtrioColors.guestTextPrimary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          l.qsHireFor(price.toCLPWithFee, priceUnit),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded,
+                          size: 18, color: AtrioColors.neonLime),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock_outline_rounded,
+                        size: 13, color: Color(0xFF009EE3)),
+                    const SizedBox(width: 6),
+                    Text(
+                      l.qsSecurePayment,
+                      style: GoogleFonts.inter(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: AtrioColors.guestTextTertiary,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -318,7 +862,10 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     );
   }
 
-  void _showRealHireConfirmation(Map<String, dynamic> service) {
+  // ─────────────────────────────────────────────────────────────
+  // HIRE CONFIRMATION + MERCADO PAGO
+  // ─────────────────────────────────────────────────────────────
+  void _showHireConfirmation(Map<String, dynamic> service) {
     final l = AppLocalizations.of(context);
     final title = service['title'] ?? l.qsServiceDefault;
     final price = (service['base_price'] as num?)?.toDouble() ?? 0;
@@ -333,146 +880,370 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     bool hiring = false;
 
     showModalBottomSheet(
-      context: context, backgroundColor: Colors.transparent,
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(color: AtrioColors.hostBackground, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 24),
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), shape: BoxShape.circle), child: Icon(Icons.check_circle_outline, size: 48, color: AtrioColors.neonLime)),
-          const SizedBox(height: 20),
-          Text(l.qsConfirmHire, style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: AtrioColors.hostTextPrimary)),
-          const SizedBox(height: 8),
-          Text(l.qsHireMessage(hostName, title, price.toCLP, priceUnit), style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary, height: 1.4), textAlign: TextAlign.center),
-          const SizedBox(height: 20),
-          // Price breakdown
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
-            child: Column(children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(l.qsServicePrice, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
-                Text(price.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-              ]),
-              const SizedBox(height: 8),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(l.qsAtrioFee, style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary)),
-                Text(serviceFee.toCLP, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-              ]),
-              const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(color: AtrioColors.hostCardBorder, height: 1)),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(l.qsTotal, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
-                Text(total.toCLP, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
-              ]),
-            ]),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+          decoration: const BoxDecoration(
+            color: AtrioColors.guestBackground,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
-          const SizedBox(height: 10),
-          // Milestones
-          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(14), border: Border.all(color: AtrioColors.hostCardBorder)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(l.qsMilestonesTitle, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AtrioColors.guestCardBorder,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                l.qsConfirmHire,
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AtrioColors.guestTextPrimary,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                l.qsHireMessage(hostName, title, price.toCLPWithFee, priceUnit),
+                style: GoogleFonts.inter(
+                  fontSize: 13.5,
+                  color: AtrioColors.guestTextSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 18),
+              // Total + collapsible breakdown (Airbnb-style).
+              PriceBreakdownCard(
+                totalLabel: l.qsTotal,
+                total: total,
+                items: [
+                  PriceBreakdownItem(l.qsServicePrice, price),
+                  PriceBreakdownItem(l.qsAtrioFee, serviceFee),
+                ],
+              ),
               const SizedBox(height: 12),
-              _MilestonePreview(label: l.qsMilestoneDetails, status: 'pending'),
-              _MilestonePreview(label: l.qsMilestoneStart, status: 'pending'),
-              _MilestonePreview(label: l.qsMilestoneProgress, status: 'pending'),
-              _MilestonePreview(label: l.qsMilestoneDone, status: 'pending'),
-            ]),
+              // MP card
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AtrioColors.guestSurface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF009EE3).withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF009EE3).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.account_balance_wallet_rounded,
+                          size: 20, color: Color(0xFF009EE3)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mercado Pago',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AtrioColors.guestTextPrimary,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          Text(
+                            l.checkoutMpMethods,
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5,
+                              color: AtrioColors.guestTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (MercadoPagoService.isSandbox)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'TEST',
+                          style: GoogleFonts.inter(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.orange,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: hiring
+                      ? null
+                      : () async {
+                          HapticFeedback.lightImpact();
+                          setSheetState(() => hiring = true);
+                          try {
+                            await _hireAndPay(
+                              hostId: hostId,
+                              listingId: listingId,
+                              title: title,
+                              price: price,
+                              fee: serviceFee,
+                              total: total,
+                              sheetCtx: ctx,
+                            );
+                          } catch (e) {
+                            if (mounted) ErrorHandler.showError(context, e);
+                          } finally {
+                            if (ctx.mounted) setSheetState(() => hiring = false);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AtrioColors.guestTextPrimary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  ),
+                  child: hiring
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.lock_outline_rounded,
+                                size: 16, color: AtrioColors.neonLime),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                l.qsPayWithMp(total.toCLP),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton(
+                  onPressed: hiring ? null : () => Navigator.pop(ctx),
+                  child: Text(
+                    l.qsGoBack,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AtrioColors.guestTextSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-            onPressed: hiring ? null : () async {
-              setSheetState(() => hiring = true);
-              try {
-                await _hireRealService(hostId, listingId, title, price, serviceFee, total);
-                if (ctx.mounted) Navigator.pop(ctx);
-              } catch (e) {
-                if (mounted) ErrorHandler.showError(context, e);
-              } finally {
-                if (ctx.mounted) setSheetState(() => hiring = false);
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AtrioColors.neonLime, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
-            child: hiring
-                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black))
-                : Text(l.qsConfirmAmount(total.toCLP), style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
-          )),
-          const SizedBox(height: 10),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.qsGoBack, style: GoogleFonts.inter(fontSize: 14, color: AtrioColors.hostTextSecondary))),
-          const SizedBox(height: 8),
-        ]),
-      ),
+        ),
       ),
     );
   }
 
-  /// Create a service booking and open chat with the real host
-  Future<void> _hireRealService(String hostId, String listingId, String title, double price, double fee, double total) async {
+  /// Creates booking, opens Mercado Pago, and on approval kicks off chat.
+  Future<void> _hireAndPay({
+    required String hostId,
+    required String listingId,
+    required String title,
+    required double price,
+    required double fee,
+    required double total,
+    required BuildContext sheetCtx,
+  }) async {
+    final l = AppLocalizations.of(context);
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
-    final l = AppLocalizations.of(context);
 
+    // Step 1 — Create the pending booking.
+    // `special_requests` is the real DB column; `notes` does not exist and
+    // PostgREST throws a 400 that bubbles up here. Wrapping in try/catch so
+    // any future schema mismatch surfaces as a snackbar instead of a silent
+    // dead-end on the "Pagar con MP" button.
     final now = DateTime.now();
-    await DatabaseService.createBooking({
-      'guest_id': currentUser.id,
-      'host_id': hostId,
-      'listing_id': listingId,
-      'check_in': now.toIso8601String(),
-      'check_out': now.add(const Duration(hours: 2)).toIso8601String(),
-      'guests_count': 1,
-      'base_total': price,
-      'cleaning_fee': 0,
-      'service_fee': fee,
-      'total': total,
-      'status': 'pending',
-      'payment_status': 'pending',
-      'rental_mode': 'hours',
-      'notes': l.qsQuickServicePrefix(title),
-    });
+    final String bookingId;
+    try {
+      final booking = await DatabaseService.createBooking({
+        'guest_id': currentUser.id,
+        'host_id': hostId,
+        'listing_id': listingId,
+        'check_in': now.toIso8601String(),
+        'check_out': now.add(const Duration(hours: 2)).toIso8601String(),
+        'guests_count': 1,
+        'base_total': price,
+        'cleaning_fee': 0,
+        'service_fee': fee,
+        'total': total,
+        'status': 'pending',
+        'payment_status': 'pending',
+        'rental_mode': 'hours',
+        'special_requests': l.qsQuickServicePrefix(title),
+      });
+      bookingId = booking['id'] as String;
+    } catch (e) {
+      if (mounted) _snack('No se pudo crear la reserva: $e', isError: true);
+      return;
+    }
 
-    final convo = await DatabaseService.getOrCreateConversation(
-      userId1: currentUser.id,
-      userId2: hostId,
-    );
+    // Step 2 — If MP is configured, run the real payment flow.
+    if (!MercadoPagoService.isConfigured) {
+      _snack(l.qsPaymentNotConfigured, isError: true);
+      return;
+    }
 
-    await DatabaseService.sendMessage(
-      conversationId: convo['id'],
-      senderId: currentUser.id,
-      text: l.qsChatHi(title, price.toCLP),
-    );
+    try {
+      if (!mounted) return;
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [const Icon(Icons.check_circle, color: Colors.black, size: 20), const SizedBox(width: 10), Expanded(child: Text(l.qsRequested, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black)))]),
-        backgroundColor: AtrioColors.neonLime, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
-      context.push('/chat/${convo['id']}');
+      // Close the sheet first so the card form opens cleanly.
+      if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+
+      // Push the in-app card form. It calls the Edge Function for
+      // server-side tokenization + payment.
+      final paymentResult = await Navigator.of(context).push<PaymentResult>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => CardPaymentScreen(
+            bookingId: bookingId,
+            total: total,
+            listingTitle: title,
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (paymentResult == null) {
+        _snack(l.qsPaymentPending, isError: false);
+        return;
+      }
+
+      if (paymentResult.isApproved) {
+        // Edge Function already updated the booking and trigger created
+        // transactions + bumped host_profiles. Don't write from client —
+        // RLS denies guest writes to those tables.
+        final convo = await DatabaseService.getOrCreateConversation(
+          userId1: currentUser.id,
+          userId2: hostId,
+        );
+        await DatabaseService.sendMessage(
+          conversationId: convo['id'],
+          senderId: currentUser.id,
+          text: l.qsChatHi(title, total.toCLP),
+        );
+
+        if (!mounted) return;
+        _snack(l.qsPaymentApproved, isError: false);
+        await Future.delayed(const Duration(milliseconds: 700));
+        if (mounted) context.push('/chat/${convo['id']}');
+      } else if (paymentResult.isPending) {
+        if (mounted) _snack(l.qsPaymentPending, isError: false);
+      } else {
+        if (mounted) _snack(l.qsPaymentRejected, isError: true);
+      }
+    } on MpException catch (e) {
+      if (mounted) _snack(l.qsPaymentError(e.message), isError: true);
     }
   }
 
-  /// Open a real chat with a specific host
   Future<void> _openChatWith(String hostId) async {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
-
     try {
       final convo = await DatabaseService.getOrCreateConversation(
         userId1: currentUser.id,
         userId2: hostId,
       );
-      if (mounted) {
-        context.push('/chat/${convo['id']}');
-      }
+      if (mounted) context.push('/chat/${convo['id']}');
     } catch (e) {
       if (mounted) ErrorHandler.showError(context, e);
     }
   }
+
+  void _snack(String msg, {required bool isError}) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline_rounded : Icons.check_circle_rounded,
+            size: 18,
+            color: isError ? Colors.white : Colors.black,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              msg,
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                color: isError ? Colors.white : Colors.black,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: isError ? AtrioColors.error : AtrioColors.neonLime,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
 }
 
-// ═══════ REAL SERVICE CARD ═══════
-class _RealServiceCard extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────
+// SERVICE CARD (light)
+// ─────────────────────────────────────────────────────────────
+class _ServiceCard extends StatelessWidget {
   final Map<String, dynamic> service;
   final VoidCallback onTap;
-  const _RealServiceCard({required this.service, required this.onTap});
+  const _ServiceCard({required this.service, required this.onTap});
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -484,59 +1255,375 @@ class _RealServiceCard extends StatelessWidget {
     final host = service['host'] as Map<String, dynamic>?;
     final hostName = host?['display_name'] ?? l.qsProviderDefault;
     final hostVerified = host?['is_verified'] == true;
+    final hostPhoto = host?['photo_url'] as String?;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AtrioColors.hostSurface, borderRadius: BorderRadius.circular(16), border: Border.all(color: AtrioColors.hostCardBorder)),
-        child: Row(children: [
-          Container(width: 50, height: 50, decoration: BoxDecoration(color: AtrioColors.neonLime.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.handyman_rounded, color: AtrioColors.neonLime, size: 26)),
-          const SizedBox(width: 14),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [Expanded(child: Text(title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AtrioColors.hostTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)), if (hostVerified) Padding(padding: const EdgeInsets.only(left: 6), child: Icon(Icons.verified, size: 16, color: AtrioColors.neonLimeDark))]),
-            const SizedBox(height: 2),
-            Text(l.qsProviderReviewsLine(hostName, reviewCount), style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 6),
-            Row(children: [const Icon(Icons.star_rounded, size: 14, color: AtrioColors.ratingGold), const SizedBox(width: 3), Text(rating.toStringAsFixed(1), style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary))]),
-          ])),
-          const SizedBox(width: 10),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(price.toCLP, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AtrioColors.neonLime)),
-            Text('/$priceUnit', style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.hostTextTertiary)),
-          ]),
-        ]),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AtrioColors.guestSurface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AtrioColors.guestCardBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AtrioColors.guestSurfaceVariant,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(Icons.handyman_rounded,
+                  color: AtrioColors.guestTextPrimary, size: 26),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: GoogleFonts.inter(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: AtrioColors.guestTextPrimary,
+                            letterSpacing: -0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (hostVerified) ...[
+                        const SizedBox(width: 5),
+                        const Icon(Icons.verified, size: 14, color: verifiedBlue),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 8,
+                        backgroundColor: AtrioColors.guestSurfaceVariant,
+                        backgroundImage: hostPhoto != null
+                            ? CachedNetworkImageProvider(hostPhoto)
+                            : null,
+                        child: hostPhoto == null
+                            ? Text(
+                                hostName.toString().substring(0, 1).toUpperCase(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: AtrioColors.guestTextPrimary,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          l.qsProviderReviewsLine(hostName, reviewCount),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AtrioColors.guestTextSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, size: 13, color: AtrioColors.ratingGold),
+                      const SizedBox(width: 3),
+                      Text(
+                        rating.toStringAsFixed(1),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AtrioColors.guestTextPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  // All-inclusive price (base + 7% fee).
+                  price.toCLPWithFee,
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AtrioColors.guestTextPrimary,
+                    letterSpacing: -0.6,
+                  ),
+                ),
+                Text(
+                  '/$priceUnit',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AtrioColors.guestTextTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ═══════ STEP ITEM ═══════
+// ─────────────────────────────────────────────────────────────
+// STEP ITEM
+// ─────────────────────────────────────────────────────────────
 class _StepItem extends StatelessWidget {
   final String step, title, subtitle;
   const _StepItem({required this.step, required this.title, required this.subtitle});
+
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.only(bottom: 14), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Container(width: 28, height: 28, decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(8)), alignment: Alignment.center, child: Text(step, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black))),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AtrioColors.hostTextPrimary)),
-        const SizedBox(height: 2),
-        Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: AtrioColors.hostTextTertiary)),
-      ])),
-    ]));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: AtrioColors.guestTextPrimary,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              step,
+              style: GoogleFonts.inter(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w800,
+                color: AtrioColors.neonLime,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: AtrioColors.guestTextPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AtrioColors.guestTextSecondary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-// ═══════ MILESTONE PREVIEW ═══════
-class _MilestonePreview extends StatelessWidget {
-  final String label, status;
-  const _MilestonePreview({required this.label, required this.status});
+// ─── Request card (urgency badge + budget) ───────────────────
+class _RequestCard extends StatelessWidget {
+  final Map<String, dynamic> request;
+  final VoidCallback onTap;
+  const _RequestCard({required this.request, required this.onTap});
+
+  ({String label, Color bg, Color fg}) _urgencyStyle(String? key) {
+    switch (key) {
+      case 'today':
+        return (
+          label: 'Hoy',
+          bg: AtrioColors.error.withValues(alpha: 0.15),
+          fg: AtrioColors.error,
+        );
+      case 'tomorrow':
+        return (
+          label: 'Mañana',
+          bg: AtrioColors.vibrantOrange.withValues(alpha: 0.15),
+          fg: AtrioColors.vibrantOrange,
+        );
+      case 'week':
+        return (
+          label: 'Esta semana',
+          bg: AtrioColors.guestSurfaceVariant,
+          fg: AtrioColors.guestTextSecondary,
+        );
+      case 'flexible':
+      default:
+        return (
+          label: 'Flexible',
+          bg: AtrioColors.neonLime.withValues(alpha: 0.22),
+          fg: AtrioColors.neonLimeDark,
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [
-      Container(width: 20, height: 20, decoration: BoxDecoration(shape: BoxShape.circle, color: status == 'done' ? AtrioColors.neonLime : status == 'active' ? AtrioColors.neonLime.withValues(alpha: 0.3) : AtrioColors.hostCardBorder), child: status == 'done' ? const Icon(Icons.check, size: 12, color: Colors.black) : null),
-      const SizedBox(width: 10),
-      Text(label, style: GoogleFonts.inter(fontSize: 13, color: status == 'pending' ? AtrioColors.hostTextTertiary : AtrioColors.hostTextPrimary)),
-    ]));
+    final l = AppLocalizations.of(context);
+    final title = request['title'] as String? ?? l.qsServiceDefault;
+    final budget = (request['base_price'] as num?)?.toDouble() ?? 0;
+    final host = request['host'] as Map<String, dynamic>?;
+    final hostName = host?['display_name'] as String? ?? l.qsProviderDefault;
+    final hostPhoto = host?['photo_url'] as String?;
+    final description = request['description'] as String? ?? '';
+    final urgency = _urgencyStyle(request['urgency'] as String?);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AtrioColors.guestSurface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AtrioColors.guestCardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: urgency.bg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.bolt_rounded, size: 11, color: urgency.fg),
+                      const SizedBox(width: 3),
+                      Text(
+                        urgency.label.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: urgency.fg,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  budget > 0 ? '\$${budget.toStringAsFixed(0)}' : '—',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AtrioColors.guestTextPrimary,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Text(
+                  ' presupuesto',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AtrioColors.guestTextTertiary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: AtrioColors.guestTextPrimary,
+                letterSpacing: -0.3,
+                height: 1.25,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (description.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: AtrioColors.guestTextSecondary,
+                  height: 1.4,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 10,
+                  backgroundColor: AtrioColors.guestSurfaceVariant,
+                  backgroundImage: hostPhoto != null
+                      ? CachedNetworkImageProvider(hostPhoto)
+                      : null,
+                  child: hostPhoto == null
+                      ? Text(
+                          hostName.isNotEmpty
+                              ? hostName.substring(0, 1).toUpperCase()
+                              : '?',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: AtrioColors.guestTextPrimary,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    hostName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AtrioColors.guestTextSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

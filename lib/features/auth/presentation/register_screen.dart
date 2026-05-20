@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/utils/legal_urls.dart';
 import '../../../l10n/app_localizations.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -32,12 +34,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     super.initState();
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 700),
     );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOut,
-    );
+    _fadeAnimation =
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
     _fadeController.forward();
   }
 
@@ -54,11 +54,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
     if (_isLoading) return;
+    HapticFeedback.mediumImpact();
 
     setState(() => _isLoading = true);
     try {
-      // Pre-set emailVerified BEFORE signup to win the race against
-      // the auth state listener that fires when the session is created
       AuthService.emailVerified = false;
 
       final response = await AuthService.signUpWithEmail(
@@ -68,26 +67,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
       );
 
       if (!mounted) return;
-
-      // If we got a session back (auto-confirm), send to verification
       if (response.session != null) {
         _showSuccess(AppLocalizations.of(context).authAccountCreated);
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) context.go('/auth/verify-email');
         return;
       }
-
-      // If no session but user exists, email confirmation may be needed
       if (response.user != null && response.session == null) {
-        _showSuccess(
-          AppLocalizations.of(context).authAccountCreatedConfirm,
-        );
+        _showSuccess(AppLocalizations.of(context).authAccountCreatedConfirm);
       }
     } on AuthException catch (e) {
-      AuthService.emailVerified = null; // Reset on failure
+      AuthService.emailVerified = null;
       if (!mounted) return;
-
-      // If email already exists, offer to go to login
       if (e.code == 'email_exists') {
         _showErrorWithAction(
           e.message,
@@ -98,7 +89,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         _showError(e.message);
       }
     } catch (e) {
-      AuthService.emailVerified = null; // Reset on failure
+      AuthService.emailVerified = null;
       if (!mounted) return;
       _showError(AppLocalizations.of(context).commonUnexpectedError);
     } finally {
@@ -108,11 +99,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
   Future<void> _signInWithGoogle() async {
     if (_isGoogleLoading) return;
-
+    HapticFeedback.lightImpact();
     setState(() => _isGoogleLoading = true);
     try {
       await AuthService.signInWithGoogle();
-      // OAuth flow opens browser, deep link callback handles redirect
     } on AuthException catch (e) {
       if (!mounted) return;
       _showError(e.message);
@@ -128,49 +118,41 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(message, style: GoogleFonts.inter(fontSize: 13)),
-            ),
-          ],
-        ),
+        content: Row(children: [
+          const Icon(Icons.error_outline_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(message, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        ]),
         backgroundColor: AtrioColors.error,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 4),
       ),
     );
   }
 
-  void _showErrorWithAction(
-    String message, {
-    required String actionLabel,
-    required VoidCallback onAction,
-  }) {
+  void _showErrorWithAction(String message,
+      {required String actionLabel, required VoidCallback onAction}) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(message, style: GoogleFonts.inter(fontSize: 13)),
-            ),
-          ],
-        ),
-        backgroundColor: AtrioColors.electricViolet,
+        content: Row(children: [
+          const Icon(Icons.info_outline_rounded, color: Colors.white, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(message, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        ]),
+        backgroundColor: AtrioColors.guestTextPrimary,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
           label: actionLabel,
-          textColor: Colors.white,
+          textColor: AtrioColors.neonLime,
           onPressed: onAction,
         ),
       ),
@@ -181,26 +163,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(message, style: GoogleFonts.inter(fontSize: 13)),
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.black, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+              ),
             ),
-          ],
-        ),
-        backgroundColor: AtrioColors.neonLimeDark,
+          ),
+        ]),
+        backgroundColor: AtrioColors.neonLime,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
       ),
     );
   }
 
-  /// Password strength indicator
-  Widget _buildPasswordStrength() {
+  Widget _passwordStrength() {
     final password = _passwordController.text;
     if (password.isEmpty) return const SizedBox.shrink();
 
@@ -211,30 +196,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) strength++;
 
     final l = AppLocalizations.of(context);
-    final labels = [l.authStrengthWeak, l.authStrengthRegular, l.authStrengthGood, l.authStrengthStrong];
+    final labels = [
+      l.authStrengthWeak,
+      l.authStrengthRegular,
+      l.authStrengthGood,
+      l.authStrengthStrong
+    ];
     final colors = [
       AtrioColors.error,
       Colors.orange,
       AtrioColors.neonLimeDark,
       const Color(0xFF00C853),
     ];
-
     final idx = (strength - 1).clamp(0, 3);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8, left: 4),
+      padding: const EdgeInsets.only(top: 8),
       child: Row(
         children: [
-          // Progress bars
           ...List.generate(4, (i) {
             return Expanded(
               child: Container(
                 height: 3,
                 margin: const EdgeInsets.only(right: 4),
                 decoration: BoxDecoration(
-                  color: i < strength
-                      ? colors[idx]
-                      : AtrioColors.guestCardBorder,
+                  color: i < strength ? colors[idx] : AtrioColors.guestCardBorder,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -245,8 +231,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
             strength > 0 ? labels[idx] : '',
             style: GoogleFonts.inter(
               fontSize: 11,
+              fontWeight: FontWeight.w800,
               color: strength > 0 ? colors[idx] : AtrioColors.guestTextTertiary,
-              fontWeight: FontWeight.w600,
+              letterSpacing: 0.4,
             ),
           ),
         ],
@@ -265,114 +252,103 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(28, 0, 28, bottomInset > 0 ? 16 : 0),
+            padding: EdgeInsets.fromLTRB(24, 8, 24, bottomInset > 0 ? 16 : 0),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 40),
-                  // Logo
-                  Center(
-                    child: Image.asset(
-                      'assets/images/logo_negro.png',
-                      height: 64,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => Text(
-                        'ATRIO',
-                        style: GoogleFonts.inter(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: AtrioColors.guestTextPrimary,
-                          letterSpacing: 6,
+                  // Back row
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.go('/auth/login'),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AtrioColors.guestSurface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AtrioColors.guestCardBorder),
+                          ),
+                          child: const Icon(Icons.arrow_back_rounded,
+                              size: 18, color: AtrioColors.guestTextPrimary),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 36),
-                  // Heading
+                  const SizedBox(height: 32),
                   Center(
                     child: Text(
                       l.authCreateAccount,
+                      textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
                         color: AtrioColors.guestTextPrimary,
-                        height: 1.1,
+                        letterSpacing: -1.0,
+                        height: 1.05,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Center(
-                    child: RichText(
+                    child: Text(
+                      'Únete a Atrio en menos de un minuto',
                       textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          color: AtrioColors.guestTextSecondary,
-                          height: 1.5,
-                        ),
-                        children: [
-                          TextSpan(text: l.authJoinAtrio),
-                          TextSpan(
-                            text: 'Atrio',
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              color: AtrioColors.neonLimeDark,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          TextSpan(text: l.authStartToday),
-                        ],
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AtrioColors.guestTextSecondary,
+                        height: 1.4,
                       ),
                     ),
                   ),
                   const SizedBox(height: 32),
+
                   // Name
-                  _LightTextField(
+                  _SectionLabel(text: 'NOMBRE'),
+                  const SizedBox(height: 8),
+                  _EditorialField(
                     controller: _nameController,
                     hint: l.authFullName,
-                    icon: Icons.person_outline,
+                    icon: Icons.person_outline_rounded,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.name],
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return l.authEnterName;
-                      }
-                      if (value.trim().length < 2) {
-                        return l.authNameMinChars;
-                      }
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return l.authEnterName;
+                      if (v.trim().length < 2) return l.authNameMinChars;
                       return null;
                     },
                   ),
                   const SizedBox(height: 14),
+
                   // Email
-                  _LightTextField(
+                  _SectionLabel(text: 'EMAIL'),
+                  const SizedBox(height: 8),
+                  _EditorialField(
                     controller: _emailController,
                     hint: l.authEmail,
-                    icon: Icons.email_outlined,
+                    icon: Icons.alternate_email_rounded,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.email],
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return l.authEnterEmail;
-                      }
-                      final emailRegex =
-                          RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
-                      if (!emailRegex.hasMatch(value.trim())) {
-                        return l.authInvalidEmail;
-                      }
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return l.authEnterEmail;
+                      final r = RegExp(r'^[\w\.\-\+]+@[\w\.\-]+\.\w{2,}$');
+                      if (!r.hasMatch(v.trim())) return l.authInvalidEmail;
                       return null;
                     },
                   ),
                   const SizedBox(height: 14),
+
                   // Password
-                  _LightTextField(
+                  _SectionLabel(text: 'CONTRASEÑA'),
+                  const SizedBox(height: 8),
+                  _EditorialField(
                     controller: _passwordController,
                     hint: l.authPassword,
-                    icon: Icons.lock_outline,
+                    icon: Icons.lock_outline_rounded,
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.next,
                     autofillHints: const [AutofillHints.newPassword],
@@ -380,173 +356,97 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                         color: AtrioColors.guestTextTertiary,
                         size: 20,
                       ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return l.authCreatePassword;
-                      }
-                      if (value.length < 8) {
-                        return l.authMinChars;
-                      }
-                      if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                        return l.authIncludeUpper;
-                      }
-                      if (!RegExp(r'[0-9]').hasMatch(value)) {
-                        return l.authIncludeNumber;
-                      }
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return l.authCreatePassword;
+                      if (v.length < 8) return l.authMinChars;
+                      if (!RegExp(r'[A-Z]').hasMatch(v)) return l.authIncludeUpper;
+                      if (!RegExp(r'[0-9]').hasMatch(v)) return l.authIncludeNumber;
                       return null;
                     },
                   ),
-                  _buildPasswordStrength(),
+                  _passwordStrength(),
                   const SizedBox(height: 14),
+
                   // Confirm
-                  _LightTextField(
+                  _SectionLabel(text: 'CONFIRMAR CONTRASEÑA'),
+                  const SizedBox(height: 8),
+                  _EditorialField(
                     controller: _confirmPasswordController,
                     hint: l.authConfirmPassword,
-                    icon: Icons.lock_outline,
+                    icon: Icons.lock_outline_rounded,
                     obscureText: _obscureConfirm,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _signUp(),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirm
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                         color: AtrioColors.guestTextTertiary,
                         size: 20,
                       ),
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return l.authConfirmPwd;
-                      }
-                      if (value != _passwordController.text) {
-                        return l.authPwdMismatch;
-                      }
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return l.authConfirmPwd;
+                      if (v != _passwordController.text) return l.authPwdMismatch;
                       return null;
                     },
                   ),
-                  const SizedBox(height: 28),
-                  // Create Account button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _signUp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AtrioColors.neonLime,
-                        foregroundColor: Colors.black,
-                        disabledBackgroundColor:
-                            AtrioColors.neonLime.withValues(alpha: 0.4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.black,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  l.authCreateAccountBtn,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Icon(Icons.arrow_forward, size: 20),
-                              ],
-                            ),
-                    ),
+                  const SizedBox(height: 22),
+
+                  // CTA
+                  _LimeButton(
+                    label: l.authCreateAccountBtn,
+                    isLoading: _isLoading,
+                    enabled: !_isLoading && !_isGoogleLoading,
+                    onTap: _signUp,
                   ),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 22),
+
                   // Divider
                   Row(
                     children: [
-                      Expanded(
-                          child:
-                              Divider(color: AtrioColors.guestCardBorder)),
+                      Expanded(child: Divider(color: AtrioColors.guestCardBorder, height: 1)),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
                         child: Text(
-                          'o continúa con',
+                          'O CONTINÚA CON',
                           style: GoogleFonts.inter(
-                            fontSize: 13,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
                             color: AtrioColors.guestTextTertiary,
+                            letterSpacing: 1.2,
                           ),
                         ),
                       ),
-                      Expanded(
-                          child:
-                              Divider(color: AtrioColors.guestCardBorder)),
+                      Expanded(child: Divider(color: AtrioColors.guestCardBorder, height: 1)),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  // Google sign in
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: OutlinedButton(
-                      onPressed:
-                          (_isLoading || _isGoogleLoading) ? null : _signInWithGoogle,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AtrioColors.guestTextPrimary,
-                        side: const BorderSide(
-                            color: AtrioColors.guestCardBorder),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        backgroundColor: AtrioColors.guestSurface,
-                        disabledForegroundColor:
-                            AtrioColors.guestTextTertiary,
-                      ),
-                      child: _isGoogleLoading
-                          ? SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: AtrioColors.guestTextSecondary,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.g_mobiledata, size: 24),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Continuar con Google',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    color: AtrioColors.guestTextPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
+
+                  const SizedBox(height: 22),
+
+                  _GhostButton(
+                    label: 'Continuar con Google',
+                    icon: Icons.g_mobiledata,
+                    isLoading: _isGoogleLoading,
+                    enabled: !_isLoading && !_isGoogleLoading,
+                    onTap: _signInWithGoogle,
                   ),
-                  const SizedBox(height: 20),
-                  // Terms
+
+                  const SizedBox(height: 24),
+
+                  // Terms (links to GitHub)
                   Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -555,27 +455,43 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                         text: TextSpan(
                           style: GoogleFonts.inter(
                             fontSize: 12,
+                            fontWeight: FontWeight.w500,
                             color: AtrioColors.guestTextTertiary,
                             height: 1.5,
                           ),
                           children: [
-                            const TextSpan(
-                                text: 'Al registrarte aceptas nuestros '),
-                            TextSpan(
-                              text: 'Términos de Servicio',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: AtrioColors.neonLimeDark,
-                                fontWeight: FontWeight.w600,
+                            const TextSpan(text: 'Al registrarte aceptas nuestros '),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: GestureDetector(
+                                onTap: () => LegalUrls.open(LegalUrls.terms),
+                                child: Text(
+                                  'Términos',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AtrioColors.guestTextPrimary,
+                                    decoration: TextDecoration.underline,
+                                    decorationThickness: 1.5,
+                                  ),
+                                ),
                               ),
                             ),
                             const TextSpan(text: ' y '),
-                            TextSpan(
-                              text: 'Política de Privacidad',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: AtrioColors.neonLimeDark,
-                                fontWeight: FontWeight.w600,
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: GestureDetector(
+                                onTap: () => LegalUrls.open(LegalUrls.privacy),
+                                child: Text(
+                                  'Política de Privacidad',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AtrioColors.guestTextPrimary,
+                                    decoration: TextDecoration.underline,
+                                    decorationThickness: 1.5,
+                                  ),
+                                ),
                               ),
                             ),
                             const TextSpan(text: '.'),
@@ -584,34 +500,42 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 22),
+
                   // Login link
                   Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           '¿Ya tienes cuenta? ',
                           style: GoogleFonts.inter(
                             fontSize: 14,
+                            fontWeight: FontWeight.w500,
                             color: AtrioColors.guestTextSecondary,
                           ),
                         ),
                         GestureDetector(
                           onTap: () => context.go('/auth/login'),
-                          child: Text(
-                            'Inicia Sesión',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AtrioColors.neonLimeDark,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            child: Text(
+                              'Inicia sesión',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: AtrioColors.guestTextPrimary,
+                                letterSpacing: -0.2,
+                                decoration: TextDecoration.underline,
+                                decorationThickness: 1.5,
+                              ),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
                 ],
               ),
             ),
@@ -622,7 +546,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
   }
 }
 
-class _LightTextField extends StatelessWidget {
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: GoogleFonts.inter(
+        fontSize: 10.5,
+        fontWeight: FontWeight.w800,
+        color: AtrioColors.guestTextTertiary,
+        letterSpacing: 1.4,
+      ),
+    );
+  }
+}
+
+class _EditorialField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData? icon;
@@ -635,7 +577,7 @@ class _LightTextField extends StatelessWidget {
   final void Function(String)? onFieldSubmitted;
   final void Function(String)? onChanged;
 
-  const _LightTextField({
+  const _EditorialField({
     required this.controller,
     required this.hint,
     this.icon,
@@ -651,62 +593,171 @@ class _LightTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      validator: validator,
-      autofillHints: autofillHints,
-      onFieldSubmitted: onFieldSubmitted,
-      onChanged: onChanged,
-      style: GoogleFonts.inter(
-        fontSize: 15,
-        color: AtrioColors.guestTextPrimary,
+    return Container(
+      decoration: BoxDecoration(
+        color: AtrioColors.guestSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AtrioColors.guestCardBorder),
       ),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.inter(
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        validator: validator,
+        autofillHints: autofillHints,
+        onFieldSubmitted: onFieldSubmitted,
+        onChanged: onChanged,
+        cursorColor: AtrioColors.guestTextPrimary,
+        style: GoogleFonts.inter(
           fontSize: 15,
-          color: AtrioColors.guestTextTertiary,
+          fontWeight: FontWeight.w600,
+          color: AtrioColors.guestTextPrimary,
+          letterSpacing: -0.2,
         ),
-        prefixIcon: icon != null
-            ? Icon(icon, color: AtrioColors.guestTextTertiary, size: 20)
-            : null,
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: AtrioColors.guestSurface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AtrioColors.guestCardBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AtrioColors.guestCardBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: AtrioColors.neonLimeDark,
-            width: 1.5,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: AtrioColors.guestTextTertiary,
           ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AtrioColors.error),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
+          prefixIcon: icon != null
+              ? Icon(icon, color: AtrioColors.guestTextSecondary, size: 19)
+              : null,
+          suffixIcon: suffixIcon,
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          errorStyle: GoogleFonts.inter(
             color: AtrioColors.error,
-            width: 1.5,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
           ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
-        errorStyle: const TextStyle(color: AtrioColors.error),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
+      ),
+    );
+  }
+}
+
+class _LimeButton extends StatelessWidget {
+  final String label;
+  final bool isLoading;
+  final bool enabled;
+  final VoidCallback onTap;
+  const _LimeButton({
+    required this.label,
+    required this.isLoading,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 56,
+        decoration: BoxDecoration(
+          color: enabled
+              ? AtrioColors.neonLime
+              : AtrioColors.neonLime.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: enabled
+              ? [
+                  BoxShadow(
+                    color: AtrioColors.neonLime.withValues(alpha: 0.4),
+                    blurRadius: 18,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
+        alignment: Alignment.center,
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.black),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded,
+                      size: 18, color: Colors.black),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _GhostButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isLoading;
+  final bool enabled;
+  final VoidCallback onTap;
+  const _GhostButton({
+    required this.label,
+    required this.icon,
+    required this.isLoading,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: AtrioColors.guestSurface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AtrioColors.guestCardBorder),
+        ),
+        alignment: Alignment.center,
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: AtrioColors.guestTextPrimary,
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 22, color: AtrioColors.guestTextPrimary),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AtrioColors.guestTextPrimary,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

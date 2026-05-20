@@ -2,289 +2,221 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import '../../config/supabase/supabase_config.dart';
 
-/// Mercado Pago Checkout Pro integration.
+/// Mercado Pago integration — uses **Checkout API** (custom card form), NOT
+/// Checkout Pro WebView.
+///
+/// Why Checkout API instead of Checkout Pro:
+///   The MP sandbox issued by their developer panel only exposes a LIVE
+///   public key. Checkout Pro WebView tokenizes the card client-side using
+///   that public key — generating `live_mode: true` tokens — but the access
+///   token is `TEST-` (sandbox), which produces a `live_mode` mismatch and
+///   silently rejects every test payment with "Algo salió mal... usa otro
+///   medio de pago".
+///
+///   Checkout API fixes this by tokenizing **server-side** using the access
+///   token's auth context. Same token used for tokenization and payment →
+///   no mismatch, sandbox payments approve, production payments approve.
 ///
 /// Flow:
-/// 1. [createPreference] → returns checkout URL
-/// 2. Open URL in WebView → user pays
-/// 3. WebView intercepts redirect → returns [PaymentResult]
-/// 4. [getPaymentStatus] → verify payment server-side
-///
-/// Security note: For production, move Access Token to server-side
-/// (Supabase Edge Function or RPC with pg_net).
+///   ┌──────────────┐   POST /functions/v1/mp-create-payment
+///   │  Atrio app   │  { bookingId, card, identification, installments }
+///   └──────┬───────┘
+///          │  HTTPS + JWT
+///          ▼
+///   ┌──────────────────────────────────────┐
+///   │  Edge Function mp-create-payment     │
+///   │   1. Verifies guest's JWT            │
+///   │   2. Loads booking (service role)    │
+///   │   3. Tokenizes card with TEST-/      │
+///   │      APP_USR- access token           │
+///   │   4. Creates payment via /v1/payments│
+///   │   5. Updates bookings.payment_status │
+///   └──────┬───────────────────────────────┘
+///          │
+///          ▼
+///   { status: "approved" | "rejected" | "pending", payment_id, ... }
 class MercadoPagoService {
-  static const _baseUrl = 'https://api.mercadopago.com';
-
-  static String get _accessToken =>
-      dotenv.env['MP_ACCESS_TOKEN'] ?? '';
-
-  /// Public key (used for client-side tokenization if needed later).
-  static String get publicKey =>
-      dotenv.env['MP_PUBLIC_KEY'] ?? '';
+  static String get _createPaymentUrl =>
+      dotenv.env['MP_CREATE_PAYMENT_URL'] ?? '';
 
   static bool get _isSandbox =>
       (dotenv.env['MP_SANDBOX'] ?? 'true').toLowerCase() == 'true';
 
-  static bool get isConfigured => _accessToken.isNotEmpty;
+  /// True when the create-payment endpoint is configured.
+  static bool get isConfigured => _createPaymentUrl.isNotEmpty;
 
   static bool get isSandbox => _isSandbox;
 
-  // ─── Success/Failure/Pending back URLs ───
-  // These are intercepted by the WebView before loading.
-  static const _backSuccess = 'https://atrio.app/payment/success';
-  static const _backFailure = 'https://atrio.app/payment/failure';
-  static const _backPending = 'https://atrio.app/payment/pending';
-
-  /// Back URL patterns for WebView interception.
-  static const backUrlPatterns = [
-    'atrio.app/payment/success',
-    'atrio.app/payment/failure',
-    'atrio.app/payment/pending',
-  ];
-
-  /// Creates a Checkout Pro preference.
+  /// Submits a card payment for [bookingId] via the Edge Function.
   ///
-  /// Returns the checkout URL to open in WebView.
-  /// [externalReference] should be the booking ID for webhook matching.
-  static Future<MpPreference> createPreference({
-    required String title,
-    required String description,
-    required double amount,
-    required String payerEmail,
-    required String externalReference,
-    String currencyId = 'CLP',
-    String? payerName,
+  /// The card data flows to our backend over HTTPS, gets immediately
+  /// tokenized at MP, and the raw data is discarded. Nothing is stored.
+  /// This keeps the merchant in PCI-DSS SAQ-A scope (lowest tier).
+  static Future<PaymentResult> payWithCard({
+    required String bookingId,
+    required String cardNumber,
+    required String cardHolderName,
+    required int expirationMonth,
+    required int expirationYear,
+    required String cvv,
+    required String identificationType, // "RUT" in CL
+    required String identificationNumber,
+    int installments = 1,
   }) async {
     if (!isConfigured) {
-      throw MpException('Mercado Pago no está configurado');
+      throw const MpException('Mercado Pago no está configurado');
+    }
+    final session = SupabaseConfig.auth.currentSession;
+    if (session == null) {
+      throw const MpException('Sesión expirada, inicia sesión de nuevo');
     }
 
-    // CLP doesn't support decimals
-    final unitPrice = currencyId == 'CLP' ? amount.round() : amount;
-
-    final body = {
-      'items': [
-        {
-          'title': title,
-          'description': description,
-          'quantity': 1,
-          'unit_price': unitPrice,
-          'currency_id': currencyId,
-        }
-      ],
-      'payer': {
-        'email': payerEmail,
-        'name': ?payerName,
+    final body = jsonEncode({
+      'bookingId': bookingId,
+      'card': {
+        'number': cardNumber.replaceAll(' ', ''),
+        'holder': cardHolderName,
+        'expMonth': expirationMonth,
+        'expYear': expirationYear,
+        'cvv': cvv,
       },
-      'back_urls': {
-        'success': _backSuccess,
-        'failure': _backFailure,
-        'pending': _backPending,
+      'identification': {
+        'type': identificationType,
+        'number': identificationNumber,
       },
-      'auto_return': 'approved',
-      'external_reference': externalReference,
-      'statement_descriptor': 'ATRIO',
-      'expires': true,
-      'expiration_date_to': DateTime.now()
-          .add(const Duration(hours: 2))
-          .toUtc()
-          .toIso8601String(),
-    };
+      'installments': installments,
+    });
 
-    debugPrint('[MP] Creating preference for $externalReference ...');
+    debugPrint('[MP] Submitting payment for booking $bookingId');
 
     final response = await http.post(
-      Uri.parse('$_baseUrl/checkout/preferences'),
+      Uri.parse(_createPaymentUrl),
       headers: {
-        'Authorization': 'Bearer $_accessToken',
+        'Authorization': 'Bearer ${session.accessToken}',
         'Content-Type': 'application/json',
+        'apikey': dotenv.env['SUPABASE_ANON_KEY'] ?? '',
       },
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final initPoint = _isSandbox
-          ? (data['sandbox_init_point'] as String? ?? data['init_point'] as String)
-          : data['init_point'] as String;
-
-      debugPrint('[MP] Preference created: ${data['id']}');
-      debugPrint('[MP] Checkout URL: $initPoint');
-
-      return MpPreference(
-        id: data['id'] as String,
-        initPoint: initPoint,
-        sandboxInitPoint: data['sandbox_init_point'] as String?,
-      );
-    } else {
-      debugPrint('[MP] Error ${response.statusCode}: ${response.body}');
-      throw MpException(
-        'Error al crear el pago: ${response.statusCode}',
-        details: response.body,
-      );
-    }
-  }
-
-  /// Checks the status of a payment by its ID.
-  ///
-  /// Used after WebView redirect to verify payment server-side.
-  static Future<MpPaymentStatus> getPaymentStatus(String paymentId) async {
-    if (!isConfigured) {
-      throw MpException('Mercado Pago no está configurado');
-    }
-
-    final response = await http.get(
-      Uri.parse('$_baseUrl/v1/payments/$paymentId'),
-      headers: {
-        'Authorization': 'Bearer $_accessToken',
-      },
+      body: body,
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      return MpPaymentStatus.fromJson(data);
-    } else {
-      throw MpException(
-        'Error al verificar el pago',
-        details: response.body,
+      final status = data['status'] as String? ?? 'unknown';
+      debugPrint('[MP] Payment ${data['payment_id']} → $status');
+      return PaymentResult(
+        status: status,
+        paymentId: (data['payment_id'] as String?) ?? '',
+        statusDetail: data['status_detail'] as String?,
+        externalReference: bookingId,
       );
     }
+
+    debugPrint('[MP] Payment error ${response.statusCode}: ${response.body}');
+    String message;
+    try {
+      final j = jsonDecode(response.body) as Map<String, dynamic>;
+      message = (j['error'] as String?) ?? 'Error al procesar el pago';
+    } catch (_) {
+      message = 'Error al procesar el pago (${response.statusCode})';
+    }
+    throw MpException(message, details: response.body);
   }
 
-  /// Searches for payments by external reference (booking ID).
-  ///
-  /// Useful when the user returns to the app without redirect params.
-  static Future<MpPaymentStatus?> findPaymentByReference(
-      String externalReference) async {
-    if (!isConfigured) return null;
-
-    final response = await http.get(
-      Uri.parse(
-          '$_baseUrl/v1/payments/search?external_reference=$externalReference&sort=date_created&criteria=desc'),
-      headers: {
-        'Authorization': 'Bearer $_accessToken',
+  /// Reads the latest payment status from the bookings table.
+  /// Webhook keeps it fresh, so this is the canonical source of truth.
+  static Future<MpPaymentStatus?> getBookingPaymentStatus(
+      String bookingId) async {
+    final row = await SupabaseConfig.client
+        .from('bookings')
+        .select('id, payment_status, mp_payment_id, total')
+        .eq('id', bookingId)
+        .maybeSingle();
+    if (row == null) return null;
+    final status = (row['payment_status'] as String?) ?? 'pending';
+    return MpPaymentStatus(
+      id: (row['mp_payment_id'] as String?) ?? '',
+      status: switch (status) {
+        'paid' => 'approved',
+        'failed' => 'rejected',
+        'refunded' => 'refunded',
+        _ => 'pending',
       },
+      externalReference: row['id'] as String?,
+      transactionAmount: (row['total'] as num?)?.toDouble() ?? 0,
     );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final results = data['results'] as List<dynamic>?;
-      if (results != null && results.isNotEmpty) {
-        return MpPaymentStatus.fromJson(
-            results.first as Map<String, dynamic>);
-      }
-    }
-    return null;
   }
 }
 
 // ─── Models ───
 
-class MpPreference {
-  final String id;
-  final String initPoint;
-  final String? sandboxInitPoint;
+/// Result of a payment attempt via Checkout API.
+class PaymentResult {
+  final String status; // approved, rejected, in_process, pending, cancelled
+  final String? paymentId;
+  final String? statusDetail;
+  final String? externalReference;
 
-  const MpPreference({
-    required this.id,
-    required this.initPoint,
-    this.sandboxInitPoint,
+  const PaymentResult({
+    required this.status,
+    this.paymentId,
+    this.statusDetail,
+    this.externalReference,
   });
+
+  bool get isApproved => status == 'approved';
+  bool get isRejected => status == 'rejected' || status == 'cancelled';
+  bool get isPending => status == 'in_process' || status == 'pending';
+  bool get isCancelled => status == 'cancelled';
+
+  /// User-friendly Spanish reason when the payment was rejected.
+  String get userMessage {
+    switch (statusDetail) {
+      case 'cc_rejected_insufficient_amount':
+        return 'Fondos insuficientes en la tarjeta';
+      case 'cc_rejected_bad_filled_card_number':
+        return 'Número de tarjeta incorrecto';
+      case 'cc_rejected_bad_filled_date':
+        return 'Fecha de vencimiento incorrecta';
+      case 'cc_rejected_bad_filled_security_code':
+        return 'Código de seguridad incorrecto';
+      case 'cc_rejected_bad_filled_other':
+        return 'Datos de tarjeta incorrectos';
+      case 'cc_rejected_call_for_authorize':
+        return 'Tu banco requiere que autorices el pago';
+      case 'cc_rejected_card_disabled':
+        return 'Tarjeta deshabilitada';
+      case 'cc_rejected_max_attempts':
+        return 'Demasiados intentos, intenta más tarde';
+      case 'cc_rejected_duplicated_payment':
+        return 'Pago duplicado';
+      case 'cc_rejected_high_risk':
+        return 'Pago rechazado por seguridad';
+      case 'accredited':
+        return 'Pago aprobado';
+      default:
+        return statusDetail ?? 'Error procesando el pago';
+    }
+  }
 }
 
 class MpPaymentStatus {
   final String id;
   final String status;
-  final String? statusDetail;
   final String? externalReference;
   final double transactionAmount;
-  final String? currencyId;
-  final String? payerEmail;
-  final String? dateApproved;
-  final String? paymentMethodId;
-  final String? paymentTypeId;
 
   const MpPaymentStatus({
     required this.id,
     required this.status,
-    this.statusDetail,
     this.externalReference,
     required this.transactionAmount,
-    this.currencyId,
-    this.payerEmail,
-    this.dateApproved,
-    this.paymentMethodId,
-    this.paymentTypeId,
   });
-
-  factory MpPaymentStatus.fromJson(Map<String, dynamic> json) {
-    return MpPaymentStatus(
-      id: json['id'].toString(),
-      status: json['status'] as String? ?? 'unknown',
-      statusDetail: json['status_detail'] as String?,
-      externalReference: json['external_reference'] as String?,
-      transactionAmount:
-          (json['transaction_amount'] as num?)?.toDouble() ?? 0,
-      currencyId: json['currency_id'] as String?,
-      payerEmail: (json['payer'] as Map<String, dynamic>?)?['email'] as String?,
-      dateApproved: json['date_approved'] as String?,
-      paymentMethodId: json['payment_method_id'] as String?,
-      paymentTypeId: json['payment_type_id'] as String?,
-    );
-  }
 
   bool get isApproved => status == 'approved';
   bool get isRejected => status == 'rejected';
   bool get isPending => status == 'in_process' || status == 'pending';
-
-  /// User-friendly status label in Spanish.
-  String get statusLabel {
-    switch (status) {
-      case 'approved':
-        return 'Aprobado';
-      case 'rejected':
-        return 'Rechazado';
-      case 'in_process':
-        return 'En proceso';
-      case 'pending':
-        return 'Pendiente';
-      case 'cancelled':
-        return 'Cancelado';
-      case 'refunded':
-        return 'Reembolsado';
-      default:
-        return 'Desconocido';
-    }
-  }
-
-  /// User-friendly rejection reason.
-  String? get rejectionReason {
-    switch (statusDetail) {
-      case 'cc_rejected_insufficient_amount':
-        return 'Fondos insuficientes';
-      case 'cc_rejected_bad_filled_card_number':
-        return 'Numero de tarjeta incorrecto';
-      case 'cc_rejected_bad_filled_date':
-        return 'Fecha de vencimiento incorrecta';
-      case 'cc_rejected_bad_filled_security_code':
-        return 'Codigo de seguridad incorrecto';
-      case 'cc_rejected_bad_filled_other':
-        return 'Datos de tarjeta incorrectos';
-      case 'cc_rejected_call_for_authorize':
-        return 'Debes autorizar el pago con tu banco';
-      case 'cc_rejected_card_disabled':
-        return 'Tarjeta deshabilitada';
-      case 'cc_rejected_max_attempts':
-        return 'Demasiados intentos, intenta mas tarde';
-      case 'cc_rejected_duplicated_payment':
-        return 'Pago duplicado';
-      case 'cc_rejected_high_risk':
-        return 'Pago rechazado por seguridad';
-      default:
-        return statusDetail;
-    }
-  }
 }
 
 class MpException implements Exception {
@@ -295,49 +227,4 @@ class MpException implements Exception {
 
   @override
   String toString() => message;
-}
-
-/// Result returned from the payment WebView.
-class PaymentResult {
-  final String status; // approved, rejected, pending
-  final String? paymentId;
-  final String? externalReference;
-  final String? merchantOrderId;
-
-  const PaymentResult({
-    required this.status,
-    this.paymentId,
-    this.externalReference,
-    this.merchantOrderId,
-  });
-
-  bool get isApproved => status == 'approved';
-  bool get isRejected =>
-      status == 'rejected' || status == 'failure';
-  bool get isPending => status == 'pending' || status == 'in_process';
-  bool get isCancelled => status == 'cancelled';
-
-  /// Parse from Mercado Pago redirect URL query parameters.
-  factory PaymentResult.fromUrl(String url) {
-    final uri = Uri.parse(url);
-    final params = uri.queryParameters;
-
-    String status;
-    if (url.contains('/success')) {
-      status = 'approved';
-    } else if (url.contains('/failure')) {
-      status = 'rejected';
-    } else if (url.contains('/pending')) {
-      status = 'pending';
-    } else {
-      status = params['status'] ?? params['collection_status'] ?? 'unknown';
-    }
-
-    return PaymentResult(
-      status: status,
-      paymentId: params['payment_id'] ?? params['collection_id'],
-      externalReference: params['external_reference'],
-      merchantOrderId: params['merchant_order_id'],
-    );
-  }
 }

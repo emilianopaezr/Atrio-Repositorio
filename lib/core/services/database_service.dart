@@ -336,6 +336,8 @@ class DatabaseService {
   }
 
   /// Update booking payment status and optionally store MP payment ID.
+  /// When payment is marked as paid, also confirm the booking if it was
+  /// pending — guests pre-paid in MP, so the booking should be active.
   static Future<void> updateBookingPaymentStatus(
     String bookingId, {
     required String paymentStatus,
@@ -348,6 +350,12 @@ class DatabaseService {
     };
     if (mpPaymentId != null) updates['mp_payment_id'] = mpPaymentId;
     if (mpPreferenceId != null) updates['mp_preference_id'] = mpPreferenceId;
+    // Auto-confirm bookings whose payment just landed.
+    if (paymentStatus == 'paid') {
+      updates['status'] = 'confirmed';
+    } else if (paymentStatus == 'failed' || paymentStatus == 'cancelled') {
+      updates['status'] = 'cancelled';
+    }
 
     await _client
         .from(AppConstants.tableBookings)
@@ -387,11 +395,11 @@ class DatabaseService {
       'description': 'Comision Atrio',
     });
 
-    // Update host balance
+    // Update host balance — host_profiles PK is `id` (FK to profiles.id).
     final hostProfile = await _client
         .from(AppConstants.tableHostProfiles)
         .select('current_balance, pending_balance, total_earnings')
-        .eq('user_id', hostId)
+        .eq('id', hostId)
         .maybeSingle();
 
     if (hostProfile != null) {
@@ -406,7 +414,14 @@ class DatabaseService {
             'current_balance': currentBalance + hostEarning,
             'total_earnings': totalEarnings + hostEarning,
           })
-          .eq('user_id', hostId);
+          .eq('id', hostId);
+    } else {
+      // First-time host — create the row so the earning isn't lost.
+      await _client.from(AppConstants.tableHostProfiles).insert({
+        'id': hostId,
+        'current_balance': hostEarning,
+        'total_earnings': hostEarning,
+      });
     }
   }
 

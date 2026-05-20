@@ -12,6 +12,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsTitle => 'Configuración';
 
   @override
+  String get settingsEyebrow => 'Preferencias';
+
+  @override
   String get sectionNotifications => 'Notificaciones';
 
   @override
@@ -397,13 +400,61 @@ class AppLocalizationsEs extends AppLocalizations {
   String get verifySendFail => 'No se pudo enviar el código. Intenta de nuevo.';
 
   @override
+  String get homeEyebrow => 'EXPLORA';
+
+  @override
+  String get homeHeroTitle => '¿Qué necesitas hoy?';
+
+  @override
+  String get homeTrendingTitle => 'En tendencia';
+
+  @override
+  String get homeTrendingSubtitle => 'Lo más visto esta semana';
+
+  @override
+  String get homeNearbyTitle => 'Cerca de ti';
+
+  @override
+  String get homeNearbySubtitle => 'A pocos minutos de distancia';
+
+  @override
+  String get homeRecentTitle => 'Recién publicados';
+
+  @override
+  String get homeRecentSubtitle => 'Lo último en Atrio';
+
+  @override
   String get homeSearchHint => 'Buscar espacios, experiencias...';
 
   @override
   String get homeQuickServicesTitle => 'Servicios Rápidos';
 
   @override
-  String get homeQuickServicesSubtitle => 'Mudanza, limpieza, armado y más';
+  String get homeQuickServicesSubtitle => 'Resuelve hoy lo que necesitas';
+
+  @override
+  String get homeQuickServicesCta => 'Explorar servicios';
+
+  @override
+  String get homeQuickServicesBadge => 'Disponible 24/7';
+
+  @override
+  String get homeQuickCatMoving => 'Mudanza';
+
+  @override
+  String get homeQuickCatCleaning => 'Limpieza';
+
+  @override
+  String get homeQuickCatAssembly => 'Armado';
+
+  @override
+  String get homeQuickCatRepair => 'Reparación';
+
+  @override
+  String get homeFeaturedListings => 'Para ti';
+
+  @override
+  String get homeFeaturedSubtitle => 'Espacios y experiencias seleccionados';
 
   @override
   String get homeBecomeHostTitle => 'Sé anfitrión en Atrio';
@@ -544,6 +595,31 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get searchError => 'Error al buscar. Intenta de nuevo.';
+
+  @override
+  String get searchHeroEyebrow => 'EXPLORA';
+
+  @override
+  String get searchHeroTitle => 'Encuentra tu lugar';
+
+  @override
+  String get searchPopularSubtitle => 'Lo que más buscan los huéspedes';
+
+  @override
+  String get searchBrowseSubtitle => 'Filtra por tipo de experiencia';
+
+  @override
+  String get searchNearYouSubtitle => 'A pocos pasos de donde estás';
+
+  @override
+  String get searchSeeAll => 'Ver todo';
+
+  @override
+  String get bookingsEyebrow => 'TU AGENDA';
+
+  @override
+  String get bookingsHeroSubtitle =>
+      'Todas tus reservas y contrataciones en un solo lugar';
 
   @override
   String get bookingsTitle => 'Mis Reservas';
@@ -754,6 +830,56 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatTitle => 'Mensajes';
 
   @override
+  String get chatEyebrow => 'BANDEJA';
+
+  @override
+  String get chatHeroSubtitle => 'Coordina todo con anfitriones y proveedores';
+
+  @override
+  String get chatTabAll => 'Todos';
+
+  @override
+  String get chatTabUnread => 'No leídos';
+
+  @override
+  String get chatTabRead => 'Leídos';
+
+  @override
+  String get chatAllEmptyTitle => 'Sin conversaciones';
+
+  @override
+  String get chatAllEmptySubtitle =>
+      'Cuando reserves o contrates, los chats aparecerán aquí';
+
+  @override
+  String chatUnreadCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sin leer',
+      one: '1 sin leer',
+      zero: 'Todo al día',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatReadEmptyTitle => 'Sin chats archivados';
+
+  @override
+  String get chatReadEmptySubtitle =>
+      'Las conversaciones que ya leíste aparecerán aquí';
+
+  @override
+  String get chatUnreadEmptyTitle => 'Estás al día';
+
+  @override
+  String get chatUnreadEmptySubtitle => 'No tienes mensajes sin leer';
+
+  @override
+  String get chatNewBadge => 'NUEVO';
+
+  @override
   String get chatSearchHint => 'Buscar conversaciones...';
 
   @override
@@ -905,7 +1031,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatSaveBtn => 'Guardar';
 
   @override
-  String get checkoutTitle => 'Checkout';
+  String get checkoutTitle => 'Reserva tu lugar';
 
   @override
   String get checkoutSummary => 'Resumen de reserva';
@@ -914,7 +1040,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get checkoutPaymentMethod => 'Método de pago';
 
   @override
-  String get checkoutTotal => 'Total a pagar';
+  String get checkoutTotal => 'Total';
 
   @override
   String get checkoutPay => 'Pagar';
@@ -1493,6 +1619,39 @@ class AppLocalizationsEs extends AppLocalizations {
   String get hostListingsHeader => 'Mis Espacios';
 
   @override
+  String get hostListingsEyebrow => 'TU PORTAFOLIO';
+
+  @override
+  String get hostListingsHeroSubtitle =>
+      'Gestiona tus anuncios y mantenlos siempre listos';
+
+  @override
+  String get hostListingsStatPublished => 'Publicados';
+
+  @override
+  String get hostListingsStatDraft => 'Borradores';
+
+  @override
+  String get hostListingsStatPaused => 'Pausados';
+
+  @override
+  String get hostListingsAllSection => 'Todos tus anuncios';
+
+  @override
+  String hostListingsAllSectionSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count publicaciones',
+      one: '1 publicación',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get hostListingsTapToManage => 'Mantén presionado para gestionar';
+
+  @override
   String hostListingsKeepRate(String rate) {
     return 'Tu recibes el $rate% de tus ingresos';
   }
@@ -1661,6 +1820,58 @@ class AppLocalizationsEs extends AppLocalizations {
       'Administra cómo recibes actualizaciones sobre retiros, transferencias y actividad financiera en tu cuenta.';
 
   @override
+  String get walletHeaderEyebrow => 'FINANZAS';
+
+  @override
+  String get walletPayoutSubtitle => 'Cuentas donde recibirás tus retiros';
+
+  @override
+  String get walletPayoutAdd => 'Agregar';
+
+  @override
+  String get walletActivitySubtitle => 'Movimientos recientes de tu billetera';
+
+  @override
+  String get walletActivityAll => 'Ver todo';
+
+  @override
+  String get walletNotificationsSubtitle => 'Cómo te avisamos sobre tu dinero';
+
+  @override
+  String get walletStatPending => 'Pendiente';
+
+  @override
+  String get walletStatThisMonth => 'Este mes';
+
+  @override
+  String get walletStatTotal => 'Total ganado';
+
+  @override
+  String get walletQuickActionsTitle => 'Acciones rápidas';
+
+  @override
+  String get walletQuickActionsSubtitle => 'Gestiona tus finanzas en un toque';
+
+  @override
+  String get walletActionAddBank => 'Vincular banco';
+
+  @override
+  String get walletActionTaxDocs => 'Documentos fiscales';
+
+  @override
+  String get walletActionMovements => 'Movimientos';
+
+  @override
+  String get walletActionHelp => 'Ayuda';
+
+  @override
+  String get walletSupport247 => 'Soporte disponible 24/7 — Próximamente';
+
+  @override
+  String get walletPayoutHint =>
+      'Vincula una cuenta para recibir tus pagos rápidamente y sin comisiones extra.';
+
+  @override
   String get listingAbout => 'Acerca del lugar';
 
   @override
@@ -1800,7 +2011,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get listingHighlightInsured => 'Asegurado';
 
   @override
-  String get listingHighlightInstant => 'Inmediato';
+  String get listingHighlightInstant => 'Reserva instantánea';
 
   @override
   String get listingHighlightConfirm => 'Confirm.';
@@ -1879,6 +2090,42 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get listingRuleQuiet => 'Respetar horario de silencio';
+
+  @override
+  String get ruleNoSmoking => 'No fumar';
+
+  @override
+  String get ruleNoPets => 'No se admiten mascotas';
+
+  @override
+  String get rulePetsAllowed => 'Mascotas permitidas';
+
+  @override
+  String get ruleNoParties => 'No fiestas ni eventos';
+
+  @override
+  String get ruleNoKids => 'No apto para niños';
+
+  @override
+  String get ruleQuietHours => 'Horario de silencio (22:00 — 08:00)';
+
+  @override
+  String get ruleNoShoes => 'Quitarse los zapatos al entrar';
+
+  @override
+  String get ruleNoFood => 'No comer dentro del espacio';
+
+  @override
+  String get ruleNoExtraGuests => 'No invitados sin previo aviso';
+
+  @override
+  String get ruleNoFilming => 'Prohibido grabar contenido';
+
+  @override
+  String get ruleNoLoudMusic => 'Sin música a alto volumen';
+
+  @override
+  String get ruleRespectNeighbors => 'Respetar a los vecinos';
 
   @override
   String get listingCancellation => 'Cancelación';
@@ -2115,6 +2362,30 @@ class AppLocalizationsEs extends AppLocalizations {
   String get profileSwitchGuestSubtitle => 'Explora y reserva experiencias';
 
   @override
+  String get profileSwitchActivate => 'Activar';
+
+  @override
+  String get profileSwitchEnter => 'Entrar';
+
+  @override
+  String get profileSwitchEarnBadge => 'GANA';
+
+  @override
+  String get profileReputation => 'Reputación';
+
+  @override
+  String get profileUserInfo => 'Información del usuario';
+
+  @override
+  String get profileUserInfoTitle => 'Información del usuario';
+
+  @override
+  String get profileUserInfoStatsTitle => 'Estadísticas';
+
+  @override
+  String get profileUserInfoLevelTitle => 'Progreso de nivel';
+
+  @override
   String get profileUserFallback => 'Usuario';
 
   @override
@@ -2148,6 +2419,29 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get profileNotifications => 'Notificaciones';
+
+  @override
+  String get profileHeaderEyebrow => 'MI CUENTA';
+
+  @override
+  String get profileSectionAccount => 'Cuenta';
+
+  @override
+  String get profileSectionAccountSubtitle =>
+      'Tus datos personales y verificaciones';
+
+  @override
+  String get profileSectionPreferences => 'Preferencias';
+
+  @override
+  String get profileSectionPreferencesSubtitle =>
+      'Personaliza tu experiencia en Atrio';
+
+  @override
+  String get profileSectionSupport => 'Soporte';
+
+  @override
+  String get profileSectionSupportSubtitle => 'Estamos aquí para ayudarte';
 
   @override
   String get editProfileTitle => 'Editar Perfil';
@@ -2229,7 +2523,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get paymentMethodsEmpty => 'No tienes métodos de pago';
 
   @override
-  String get pmStripePayments => 'Pagos con Stripe';
+  String get pmStripePayments => 'Pagos con Mercado Pago';
 
   @override
   String get pmStripeTagline => 'Pagos seguros y rápidos';
@@ -2238,10 +2532,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pmActive => 'Activo';
 
   @override
-  String get pmConnectStripe => 'Conectar con Stripe';
+  String get pmConnectStripe => 'Conectar con Mercado Pago';
 
   @override
-  String get pmStripeConnected => 'Stripe conectado exitosamente';
+  String get pmStripeConnected => 'Mercado Pago conectado exitosamente';
 
   @override
   String get pmSavedCards => 'Tarjetas Guardadas';
@@ -2285,14 +2579,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pmSecureDesc =>
-      'Tus pagos son procesados por Stripe con cifrado de grado bancario. Atrio nunca almacena tus datos de tarjeta.';
+      'Tus pagos son procesados por Mercado Pago con cifrado de grado bancario. Atrio nunca almacena tus datos de tarjeta.';
 
   @override
   String get pmAddCardTitle => 'Agregar Tarjeta';
 
   @override
   String get pmAddCardDesc =>
-      'Tu tarjeta será procesada de forma segura por Stripe';
+      'Tu tarjeta será procesada de forma segura por Mercado Pago';
 
   @override
   String get pmFieldCardNumber => 'Número de tarjeta';
@@ -2310,13 +2604,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pmFieldCvc => 'CVC';
 
   @override
-  String get pmSaveWithStripe => 'Guardar con Stripe';
+  String get pmSaveWithStripe => 'Guardar con Mercado Pago';
 
   @override
   String get pmCardAdded => 'Tarjeta agregada correctamente';
 
   @override
-  String get pmProcessedByStripe => 'Procesado de forma segura por Stripe';
+  String get pmProcessedByStripe =>
+      'Procesado de forma segura por Mercado Pago';
 
   @override
   String get helpCenterTitle => 'Centro de Ayuda';
@@ -3497,6 +3792,52 @@ class AppLocalizationsEs extends AppLocalizations {
   String get qsTitle => 'Servicios Rápidos';
 
   @override
+  String get qsEyebrow => 'RESUELVE TU DÍA';
+
+  @override
+  String get qsHeroSubtitle =>
+      'Ofrece o encuentra cualquier servicio que necesites';
+
+  @override
+  String qsResultsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count servicios',
+      one: '1 servicio',
+      zero: 'Sin resultados',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get qsAvailableSection => 'Disponibles cerca tuyo';
+
+  @override
+  String qsPayWithMp(String amount) {
+    return 'Pagar $amount con Mercado Pago';
+  }
+
+  @override
+  String get qsPaymentApproved =>
+      '¡Pago aprobado! Coordina los detalles por chat.';
+
+  @override
+  String get qsPaymentRejected => 'Pago rechazado';
+
+  @override
+  String get qsPaymentPending =>
+      'Pago pendiente, te avisaremos cuando se confirme';
+
+  @override
+  String qsPaymentError(String msg) {
+    return 'Error al procesar el pago: $msg';
+  }
+
+  @override
+  String get qsPaymentNotConfigured => 'Mercado Pago no está configurado';
+
+  @override
   String get qsPublish => 'Publicar';
 
   @override
@@ -3668,6 +4009,40 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get qsRequested => '¡Servicio solicitado!';
+
+  @override
+  String get psEyebrowOffer => 'PUBLICA TU TALENTO';
+
+  @override
+  String get psEyebrowRequest => 'BUSCA AYUDA';
+
+  @override
+  String get psSubtitleOffer =>
+      'Cuenta qué haces y empieza a recibir solicitudes';
+
+  @override
+  String get psSubtitleRequest =>
+      'Describe lo que necesitas y deja que los profesionales se acerquen';
+
+  @override
+  String get psSectionPresentation => 'PRESENTACIÓN';
+
+  @override
+  String get psSectionPhotos => 'FOTOS';
+
+  @override
+  String get psSectionCategoryLabel => 'CATEGORÍA';
+
+  @override
+  String get psSectionPriceLabel => 'PRECIO';
+
+  @override
+  String get psSectionUrgencyLabel => 'URGENCIA';
+
+  @override
+  String psPhotosSubtitle(int n) {
+    return 'Sube hasta $n imágenes para generar más confianza';
+  }
 
   @override
   String psMaxPhotos(int n) {
@@ -3901,11 +4276,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get clPublish => 'Publicar';
 
   @override
-  String get clCommissionTitle => 'Comisión del 7% (máx \$90.000)';
+  String get clCommissionTitle => '1% en tus primeras 5 reservas';
 
   @override
   String get clCommissionDesc =>
-      'Si el 7% supera \$90.000, solo se cobran \$90.000. Transparencia total.';
+      'Después: 7% por reserva, máx \$90.000 CLP. El dinero va directo a ti.';
 
   @override
   String get clCategoryQuestion => '¿Qué vas a ofrecer?';
@@ -3913,6 +4288,40 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get clCategorySelect =>
       'Selecciona la categoría que mejor describe tu oferta';
+
+  @override
+  String get clCategoryEyebrow => 'EMPECEMOS';
+
+  @override
+  String get clDetailsEyebrow => 'PRESENTACIÓN';
+
+  @override
+  String get clDetailsSubtitle =>
+      'El título y la descripción son lo primero que verán los huéspedes';
+
+  @override
+  String get clPhotosEyebrow => 'VISUAL';
+
+  @override
+  String get clLocationEyebrow => 'DÓNDE';
+
+  @override
+  String get clLocationSubtitle =>
+      'Indica dónde está y los huéspedes podrán encontrarte';
+
+  @override
+  String get clRulesEyebrow => 'TUS LÍMITES';
+
+  @override
+  String get clModeEyebrow => 'MODALIDAD';
+
+  @override
+  String get clPricingEyebrow => 'PRECIO';
+
+  @override
+  String clNavStep(int current, int total) {
+    return 'Paso $current/$total';
+  }
 
   @override
   String get clTypeSpace => 'Espacio';
@@ -3952,7 +4361,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get clPhotosTitle => 'Agrega fotos';
 
   @override
-  String get clPhotosSubtitle => 'Las buenas fotos atraen más reservas (max 8)';
+  String get clPhotosSubtitle =>
+      'Las buenas fotos atraen más reservas (max 15)';
 
   @override
   String get clPhotosAdd => 'Agregar';
@@ -4033,7 +4443,28 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get clCommissionInfo =>
-      'Atrio cobra 7% de comisión por reserva. Si el 7% supera \$90.000 CLP, solo se cobran \$90.000.';
+      'Tus primeras 5 reservas pagan solo 1%. Luego, 7% por reserva con tope de \$90.000 CLP. El monto del huésped se transfiere directo a tu cuenta menos esa comisión.';
+
+  @override
+  String get clRulesTitle => 'Reglas del espacio';
+
+  @override
+  String get clRulesSubtitle => 'Selecciona hasta 5 reglas para tus huéspedes';
+
+  @override
+  String clRulesSelected(int count) {
+    return '$count de 5 seleccionadas';
+  }
+
+  @override
+  String get clRulesMaxReached => 'Alcanzaste el máximo de 5 reglas';
+
+  @override
+  String get clRulesEmpty => 'No agregar reglas (opcional)';
+
+  @override
+  String get clRulesHint =>
+      'Las reglas ayudan a establecer expectativas claras';
 
   @override
   String get rmModeTitle => 'Modalidad de reserva';
@@ -4136,4 +4567,935 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get verifiedProfile => 'Perfil verificado';
+
+  @override
+  String get verifiedTooltip => 'Identidad verificada con KYC';
+
+  @override
+  String get profileHostKycTip =>
+      'Te invitamos a verificarte — genera más confianza';
+
+  @override
+  String get profileHostKycVerifiedTip =>
+      'Identidad verificada — generas más confianza';
+
+  @override
+  String get onboardingPage1Eyebrow => 'Espacios';
+
+  @override
+  String get onboardingPage2Eyebrow => 'Experiencias';
+
+  @override
+  String get onboardingPage3Eyebrow => 'Servicios';
+
+  @override
+  String get homeBecomeHostEyebrow => 'HOSTING';
+
+  @override
+  String get homeBecomeHostBadge => '1% COMISIÓN';
+
+  @override
+  String get homeBecomeHostHero => 'Tu espacio,\ntu negocio.';
+
+  @override
+  String get homeBecomeHostDescription =>
+      'Publica gratis y gana. Solo 1% de comisión las primeras 5 reservas.';
+
+  @override
+  String get homeBecomeHostStatDirect => 'Pago directo';
+
+  @override
+  String get homeBecomeHostStatSupport => 'Soporte 24/7';
+
+  @override
+  String get homeBecomeHostStart => 'Empezar';
+
+  @override
+  String get listingHighlightsTitle => 'Lo que destaca';
+
+  @override
+  String get listingHighlightTopRated => 'En el top de los mejor valorados';
+
+  @override
+  String get listingHighlightTopRatedDesc =>
+      'Está entre los listados con calificaciones más altas.';
+
+  @override
+  String get listingHighlightFavorite => 'Favorito entre huéspedes';
+
+  @override
+  String get listingHighlightFavoriteDesc =>
+      'Una de las publicaciones más queridas por la comunidad.';
+
+  @override
+  String get listingHighlightInstantDesc =>
+      'Confirmás sin esperar la aprobación del anfitrión.';
+
+  @override
+  String get listingHighlightPool => 'Sumérgete';
+
+  @override
+  String get listingHighlightPoolDesc =>
+      'Es uno de los pocos lugares de la zona con piscina.';
+
+  @override
+  String get listingHighlightGym => 'Gimnasio en casa';
+
+  @override
+  String get listingHighlightGymDesc =>
+      'Cuenta con equipo para entrenar sin salir.';
+
+  @override
+  String get listingHighlightView => 'Vista destacada';
+
+  @override
+  String get listingHighlightViewDesc =>
+      'Cuenta con una vista que vale la pena.';
+
+  @override
+  String get listingHighlightJacuzzi => 'Jacuzzi';
+
+  @override
+  String get listingHighlightJacuzziDesc => 'Para relajarte al final del día.';
+
+  @override
+  String get listingMeetHostTitle => 'Conoce al anfitrión';
+
+  @override
+  String get listingHostFallback => 'Anfitrión';
+
+  @override
+  String get listingDirectContactLabel => 'CONTACTO DIRECTO';
+
+  @override
+  String get listingHostYearsNew => 'Nuevo';
+
+  @override
+  String get listingHostYearsUnitNew => 'anfitrión';
+
+  @override
+  String get listingHostYearsUnitOne => 'año como anfitrión';
+
+  @override
+  String get listingHostYearsUnitMany => 'años como anfitrión';
+
+  @override
+  String get listingHostBadgeSuperhost => 'Superanfitrión';
+
+  @override
+  String get listingHostBadgeVerified => 'Verificado';
+
+  @override
+  String get listingHostBadgeHost => 'Anfitrión';
+
+  @override
+  String listingHostStatReviewLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'reseñas',
+      one: 'reseña',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get listingHostStatRating => 'calificación';
+
+  @override
+  String listingHostAboutDecade(String decade) {
+    return 'Nació en la década de los $decade';
+  }
+
+  @override
+  String listingHostAboutProfession(String profession) {
+    return 'Me dedico a: $profession';
+  }
+
+  @override
+  String listingHostAboutLanguages(String langs) {
+    return 'Habla: $langs';
+  }
+
+  @override
+  String get listingHostInterests => 'Le interesa';
+
+  @override
+  String listingHostIsSuperhost(String name) {
+    return '$name es Superanfitrión';
+  }
+
+  @override
+  String listingHostAboutTitle(String name) {
+    return 'Sobre $name';
+  }
+
+  @override
+  String get listingSuperhostDescription =>
+      'Los Superanfitriones son anfitriones con experiencia, valoraciones excelentes y compromiso con sus huéspedes.';
+
+  @override
+  String get listingHostInfoTitle => 'Información del anfitrión';
+
+  @override
+  String listingHostResponseRate(int rate) {
+    return 'Índice de respuesta: $rate%';
+  }
+
+  @override
+  String get listingHostResponseRateEmpty => 'Índice de respuesta: —';
+
+  @override
+  String get listingHostResponseTime1h => 'Suele responder en menos de 1 h';
+
+  @override
+  String get listingHostResponseTimeFew => 'Suele responder en unas horas';
+
+  @override
+  String get listingHostResponseTimeDay => 'Suele responder dentro del día';
+
+  @override
+  String get listingHostResponseTimeDays => 'Suele responder en uno o dos días';
+
+  @override
+  String get listingChatWithHost => 'Mensajea con el anfitrión';
+
+  @override
+  String get langPortuguese => 'Portugués';
+
+  @override
+  String get langFrench => 'Francés';
+
+  @override
+  String get langItalian => 'Italiano';
+
+  @override
+  String get langGerman => 'Alemán';
+
+  @override
+  String get qsEmptyNoRequests => 'Sin solicitudes';
+
+  @override
+  String get qsEmptyPostFirst => 'Publica la primera';
+
+  @override
+  String get qsActiveRequests => 'Solicitudes activas';
+
+  @override
+  String get insightsEyebrow => 'TU NEGOCIO';
+
+  @override
+  String get insightsTitle => 'Estadísticas';
+
+  @override
+  String get insightsSubtitle => 'Cómo van tus publicaciones este mes';
+
+  @override
+  String get insightsThisMonth => 'Este mes';
+
+  @override
+  String get insightsTopListings => 'Top publicaciones';
+
+  @override
+  String get insightsAllTime => 'Histórico total';
+
+  @override
+  String get insightsReviews => 'Reseñas';
+
+  @override
+  String get insightsKpiBookings => 'RESERVAS';
+
+  @override
+  String get insightsKpiRevenue => 'INGRESOS';
+
+  @override
+  String get insightsKpiRating => 'CALIFICACIÓN';
+
+  @override
+  String get insightsKpiViews => 'VISTAS';
+
+  @override
+  String get insightsKpiActive => 'ACTIVAS';
+
+  @override
+  String get insightsKpiResponseRate => 'Tasa de respuesta';
+
+  @override
+  String get insightsKpiResponseTime => 'Tiempo de respuesta';
+
+  @override
+  String get insightsNoData => 'Aún no hay datos';
+
+  @override
+  String get insightsNoDataSubtitle =>
+      'Cuando recibas reservas verás tus estadísticas aquí';
+
+  @override
+  String get insightsNoBookingsThisMonth =>
+      'Sin reservas pagadas este mes. Tu primera reserva aparecerá acá.';
+
+  @override
+  String get insightsLoadError => 'No se pudieron cargar los datos.';
+
+  @override
+  String get insightsReviewsLoadError => 'No se pudieron cargar las reseñas.';
+
+  @override
+  String get insightsBookingsCompleted => 'Reservas completadas';
+
+  @override
+  String get insightsAvgRating => 'Rating promedio';
+
+  @override
+  String get insightsResponseRateStat => 'Tasa de respuesta';
+
+  @override
+  String get insightsTotalRevenue => 'Ingresos acumulados';
+
+  @override
+  String get insightsNoReviewsYet =>
+      'Aún no tienes reseñas. Aparecerán acá cuando un huésped califique.';
+
+  @override
+  String get insightsRespondImprovesTrust =>
+      'Responder mejora la confianza con futuros huéspedes.';
+
+  @override
+  String get insightsReviewCheck => 'Revisa qué falló y mejora tu publicación.';
+
+  @override
+  String get insightsReviewerAnonymous => 'Anónimo';
+
+  @override
+  String get insightsPendingResponse => 'Pendiente de respuesta';
+
+  @override
+  String insightsAgoMin(int n) {
+    return 'hace $n min';
+  }
+
+  @override
+  String insightsAgoHour(int n) {
+    return 'hace $n h';
+  }
+
+  @override
+  String insightsAgoDay(int n) {
+    return 'hace $n d';
+  }
+
+  @override
+  String get insightsBookingsCountOne => 'reserva';
+
+  @override
+  String get insightsBookingsCountMany => 'reservas';
+
+  @override
+  String insightsPendingReviews(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reseñas sin responder',
+      one: '$count reseña sin responder',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String insightsNegativeReviews(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reseñas negativas (≤ 3 ★)',
+      one: '$count reseña negativa (≤ 3 ★)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get verifyAccountEyebrow => 'Identidad';
+
+  @override
+  String get verifyAccountTitle => 'Verifica tu cuenta';
+
+  @override
+  String get verifyAccountSteps => 'Pasos';
+
+  @override
+  String get verifyAccountVerified => 'Cuenta verificada';
+
+  @override
+  String get verifyAccountSubtitle =>
+      'Aumenta la confianza con anfitriones y huéspedes';
+
+  @override
+  String get verifyAccountSubtitleCompleted =>
+      'Tienes acceso a todas las funciones';
+
+  @override
+  String get verifyAccountSubtitlePending =>
+      'Completa los pasos para activar tu cuenta';
+
+  @override
+  String get verifyStepEmail => 'Correo electrónico';
+
+  @override
+  String get verifyStepEmailDoneDesc => 'Tu email está verificado';
+
+  @override
+  String get verifyStepEmailPendingDesc => 'Te enviamos un código a tu correo';
+
+  @override
+  String get verifyStepPhone => 'Teléfono';
+
+  @override
+  String get verifyStepPhoneDoneDesc => 'Tu teléfono está verificado';
+
+  @override
+  String get verifyStepPhonePendingDesc => 'Verifica tu número con un código';
+
+  @override
+  String get verifyStepIdentity => 'Documento de identidad';
+
+  @override
+  String get verifyStepIdentityApproved => 'Aprobado';
+
+  @override
+  String get verifyStepIdentityRejected => 'Rechazado, intenta de nuevo';
+
+  @override
+  String get verifyStepIdentityDefault => 'Cédula y selfie de verificación';
+
+  @override
+  String get verifyStepProfile => 'Perfil completo';
+
+  @override
+  String get verifyStepStart => 'Comenzar';
+
+  @override
+  String get verifyStepReview => 'En revisión';
+
+  @override
+  String get verifyStepDone => 'Completado';
+
+  @override
+  String get verifyReviewSubmittedDefault => 'En revisión por nuestro equipo';
+
+  @override
+  String verifyReviewSubmittedMin(int n) {
+    return 'En revisión · enviado hace $n min';
+  }
+
+  @override
+  String verifyReviewSubmittedHour(int n) {
+    return 'En revisión · enviado hace $n h';
+  }
+
+  @override
+  String verifyReviewSubmittedDay(int n) {
+    return 'En revisión · enviado hace $n d';
+  }
+
+  @override
+  String get verifyStatusInReview => 'EN REVISIÓN';
+
+  @override
+  String get verifyStatusRetry => 'REINTENTAR';
+
+  @override
+  String get verifyStatusStart => 'EMPEZAR';
+
+  @override
+  String get verifyBenefitsTitle => 'BENEFICIOS';
+
+  @override
+  String get verifyBenefit1Title => 'Mayor confianza';
+
+  @override
+  String get verifyBenefit1Desc =>
+      'Los anfitriones priorizan a usuarios verificados';
+
+  @override
+  String get verifyBenefit2Title => 'Reservas instantáneas';
+
+  @override
+  String get verifyBenefit2Desc => 'Sin esperar aprobación manual';
+
+  @override
+  String get verifyBenefit3Title => 'Más visibilidad';
+
+  @override
+  String get verifyBenefit3Desc => 'Tu perfil sale destacado en búsquedas';
+
+  @override
+  String get verifyProfileLoadError => 'No se pudo cargar tu perfil';
+
+  @override
+  String verifyStepsProgress(int done, int total) {
+    return '$done de $total pasos';
+  }
+
+  @override
+  String get kycHeroTitle => 'Verifica tu\ndocumento';
+
+  @override
+  String get kycHeroSubtitle =>
+      'Necesitamos confirmar quién eres antes de aprobar tu cuenta. Es rápido y seguro.';
+
+  @override
+  String get kycStepIntro => 'INTRO';
+
+  @override
+  String kycStepLabel(int n) {
+    return 'PASO $n DE 3';
+  }
+
+  @override
+  String get kycIntroBenefit1Title => 'Tu privacidad está protegida';
+
+  @override
+  String get kycIntroBenefit1Desc =>
+      'Tus documentos se guardan cifrados y solo nuestro equipo de verificación los ve.';
+
+  @override
+  String get kycIntroBenefit2Title => 'Toma ~3 minutos';
+
+  @override
+  String get kycIntroBenefit2Desc =>
+      'Necesitamos foto del frente y reverso de tu cédula, y una selfie.';
+
+  @override
+  String get kycIntroBenefit3Title => 'Aprobación en 24-48 hs';
+
+  @override
+  String get kycIntroBenefit3Desc => 'Te avisamos por mail cuando esté listo.';
+
+  @override
+  String get kycStepFront => 'Frente de tu cédula';
+
+  @override
+  String get kycStepFrontDesc =>
+      'Asegúrate de que se vea nítido y completo. Sin reflejos, todos los datos legibles.';
+
+  @override
+  String get kycStepBack => 'Reverso de tu cédula';
+
+  @override
+  String get kycStepBackDesc =>
+      'La cara trasera, donde está el chip / código de barras.';
+
+  @override
+  String get kycStepSelfie => 'Selfie con tu cédula';
+
+  @override
+  String get kycStepSelfieDesc =>
+      'Tu cara y la cédula visibles. Sin gorra, sin lentes oscuros.';
+
+  @override
+  String get kycTapToCapture => 'Toca para capturar';
+
+  @override
+  String get kycBtnStart => 'Empezar';
+
+  @override
+  String get kycBtnTakePhoto => 'Tomar foto';
+
+  @override
+  String get kycBtnTakeSelfie => 'Tomar selfie';
+
+  @override
+  String get kycBtnSend => 'Enviar';
+
+  @override
+  String get kycBtnContinue => 'Continuar';
+
+  @override
+  String get kycBtnRetake => 'Volver a tomar la foto';
+
+  @override
+  String get kycSubmitButton => 'Enviar a revisión';
+
+  @override
+  String get kycSubmitted => 'Documentos enviados';
+
+  @override
+  String get kycSubmittedSubtitle =>
+      'Vamos a revisar tus documentos en las próximas 24-48 hs. Te avisaremos por mail cuando esté listo.';
+
+  @override
+  String get kycBackHome => 'Volver al inicio';
+
+  @override
+  String get kycInReview => 'En revisión';
+
+  @override
+  String get adminKycTitle => 'Verificación KYC';
+
+  @override
+  String get adminKycSubtitle => 'Panel admin';
+
+  @override
+  String get adminKycEmpty => 'Sin pendientes';
+
+  @override
+  String get adminKycEmptySubtitle =>
+      'Cuando un usuario envíe documentos aparecerá aquí.';
+
+  @override
+  String get adminKycRequest => 'Solicitud KYC';
+
+  @override
+  String get adminKycActive => 'Solicitudes activas';
+
+  @override
+  String get adminKycApprove => 'Aprobar';
+
+  @override
+  String get adminKycReject => 'Rechazar';
+
+  @override
+  String get adminKycReviewing => 'En revisión';
+
+  @override
+  String get adminKycPending => 'Pendientes';
+
+  @override
+  String get adminKycApproved => 'Aprobadas';
+
+  @override
+  String get adminKycRejected => 'Rechazadas';
+
+  @override
+  String get adminKycListIntro =>
+      'Revisa los documentos pendientes y aprueba o rechaza con motivo.';
+
+  @override
+  String get adminKycLoadError => 'No se pudo cargar la lista';
+
+  @override
+  String get adminKycRetry => 'Reintentar';
+
+  @override
+  String get adminKycBack => 'Volver';
+
+  @override
+  String get adminKycNoName => 'Sin nombre';
+
+  @override
+  String get adminKycPendingBadge => 'PENDIENTE';
+
+  @override
+  String get adminKycEmailOk => 'Email OK';
+
+  @override
+  String get adminKycEmailPending => 'Email pend.';
+
+  @override
+  String get adminKycAccessRestricted => 'Acceso restringido';
+
+  @override
+  String get adminKycAccessRestrictedDesc =>
+      'Esta sección es solo para administradores.';
+
+  @override
+  String adminKycTimeAgoMin(int n) {
+    return 'hace $n min';
+  }
+
+  @override
+  String adminKycTimeAgoHour(int n) {
+    return 'hace $n h';
+  }
+
+  @override
+  String adminKycTimeAgoDay(int n) {
+    return 'hace $n d';
+  }
+
+  @override
+  String get adminKycApprovedToast => 'Verificación aprobada';
+
+  @override
+  String get adminKycRejectedToast => 'Verificación rechazada';
+
+  @override
+  String get adminKycRejectReason => 'Motivo del rechazo';
+
+  @override
+  String get adminKycRejectHint => 'Ej. La foto del frente está borrosa';
+
+  @override
+  String get adminKycEmailPendingChip => 'Email pendiente';
+
+  @override
+  String adminKycSentAgo(String when) {
+    return 'Enviado $when';
+  }
+
+  @override
+  String get adminKycDocuments => 'Documentos';
+
+  @override
+  String get adminKycDocFront => 'Frente de cédula';
+
+  @override
+  String get adminKycDocBack => 'Reverso de cédula';
+
+  @override
+  String get adminKycDocSelfie => 'Selfie con cédula';
+
+  @override
+  String get adminKycSectionReview => 'Revisión';
+
+  @override
+  String get helpEyebrow => 'Soporte';
+
+  @override
+  String get helpHowWeHelp => 'CÓMO TE AYUDAMOS';
+
+  @override
+  String get helpContactChannels => 'Canales de contacto';
+
+  @override
+  String get helpFaqsTitle => 'Preguntas frecuentes';
+
+  @override
+  String get helpEmailChannel => 'Correo electrónico';
+
+  @override
+  String get helpWhatsapp => 'WhatsApp';
+
+  @override
+  String get helpWhatsappSubtitle => 'Respuesta en horario hábil';
+
+  @override
+  String get helpSearchHint => 'Buscar en preguntas frecuentes';
+
+  @override
+  String get helpHeroTitle => 'Escríbenos.\nTe contestamos rápido.';
+
+  @override
+  String get helpHeroSubtitle =>
+      'Nuestro equipo lee cada mensaje y suele responder en menos de 24 hs.';
+
+  @override
+  String get helpWriteTeam => 'Escribir al equipo';
+
+  @override
+  String get helpReportProblem => 'Reportar un problema';
+
+  @override
+  String get helpReportProblemSubtitle =>
+      'Un bug, un cobro extraño o algo urgente';
+
+  @override
+  String helpNoResults(String query) {
+    return 'No encontramos respuesta para \"$query\"';
+  }
+
+  @override
+  String get helpTryOther =>
+      'Prueba con otras palabras o escríbenos directamente.';
+
+  @override
+  String get helpCatPayments => 'PAGOS';
+
+  @override
+  String get helpCatBookings => 'RESERVAS';
+
+  @override
+  String get helpCatVerification => 'VERIFICACIÓN';
+
+  @override
+  String get helpCatAccount => 'CUENTA';
+
+  @override
+  String get helpFaq1Q => '¿Cómo se procesan los pagos?';
+
+  @override
+  String get helpFaq1A =>
+      'Cobramos directamente en la app con Mercado Pago. Aceptamos tarjetas de crédito, débito y prepagas (Visa, Mastercard y American Express). Tu tarjeta nunca se guarda en Atrio: solo se tokeniza para el cobro.';
+
+  @override
+  String get helpFaq2Q => '¿Cuándo cobra el anfitrión?';
+
+  @override
+  String get helpFaq2A =>
+      'El anfitrión recibe el monto en su saldo de Atrio una vez que tu reserva queda confirmada. Puede retirar el dinero a su cuenta bancaria desde el Dashboard.';
+
+  @override
+  String get helpFaq3Q => '¿Puedo cancelar una reserva?';
+
+  @override
+  String get helpFaq3A =>
+      'Sí. Cada anfitrión define su propia política (flexible, moderada o estricta). El detalle aparece en la pantalla de la publicación antes de pagar y luego en \"Mis Reservas\".';
+
+  @override
+  String get helpFaq4Q => 'Mi pago fue rechazado, ¿qué hago?';
+
+  @override
+  String get helpFaq4A =>
+      'En el 90% de los casos es la tarjeta. Prueba con otra tarjeta, revisa que el RUT del titular sea correcto y que tu banco no haya bloqueado la operación. Si el problema persiste escríbenos.';
+
+  @override
+  String get helpFaq5Q => '¿Por qué necesito verificar mi identidad?';
+
+  @override
+  String get helpFaq5A =>
+      'La verificación aumenta la confianza con anfitriones y huéspedes. Los usuarios verificados aparecen destacados en búsquedas y suelen obtener aprobación instantánea en las reservas.';
+
+  @override
+  String get helpFaq6Q => '¿Cuánto tarda la verificación de documento?';
+
+  @override
+  String get helpFaq6A =>
+      'Entre 24 y 48 horas hábiles. Cuando esté lista te avisamos por correo electrónico.';
+
+  @override
+  String get helpFaq7Q => '¿Puedo cambiar mi correo electrónico?';
+
+  @override
+  String get helpFaq7A =>
+      'Por ahora no. Si necesitas migrar a otro email, escríbenos y te ayudamos.';
+
+  @override
+  String get helpFaq8Q => 'Quiero eliminar mi cuenta';
+
+  @override
+  String get helpFaq8A =>
+      'Ve a Configuración → Cuenta → Eliminar cuenta. Ten en cuenta que no podrás recuperar tus reservas pasadas ni el historial de chat.';
+
+  @override
+  String get privacyEyebrow => 'Privacidad';
+
+  @override
+  String get privacyIntro =>
+      'Esto es lo que recolectamos, cómo lo usamos y los derechos que tienes sobre tus datos. Nada de letra chica: queremos que entiendas exactamente qué pasa con tu información.';
+
+  @override
+  String get privacySummarySection => 'En resumen';
+
+  @override
+  String get privacyDetailsSection => 'Detalle';
+
+  @override
+  String get privacySummary1Title => 'Cifrado';
+
+  @override
+  String get privacySummary1Desc => 'Tus datos sensibles van encriptados';
+
+  @override
+  String get privacySummary2Title => 'Sin venta';
+
+  @override
+  String get privacySummary2Desc => 'No vendemos tu info a terceros';
+
+  @override
+  String get privacySummary3Title => 'Exportable';
+
+  @override
+  String get privacySummary3Desc => 'Puedes pedir todos tus datos';
+
+  @override
+  String get privacySummary4Title => 'Borrable';
+
+  @override
+  String get privacySummary4Desc => 'Puedes eliminar tu cuenta cuando quieras';
+
+  @override
+  String get privacyHowWeProtect => 'CÓMO PROTEGEMOS TUS DATOS';
+
+  @override
+  String get privacyExerciseRights => 'Ejercé tus derechos';
+
+  @override
+  String privacySectionsCount(int n) {
+    return '$n secciones';
+  }
+
+  @override
+  String get termsEyebrow => 'Legal';
+
+  @override
+  String get termsIntro =>
+      'Estos términos regulan la relación entre tú y Atrio Company cuando usas la app, ya sea como anfitrión o como huésped. Léelos con calma — son cortos y claros.';
+
+  @override
+  String get termsContentSection => 'Contenido';
+
+  @override
+  String get termsAgreementOfUse => 'ACUERDO DE USO';
+
+  @override
+  String get checkoutEyebrow => 'CONFIRMACIÓN';
+
+  @override
+  String get checkoutCardPayment => 'Pago con tarjeta';
+
+  @override
+  String get checkoutBookingConfirmed => 'Reserva confirmada';
+
+  @override
+  String get cardYourCard => 'Tu tarjeta';
+
+  @override
+  String get cardNumber => 'NÚMERO DE TARJETA';
+
+  @override
+  String get cardHolder => 'NOMBRE DEL TITULAR';
+
+  @override
+  String get cardHolderHint => 'COMO APARECE EN LA TARJETA';
+
+  @override
+  String get cardExpiry => 'VENCIMIENTO';
+
+  @override
+  String get cardCvv => 'CVV';
+
+  @override
+  String get cardRut => 'RUT DEL TITULAR';
+
+  @override
+  String get cardTrustStrip =>
+      'Cifrado de extremo a extremo · Procesado por Mercado Pago';
+
+  @override
+  String cardPayTotal(String total) {
+    return 'Pagar $total';
+  }
+
+  @override
+  String get cardToPayLabel => 'A PAGAR';
+
+  @override
+  String get cardSandboxNotice =>
+      'Modo prueba — Tarjeta: 5416 7526 0258 2580 · CVV 123 · 11/30';
+
+  @override
+  String get cardInvalidNumber => 'Número inválido';
+
+  @override
+  String get cardOnlyDigits => 'Solo dígitos';
+
+  @override
+  String get cardNotValid => 'Tarjeta no válida';
+
+  @override
+  String get cardEnterName => 'Ingresá el nombre';
+
+  @override
+  String get cardInvalidMonth => 'Mes inválido';
+
+  @override
+  String get cardExpired => 'Vencida';
+
+  @override
+  String get cardInvalid => 'Inválido';
+
+  @override
+  String get cardPaymentError => 'Error al procesar el pago';
 }
