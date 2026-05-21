@@ -560,7 +560,9 @@ class _BookingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final listing = (booking['listing'] as Map<String, dynamic>?) ?? const {};
+    // asStringMapOrEmpty handles the Hive _Map<dynamic, dynamic> case
+    // that triggered the original TypeError reported in Sentry.
+    final listing = asStringMapOrEmpty(booking['listing']);
     final status = (booking['status'] as String?) ?? 'pending';
     final imagesRaw = listing['images'];
     final images = imagesRaw is List ? imagesRaw : const [];

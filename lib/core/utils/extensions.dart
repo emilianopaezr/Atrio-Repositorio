@@ -2,6 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+/// Safely converts an `Object?` that may be a Map (from JSON, Hive, or
+/// Supabase) into a `Map<String, dynamic>` without throwing.
+///
+/// Why this exists: `as Map<String, dynamic>` fails at runtime when the
+/// source map is actually `_Map<dynamic, dynamic>` — common when a value
+/// comes back through Hive's offline cache, since Hive serialises maps
+/// with dynamic keys even when the keys are strings.
+///
+/// Use this everywhere you would otherwise write
+/// `(thing as Map<String, dynamic>?)`.
+Map<String, dynamic>? asStringMap(Object? value) {
+  if (value == null) return null;
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) return Map<String, dynamic>.from(value);
+  return null;
+}
+
+/// Like [asStringMap] but returns an empty const map instead of `null`.
+Map<String, dynamic> asStringMapOrEmpty(Object? value) =>
+    asStringMap(value) ?? const {};
+
 extension ContextExtensions on BuildContext {
   ThemeData get theme => Theme.of(this);
   ColorScheme get colorScheme => theme.colorScheme;

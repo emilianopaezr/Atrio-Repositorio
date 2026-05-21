@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/providers/conversations_provider.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
 
 class ConversationsScreen extends ConsumerStatefulWidget {
@@ -159,7 +160,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
             (id) => id != currentUserId,
             orElse: () => '',
           );
-          final listing = conv['listing'] as Map<String, dynamic>?;
+          final listing = asStringMap(conv['listing']);
           final images = List<String>.from(listing?['images'] ?? []);
           final lastMessage = conv['last_message_text'] as String? ?? '';
           final lastSender = conv['last_message_sender'] as String?;

@@ -699,8 +699,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             return Column(
               children: [
                 ...upcoming.map((booking) {
-                  final guest = booking['guest'] as Map<String, dynamic>?;
-                  final listing = booking['listing'] as Map<String, dynamic>?;
+                  final guest = asStringMap(booking['guest']);
+                  final listing = asStringMap(booking['listing']);
                   final guestName = guest?['display_name'] ?? l.dashboardGuestFallback;
                   final listingTitle = listing?['title'] ?? l.dashboardListingFallback;
                   final checkIn = booking['check_in']?.toString().split('T').first ?? '';

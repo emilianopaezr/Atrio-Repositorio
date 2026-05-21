@@ -95,6 +95,23 @@ class ObservabilityService {
     }
   }
 
+  /// Fires a one-off test message so you can confirm in the Sentry UI
+  /// that the SDK is wired up correctly. Opt-in via `SENTRY_TEST_ON_BOOT=true`
+  /// in `.env` — once confirmed, set it back to `false` (or delete it).
+  static Future<void> sendBootTestEventIfRequested() async {
+    if (!_initialized || !_enabled) return;
+    final flag = dotenv.maybeGet('SENTRY_TEST_ON_BOOT')?.toLowerCase().trim();
+    if (flag != 'true' && flag != '1') return;
+    try {
+      await Sentry.captureMessage(
+        'Atrio boot verification — Sentry SDK reachable',
+        level: SentryLevel.info,
+      );
+    } catch (_) {
+      // Swallow.
+    }
+  }
+
   /// Identifies the current authenticated user. Call after login, and
   /// `setUser(null)` after logout.
   static Future<void> setUser({String? id, String? email}) async {

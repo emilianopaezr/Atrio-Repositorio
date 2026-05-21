@@ -78,6 +78,10 @@ void main() async {
       );
     };
 
+    // Fires only if SENTRY_TEST_ON_BOOT=true is set in .env. Use once to
+    // verify the dashboard receives events, then unset the flag.
+    await ObservabilityService.sendBootTestEventIfRequested();
+
     runApp(const ProviderScope(child: AtrioApp()));
   });
 }

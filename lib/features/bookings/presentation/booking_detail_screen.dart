@@ -138,8 +138,8 @@ class BookingDetailScreen extends ConsumerWidget {
           );
         }
 
-        final listing = bookingData['listing'] as Map<String, dynamic>?;
-        final host = bookingData['host'] as Map<String, dynamic>?;
+        final listing = asStringMap(bookingData['listing']);
+        final host = asStringMap(bookingData['host']);
         final status = bookingData['status'] as String? ?? 'pending';
         final checkIn = DateTime.tryParse(bookingData['check_in'] ?? '');
         final checkOut = DateTime.tryParse(bookingData['check_out'] ?? '');

@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/utils/error_handler.dart';
+import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -700,7 +701,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final listingTitle =
-        (_conversation?['listing'] as Map<String, dynamic>?)?['title'] as String? ??
+        asStringMap(_conversation?['listing'])?['title'] as String? ??
             l.chatDefault;
 
     final bg = isDark ? AtrioColors.hostBackground : AtrioColors.guestBackground;
