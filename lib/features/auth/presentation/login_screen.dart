@@ -234,25 +234,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 56),
-                  // Centered logo + heading + subtitle
-                  Center(
-                    child: Image.asset(
-                      'assets/images/logo_negro.png',
-                      height: 64,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => Text(
-                        'ATRIO',
-                        style: GoogleFonts.inter(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: AtrioColors.guestTextPrimary,
-                          letterSpacing: 6,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 96),
+                  // Heading + subtitle (logo removed per design)
                   Center(
                     child: Text(
                       l.authWelcome,
