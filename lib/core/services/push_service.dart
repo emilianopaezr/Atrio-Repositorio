@@ -34,6 +34,15 @@ class PushService {
   static bool _initialized = false;
   static String? _cachedToken;
 
+  /// Optional navigation callback wired from `app.dart`. When a push is
+  /// tapped (terminated, background, or foreground), we feed the
+  /// `data.route` field to this callback so the router can deep-link to
+  /// the relevant screen (e.g. `/booking/123`, `/chat/abc`).
+  ///
+  /// If the callback is null (PushService initialised before the router),
+  /// tap events are still consumed but not routed.
+  static void Function(String route)? onTapRoute;
+
   /// Call once from `main()`. Idempotent and never throws.
   static Future<void> initialize() async {
     if (_initialized) return;
@@ -47,6 +56,11 @@ class PushService {
 
       FirebaseMessaging.onMessage.listen(_onForegroundMessage);
       FirebaseMessaging.instance.onTokenRefresh.listen(_onTokenRefresh);
+
+      // Tap handlers: notification opened from terminated state (initial
+      // message) vs from background state (onMessageOpenedApp).
+      FirebaseMessaging.instance.getInitialMessage().then(_routeFromMessage);
+      FirebaseMessaging.onMessageOpenedApp.listen(_routeFromMessage);
 
       _initialized = true;
     } catch (e) {
@@ -149,6 +163,14 @@ class PushService {
       ),
       payload: message.data.isNotEmpty ? message.data.toString() : null,
     );
+  }
+
+  static void _routeFromMessage(RemoteMessage? message) {
+    if (message == null) return;
+    final route = message.data['route']?.toString();
+    if (route == null || route.isEmpty) return;
+    final cb = onTapRoute;
+    if (cb != null) cb(route);
   }
 
   static Future<void> _onTokenRefresh(String token) async {

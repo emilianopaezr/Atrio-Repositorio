@@ -85,3 +85,7 @@ firebase-adminsdk*.json
 Thumbs.db
 *.bak
 *.tmp
+
+# Dev artifacts (screenshots, scratch)
+.tmp_screens/
+.scratch/

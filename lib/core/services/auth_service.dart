@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase/supabase_config.dart';
 import '../utils/constants.dart';
+import 'analytics_service.dart';
+import 'observability_service.dart';
+import 'push_service.dart';
 import 'realtime_service.dart';
 
 /// Custom exception for auth errors with user-friendly messages
@@ -132,6 +137,16 @@ class AuthService {
         } catch (e) {
           debugPrint('Profile check note: $e');
         }
+
+        // Wire identity into observability + analytics, register FCM token.
+        await ObservabilityService.setUser(
+          id: response.user!.id,
+          email: response.user!.email,
+        );
+        await AnalyticsService.setUserId(response.user!.id);
+        AnalyticsService.logLogin('password');
+        // Fire-and-forget: never block login on permission prompt or token.
+        unawaited(PushService.registerCurrentUser());
       }
 
       return response;
@@ -159,6 +174,9 @@ class AuthService {
   /// Sign out
   static Future<void> signOut() async {
     emailVerified = null;
+    await PushService.unregisterCurrentDevice();
+    await ObservabilityService.setUser();
+    await AnalyticsService.setUserId(null);
     await SupabaseConfig.auth.signOut();
   }
 
@@ -168,6 +186,9 @@ class AuthService {
     try {
       await RealtimeService.removeAllChannels();
     } catch (_) {}
+    await PushService.unregisterCurrentDevice();
+    await ObservabilityService.setUser();
+    await AnalyticsService.setUserId(null);
     await SupabaseConfig.auth.signOut();
   }
 

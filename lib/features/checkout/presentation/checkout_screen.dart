@@ -8,6 +8,7 @@ import '../../../config/theme/app_typography.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/models/pricing_result_model.dart';
 import '../../../core/providers/listings_provider.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/pricing_engine_service.dart';
@@ -316,6 +317,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     required double total,
     required double serviceFee,
   }) async {
+    AnalyticsService.logBeginCheckout(
+      listingId: listing.id,
+      amount: total,
+      currency: 'CLP',
+    );
     try {
       final paymentResult = await Navigator.of(context).push<PaymentResult>(
         MaterialPageRoute(
@@ -402,6 +408,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     // and host_profiles), which surfaces as the red snackbar.
     //
     // Nothing to do here besides UX feedback.
+    AnalyticsService.logPurchase(
+      bookingId: bookingId,
+      amount: total,
+      currency: 'CLP',
+    );
     if (mounted) {
       _snack(AppLocalizations.of(context).checkoutPaymentApproved);
       await Future.delayed(const Duration(milliseconds: 600));

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/supabase/supabase_config.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/services/analytics_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
@@ -55,12 +56,16 @@ final _hostShellKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = ref.watch(authChangeNotifierProvider);
+  final analyticsObserver = AnalyticsService.observer();
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: false,
     refreshListenable: authNotifier,
+    observers: [
+      if (analyticsObserver != null) analyticsObserver,
+    ],
     redirect: (context, state) {
       final session = SupabaseConfig.client.auth.currentSession;
       final isAuthenticated = session != null;

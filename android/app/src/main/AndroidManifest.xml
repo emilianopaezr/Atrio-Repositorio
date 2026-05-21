@@ -59,6 +59,23 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="com.atrio.atrio" android:host="callback"/>
             </intent-filter>
+            <!-- App-internal deep links: atrio://listing/X, atrio://booking/X, etc.
+                 Picked up by go_router. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="atrio"/>
+            </intent-filter>
+            <!-- App Links (Universal Links equivalent on Android). Verified
+                 via /.well-known/assetlinks.json hosted on atrio.app. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="atrio.app"/>
+                <data android:scheme="https" android:host="www.atrio.app"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
