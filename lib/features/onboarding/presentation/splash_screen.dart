@@ -91,10 +91,10 @@ class _SplashScreenState extends State<SplashScreen>
               children: [
                 Image.asset(
                   'assets/images/isotipo_atrio_blanco.png',
-                  height: 96,
+                  height: 64,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 Container(
                   width: 8,
                   height: 8,

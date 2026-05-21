@@ -11,6 +11,7 @@ import '../../../core/services/database_service.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/section_eyebrow.dart';
 import '../../../shared/widgets/verified_badge.dart';
 
 class BookingDetailScreen extends ConsumerWidget {
@@ -290,28 +291,35 @@ class BookingDetailScreen extends ConsumerWidget {
 
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Listing Info
+                      // Editorial intro
+                      const PageEyebrow(text: 'TU RESERVA'),
+                      const SizedBox(height: 10),
                       Text(
                         listingTitle,
-                        style: AtrioTypography.headingMedium.copyWith(
-                          color: AtrioColors.guestTextPrimary,
+                        style: GoogleFonts.inter(
+                          fontSize: 28,
                           fontWeight: FontWeight.w800,
+                          color: AtrioColors.guestTextPrimary,
+                          letterSpacing: -0.8,
+                          height: 1.08,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           if (listingCity.isNotEmpty) ...[
                             const Icon(Icons.location_on_outlined,
-                                size: 16, color: AtrioColors.guestTextSecondary),
+                                size: 15, color: AtrioColors.guestTextSecondary),
                             const SizedBox(width: 4),
                             Text(
                               listingCity,
-                              style: AtrioTypography.bodySmall.copyWith(
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                                 color: AtrioColors.guestTextSecondary,
                               ),
                             ),
@@ -323,15 +331,19 @@ class BookingDetailScreen extends ConsumerWidget {
                             const SizedBox(width: 4),
                             Text(
                               listingRating.toStringAsFixed(1),
-                              style: AtrioTypography.bodySmall.copyWith(
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
                                 color: AtrioColors.guestTextPrimary,
-                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 26),
+
+                      const SectionEyebrow(text: 'Fechas', small: true),
+                      const SizedBox(height: 12),
 
                       // Date Section
                       Container(
@@ -404,7 +416,9 @@ class BookingDetailScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
+                      const SectionEyebrow(text: 'Anfitrión', small: true),
+                      const SizedBox(height: 12),
 
                       // Host Info
                       Container(
@@ -496,7 +510,9 @@ class BookingDetailScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
+                      const SectionEyebrow(text: 'Pago', small: true),
+                      const SizedBox(height: 12),
 
                       // Price Breakdown
                       Container(
@@ -517,9 +533,11 @@ class BookingDetailScreen extends ConsumerWidget {
                           children: [
                             Text(
                               l.bookingPriceBreakdown,
-                              style: AtrioTypography.labelLarge.copyWith(
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
                                 color: AtrioColors.guestTextPrimary,
-                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -562,7 +580,9 @@ class BookingDetailScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
+                      const SectionEyebrow(text: 'Políticas', small: true),
+                      const SizedBox(height: 12),
 
                       // Policies
                       Container(
@@ -583,9 +603,11 @@ class BookingDetailScreen extends ConsumerWidget {
                           children: [
                             Text(
                               l.bookingPolicies,
-                              style: AtrioTypography.labelLarge.copyWith(
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
                                 color: AtrioColors.guestTextPrimary,
-                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
                               ),
                             ),
                             const SizedBox(height: 14),
