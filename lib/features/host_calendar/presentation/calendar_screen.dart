@@ -419,36 +419,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           return SafeArea(
             child: Column(
               children: [
-                // ─── Editorial header ───
+                // ─── Editorial header (eyebrow removed by request) ───
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(24, 16, 20, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: AtrioColors.neonLime,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'DISPONIBILIDAD',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: AtrioColors.hostTextSecondary,
-                              letterSpacing: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
