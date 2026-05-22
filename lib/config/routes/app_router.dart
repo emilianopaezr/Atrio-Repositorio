@@ -126,7 +126,24 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/auth/verify-email',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const EmailVerificationScreen(),
+        builder: (context, state) {
+          // When coming from the new strict-signup flow, register_screen
+          // passes {email, password} as extra so the verify screen can
+          // finish the signup atomically. When coming via the resend
+          // fallback (legacy authenticated-but-unverified case), extra
+          // is null and the screen falls back to requestVerificationCode.
+          final extra = state.extra;
+          String? email;
+          String? password;
+          if (extra is Map) {
+            email = extra['email'] as String?;
+            password = extra['password'] as String?;
+          }
+          return EmailVerificationScreen(
+            pendingEmail: email,
+            pendingPassword: password,
+          );
+        },
       ),
 
       // === GUEST MODE ===

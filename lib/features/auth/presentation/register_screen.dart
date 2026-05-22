@@ -58,26 +58,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
 
     setState(() => _isLoading = true);
     try {
-      AuthService.emailVerified = false;
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final name = _nameController.text.trim();
 
-      final response = await AuthService.signUpWithEmail(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        displayName: _nameController.text.trim(),
+      // Strict signup: nothing in auth.users yet — just pending + OTP.
+      await AuthService.requestPendingSignup(
+        email: email,
+        password: password,
+        displayName: name,
       );
 
       if (!mounted) return;
-      if (response.session != null) {
-        _showSuccess(AppLocalizations.of(context).authAccountCreated);
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) context.go('/auth/verify-email');
-        return;
-      }
-      if (response.user != null && response.session == null) {
-        _showSuccess(AppLocalizations.of(context).authAccountCreatedConfirm);
-      }
+      _showSuccess(AppLocalizations.of(context).authAccountCreated);
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (!mounted) return;
+
+      // Pass email + password to the verify screen so it can finish the
+      // signup atomically and sign in immediately on success. These live
+      // only in router state — not stored anywhere persistent.
+      context.go('/auth/verify-email', extra: {
+        'email': email,
+        'password': password,
+      });
     } on AuthException catch (e) {
-      AuthService.emailVerified = null;
       if (!mounted) return;
       if (e.code == 'email_exists') {
         _showErrorWithAction(
@@ -89,7 +93,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         _showError(e.message);
       }
     } catch (e) {
-      AuthService.emailVerified = null;
       if (!mounted) return;
       _showError(AppLocalizations.of(context).commonUnexpectedError);
     } finally {

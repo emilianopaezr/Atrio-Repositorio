@@ -256,9 +256,123 @@ class AuthService {
   static Session? get currentSession => SupabaseConfig.auth.currentSession;
   static bool get isAuthenticated => currentUser != null;
 
-  /// Request email verification OTP
-  /// Note: The Brevo API key is stored server-side in Supabase vault/secrets.
-  /// Never send API keys from the client.
+  /// Step 1 of strict signup. Stores email/name/password in a
+  /// short-lived `pending_signups` row (NOT in auth.users) and emails
+  /// the user a 6-digit OTP. Nothing in auth.users yet — if the user
+  /// never verifies, the pending row expires on its own.
+  ///
+  /// Throws [AuthException] if the email is already registered, the
+  /// rate limit is hit, validation fails, or Brevo rejects the email.
+  static Future<void> requestPendingSignup({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    try {
+      await SupabaseConfig.client.rpc('request_signup', params: {
+        'p_email': email,
+        'p_name': displayName,
+        'p_password': password,
+      });
+    } on PostgrestException catch (e) {
+      throw _mapPendingSignupError(e);
+    } catch (e) {
+      throw AuthException(
+        'No se pudo iniciar el registro. Intenta de nuevo.',
+        code: 'pending_signup_error',
+      );
+    }
+  }
+
+  /// Step 2 of strict signup. Validates the OTP against the
+  /// `pending_signups` row, then atomically creates the real
+  /// auth.users + profile rows and deletes the pending row.
+  ///
+  /// On success, sign the user in with the original password to
+  /// obtain a session.
+  static Future<void> verifyPendingSignup({
+    required String email,
+    required String code,
+    required String password,
+  }) async {
+    try {
+      await SupabaseConfig.client.rpc('verify_signup', params: {
+        'p_email': email,
+        'p_code': code,
+      });
+      // Account exists in auth.users now — sign in to obtain a JWT.
+      await SupabaseConfig.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    } on PostgrestException catch (e) {
+      throw _mapPendingSignupError(e);
+    } on AuthApiException catch (e) {
+      throw _mapAuthError(e);
+    } catch (e) {
+      throw AuthException(
+        'Error al verificar el código. Intenta de nuevo.',
+        code: 'verify_signup_error',
+      );
+    }
+  }
+
+  static AuthException _mapPendingSignupError(PostgrestException e) {
+    final msg = e.message.toLowerCase();
+    if (msg.contains('already registered')) {
+      return AuthException(
+        'Este email ya está registrado. Intenta iniciar sesión.',
+        code: 'email_exists',
+      );
+    }
+    if (msg.contains('too many attempts')) {
+      return AuthException(
+        'Demasiados intentos. Espera 10 minutos.',
+        code: 'rate_limited',
+      );
+    }
+    if (msg.contains('invalid code')) {
+      return AuthException(
+        'Código incorrecto. Intenta de nuevo.',
+        code: 'invalid_code',
+      );
+    }
+    if (msg.contains('code expired')) {
+      return AuthException(
+        'El código expiró. Solicita uno nuevo.',
+        code: 'code_expired',
+      );
+    }
+    if (msg.contains('no pending signup')) {
+      return AuthException(
+        'No hay registro pendiente. Empieza de nuevo.',
+        code: 'no_pending',
+      );
+    }
+    if (msg.contains('brevo')) {
+      return AuthException(
+        'No se pudo enviar el código. Intenta de nuevo en unos minutos.',
+        code: 'brevo_error',
+      );
+    }
+    if (msg.contains('invalid email')) {
+      return AuthException('Email no válido', code: 'invalid_email');
+    }
+    if (msg.contains('password must be')) {
+      return AuthException(
+        'La contraseña debe tener al menos 8 caracteres.',
+        code: 'weak_password',
+      );
+    }
+    return AuthException(
+      'No se pudo procesar el registro. Intenta de nuevo.',
+      code: 'pending_signup_error',
+    );
+  }
+
+  /// Legacy method retained for the resend-from-verify-screen flow
+  /// (used when the user is already authenticated but unverified).
+  /// New signups should use [requestPendingSignup] + [verifyPendingSignup].
   static Future<void> requestVerificationCode() async {
     try {
       await SupabaseConfig.client.rpc('request_verification');

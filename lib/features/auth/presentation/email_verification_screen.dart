@@ -13,7 +13,22 @@ import '../../../core/services/auth_service.dart';
 import '../../../l10n/app_localizations.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
-  const EmailVerificationScreen({super.key});
+  /// Email being verified — populated by the strict-signup flow so the
+  /// screen knows what `pending_signups` row to validate against. Null
+  /// when this screen is reached via the legacy "authenticated but
+  /// unverified" path, which falls back to the current-user email.
+  final String? pendingEmail;
+
+  /// Password chosen during registration. Used to sign the user in
+  /// once `verify_signup` has created the actual auth.users row. Never
+  /// persisted — lives only in router state during the signup flow.
+  final String? pendingPassword;
+
+  const EmailVerificationScreen({
+    super.key,
+    this.pendingEmail,
+    this.pendingPassword,
+  });
 
   @override
   ConsumerState<EmailVerificationScreen> createState() =>
@@ -60,10 +75,15 @@ class _EmailVerificationScreenState
       CurvedAnimation(parent: _shakeController, curve: Curves.elasticIn),
     );
 
-    // Request verification code on screen load
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _requestVerificationCode(showSnackbar: false);
-    });
+    // Only kick off a verification request on screen load if we're in
+    // the LEGACY flow (already-authenticated unverified user). For the
+    // STRICT flow, the register screen already triggered the email when
+    // it called request_signup — re-requesting here would spam.
+    if (widget.pendingEmail == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _requestVerificationCode(showSnackbar: false);
+      });
+    }
   }
 
   @override
@@ -83,7 +103,11 @@ class _EmailVerificationScreenState
   String get _otpCode => _controllers.map((c) => c.text).join();
 
   String get _userEmail {
-    final email = SupabaseConfig.auth.currentUser?.email ?? '';
+    // Strict flow: there's no session yet, so we read from the router
+    // extra. Legacy flow: fall back to the authenticated user's email.
+    final email = widget.pendingEmail
+        ?? SupabaseConfig.auth.currentUser?.email
+        ?? '';
     return _obscureEmail(email);
   }
 
@@ -126,15 +150,32 @@ class _EmailVerificationScreenState
     }
     if (_isLoading) return;
 
-    final userId = SupabaseConfig.auth.currentUser?.id;
-    if (userId == null) {
-      _showError(l.verifyNoSession);
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
+      // STRICT flow: we have a pending signup. Calling verify_signup
+      // atomically creates auth.users + profile, then we sign in.
+      if (widget.pendingEmail != null && widget.pendingPassword != null) {
+        await AuthService.verifyPendingSignup(
+          email: widget.pendingEmail!,
+          code: code,
+          password: widget.pendingPassword!,
+        );
+        AuthService.emailVerified = true;
+        if (!mounted) return;
+        _showSuccess(l.verifyEmailVerified);
+        await Future.delayed(const Duration(milliseconds: 600));
+        if (mounted) context.go('/guest/home');
+        return;
+      }
+
+      // LEGACY flow: already-authenticated user finishing OTP.
+      final userId = SupabaseConfig.auth.currentUser?.id;
+      if (userId == null) {
+        _showError(l.verifyNoSession);
+        return;
+      }
+
       final result = await SupabaseConfig.client.rpc(
         'verify_otp_code',
         params: {'p_user_id': userId, 'p_code': code},
@@ -143,7 +184,7 @@ class _EmailVerificationScreenState
       if (!mounted) return;
 
       if (result == true) {
-        AuthService.emailVerified = true; // Unblock router
+        AuthService.emailVerified = true;
         _showSuccess(l.verifyEmailVerified);
         await Future.delayed(const Duration(milliseconds: 600));
         if (mounted) context.go('/guest/home');
@@ -151,6 +192,10 @@ class _EmailVerificationScreenState
         _triggerShake();
         _showError(l.verifyIncorrect);
       }
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _triggerShake();
+      _showError(e.message);
     } catch (e) {
       if (!mounted) return;
       _triggerShake();
@@ -167,7 +212,22 @@ class _EmailVerificationScreenState
     setState(() => _isResending = true);
 
     try {
-      await SupabaseConfig.client.rpc('request_verification');
+      // STRICT flow: no session yet — re-trigger request_signup with the
+      // pending email/password so the OTP is re-issued.
+      if (widget.pendingEmail != null && widget.pendingPassword != null) {
+        // Display name will be re-derived server-side from any existing
+        // pending row — but we have to send something non-null. Reuse
+        // the local part of the email as a safe fallback.
+        final fallbackName = widget.pendingEmail!.split('@').first;
+        await AuthService.requestPendingSignup(
+          email: widget.pendingEmail!,
+          password: widget.pendingPassword!,
+          displayName: fallbackName,
+        );
+      } else {
+        // LEGACY flow: there IS a session, use the old RPC.
+        await SupabaseConfig.client.rpc('request_verification');
+      }
 
       if (!mounted) return;
 
@@ -175,6 +235,11 @@ class _EmailVerificationScreenState
         _showSuccess(l.verifyResent);
       }
       _startCooldown();
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      if (showSnackbar) _showError(e.message);
+      setState(() => _isResending = false);
+      return;
     } catch (e) {
       if (!mounted) return;
       if (showSnackbar) {
