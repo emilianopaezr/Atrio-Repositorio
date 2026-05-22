@@ -90,9 +90,12 @@ BEGIN
     RAISE EXCEPTION 'Too many attempts. Wait 10 minutes.';
   END IF;
 
-  -- Generate OTP + hash password (bcrypt cost 10 — same as Supabase default)
+  -- Generate OTP + hash password (bcrypt cost 10 — same as Supabase default).
+  -- pgcrypto lives in the `extensions` schema in Supabase, so we have to
+  -- qualify the calls — `search_path = public` on this function would
+  -- otherwise miss them.
   v_code := LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0');
-  v_hash := crypt(p_password, gen_salt('bf', 10));
+  v_hash := extensions.crypt(p_password, extensions.gen_salt('bf', 10));
 
   -- Get Brevo key
   SELECT value INTO v_api_key FROM app_secrets WHERE key = 'brevo_api_key';
@@ -100,8 +103,10 @@ BEGIN
     RAISE EXCEPTION 'Brevo API key not configured';
   END IF;
 
-  -- Send OTP email
-  SELECT id INTO v_request_id FROM net.http_post(
+  -- Send OTP email. pg_net's net.http_post returns the request id as a
+  -- bigint directly — using SELECT id FROM net.http_post(...) fails on
+  -- some installs because there's no row, just a scalar.
+  v_request_id := net.http_post(
     url := 'https://api.brevo.com/v3/smtp/email',
     headers := jsonb_build_object(
       'api-key', v_api_key,
@@ -316,9 +321,11 @@ BEGIN
   END IF;
 END $$;
 
--- 6. Verification — show that everything is in place
+-- 6. Verification — show that everything is in place. Guarded so it
+--    doesn't blow up when pg_cron isn't installed (self-hosted Supabase
+--    without the extension just won't have cron scheduling — that's OK).
 SELECT
   (SELECT COUNT(*) FROM pg_proc WHERE proname = 'request_signup') AS request_signup_exists,
   (SELECT COUNT(*) FROM pg_proc WHERE proname = 'verify_signup')  AS verify_signup_exists,
   (SELECT COUNT(*) FROM pg_tables WHERE tablename = 'pending_signups') AS pending_table_exists,
-  (SELECT COUNT(*) FROM cron.job WHERE jobname = 'atrio-cleanup-pending-signups') AS cron_active;
+  (SELECT COUNT(*) FROM pg_extension WHERE extname = 'pg_cron') AS pg_cron_installed;
