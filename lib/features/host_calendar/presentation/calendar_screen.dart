@@ -233,12 +233,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _selectedDay = null;
       });
     } else {
+      // Tap on already-selected day deselects it (closes the action bar).
+      final tappedSame = _selectedDay != null &&
+          _selectedDay!.year == date.year &&
+          _selectedDay!.month == date.month &&
+          _selectedDay!.day == date.day;
       setState(() {
-        _selectedDay = date;
+        _selectedDay = tappedSame ? null : date;
         _rangeStart = null;
         _rangeEnd = null;
       });
     }
+  }
+
+  /// Clears the current selection (single or range). Used by the close
+  /// button on the action bar so the user can dismiss the panel without
+  /// having to tap a different day.
+  void _clearSelection() {
+    setState(() {
+      _selectedDay = null;
+      _rangeStart = null;
+      _rangeEnd = null;
+    });
   }
 
   void _goToToday() {
@@ -879,43 +895,89 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
+  /// Bottom action bar — context-aware. Wrapped in [AnimatedSize] so the
+  /// transitions between empty / single-day / range-pending / range-ready
+  /// states feel smooth, and a close (X) chip on every populated variant
+  /// gives the user an explicit way to dismiss the panel without having
+  /// to tap another day.
   Widget _buildActionBar() {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topCenter,
+      child: _actionBarContent(),
+    );
+  }
+
+  Widget _actionBarContent() {
     final l = AppLocalizations.of(context);
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
+    BoxDecoration decoration() => BoxDecoration(
+          color: AtrioColors.hostSurface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border(
+            top: BorderSide(color: AtrioColors.hostCardBorder),
+            left: BorderSide(color: AtrioColors.hostCardBorder),
+            right: BorderSide(color: AtrioColors.hostCardBorder),
+          ),
+        );
+
+    Widget closeButton() => GestureDetector(
+          onTap: _clearSelection,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.close_rounded,
+                size: 18, color: Colors.white),
+          ),
+        );
+
+    // ── Range mode: both endpoints picked → Block / Unblock + close ─────
     if (_isRangeMode && _rangeStart != null && _rangeEnd != null) {
       return Container(
-        padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
-        decoration: BoxDecoration(
-          color: AtrioColors.hostSurface,
-          border: Border(top: BorderSide(color: AtrioColors.hostCardBorder)),
-        ),
+        key: const ValueKey('range-ready'),
+        padding: EdgeInsets.fromLTRB(16, 14, 16, bottomPad + 14),
+        decoration: decoration(),
         child: Row(
           children: [
+            closeButton(),
+            const SizedBox(width: 10),
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _blockRange,
                 icon: const Icon(Icons.block, size: 16),
-                label: Text(l.calendarBlock, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
+                label: Text(l.calendarBlock,
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red[400],
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   elevation: 0,
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _unblockRange,
                 icon: const Icon(Icons.lock_open, size: 16),
-                label: Text(l.calendarUnblock, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13)),
+                label: Text(l.calendarUnblock,
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AtrioColors.neonLime,
                   foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   elevation: 0,
                 ),
@@ -926,6 +988,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       );
     }
 
+    // ── Single-day selected → Status + Block/Unblock/Detail + close ─────
     if (!_isRangeMode && _selectedDay != null) {
       final key = _dateKey(_selectedDay!);
       final booked = _bookedDates.contains(key);
@@ -933,13 +996,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       final dayName = _dayAbbrNames(l)[_selectedDay!.weekday - 1];
 
       return Container(
-        padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
-        decoration: BoxDecoration(
-          color: AtrioColors.hostSurface,
-          border: Border(top: BorderSide(color: AtrioColors.hostCardBorder)),
-        ),
+        key: const ValueKey('single-day'),
+        padding: EdgeInsets.fromLTRB(16, 14, 16, bottomPad + 14),
+        decoration: decoration(),
         child: Row(
           children: [
+            closeButton(),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -947,13 +1010,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 children: [
                   Text(
                     '$dayName ${_selectedDay!.day} ${_months(l)[_selectedDay!.month - 1]}',
-                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white),
+                    style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white),
                   ),
                   Text(
-                    booked ? l.calendarStatusReserved : blocked ? l.calendarStatusBlocked : l.calendarStatusAvailable,
+                    booked
+                        ? l.calendarStatusReserved
+                        : blocked
+                            ? l.calendarStatusBlocked
+                            : l.calendarStatusAvailable,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: booked ? Colors.green : blocked ? Colors.red[400] : AtrioColors.neonLimeDark,
+                      color: booked
+                          ? Colors.green
+                          : blocked
+                              ? Colors.red[400]
+                              : AtrioColors.neonLimeDark,
                     ),
                   ),
                 ],
@@ -965,13 +1039,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 icon: Icon(blocked ? Icons.lock_open : Icons.block, size: 16),
                 label: Text(
                   blocked ? l.calendarUnblock : l.calendarBlock,
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
+                  style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700, fontSize: 13),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: blocked ? AtrioColors.neonLime : Colors.red[400],
+                  backgroundColor:
+                      blocked ? AtrioColors.neonLime : Colors.red[400],
                   foregroundColor: blocked ? Colors.black : Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
                   elevation: 0,
                 ),
               ),
@@ -980,38 +1058,54 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 onPressed: () => _showDayDetail(_selectedDay!),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AtrioColors.neonLime,
-                  side: BorderSide(color: AtrioColors.neonLime.withValues(alpha: 0.3)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  side: BorderSide(
+                      color: AtrioColors.neonLime.withValues(alpha: 0.3)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
                 ),
-                child: Text(l.calendarViewDetails, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+                child: Text(l.calendarViewDetails,
+                    style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600, fontSize: 13)),
               ),
           ],
         ),
       );
     }
 
+    // ── Range mode but not yet complete → hint + close ─────────────────
     if (_isRangeMode && (_rangeStart == null || _rangeEnd == null)) {
       return Container(
-        padding: EdgeInsets.fromLTRB(20, 12, 20, bottomPad + 12),
-        decoration: BoxDecoration(
-          color: AtrioColors.hostSurface,
-          border: Border(top: BorderSide(color: AtrioColors.hostCardBorder)),
-        ),
+        key: const ValueKey('range-hint'),
+        padding: EdgeInsets.fromLTRB(16, 14, 16, bottomPad + 14),
+        decoration: decoration(),
         child: Row(
           children: [
-            Icon(Icons.info_outline, size: 16, color: AtrioColors.hostTextTertiary),
+            closeButton(),
+            const SizedBox(width: 12),
+            const Icon(Icons.info_outline,
+                size: 16, color: AtrioColors.hostTextTertiary),
             const SizedBox(width: 8),
-            Text(
-              _rangeStart == null ? l.calendarSelectStartDate : l.calendarSelectEndDate,
-              style: GoogleFonts.inter(fontSize: 13, color: AtrioColors.hostTextSecondary),
+            Expanded(
+              child: Text(
+                _rangeStart == null
+                    ? l.calendarSelectStartDate
+                    : l.calendarSelectEndDate,
+                style: GoogleFonts.inter(
+                    fontSize: 13, color: AtrioColors.hostTextSecondary),
+              ),
             ),
           ],
         ),
       );
     }
 
-    return SizedBox(height: bottomPad + 8);
+    // No selection → reserve only the safe-area inset.
+    return SizedBox(
+      key: const ValueKey('empty'),
+      height: bottomPad + 8,
+    );
   }
 
   Widget _legend(Color color, String label) {
