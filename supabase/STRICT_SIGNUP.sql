@@ -158,39 +158,21 @@ BEGIN
     attempts = COALESCE(pending_signups.attempts, 0) + 1,
     updated_at = NOW();
 
-  -- Wait briefly for Brevo response so we can surface obvious failures
-  -- (401 invalid key, 400 bad payload, etc) before returning. pg_net is
-  -- async, so we poll up to ~8s. If we still haven't seen a response by
-  -- then, we assume success — the request was queued and Brevo's median
-  -- delivery is sub-second; the response just hasn't been materialised
-  -- in net._http_response yet.
-  v_attempts := 0;
-  LOOP
-    SELECT status_code, content::text AS body INTO v_response
-    FROM net._http_response WHERE id = v_request_id;
-    EXIT WHEN v_response.status_code IS NOT NULL OR v_attempts >= 16;
-    v_attempts := v_attempts + 1;
-    PERFORM pg_sleep(0.5);
-  END LOOP;
-
-  IF v_response.status_code IS NULL THEN
-    -- Brevo didn't reply within the polling window. The request IS in
-    -- pg_net's queue (we have v_request_id), so we optimistically treat
-    -- this as success. If Brevo actually rejected it, the next retry
-    -- attempt will surface the error.
-    RETURN jsonb_build_object(
-      'ok', true,
-      'status', 'pending',
-      'request_id', v_request_id
-    );
-  END IF;
-
-  IF v_response.status_code BETWEEN 200 AND 299 THEN
-    RETURN jsonb_build_object('ok', true, 'status', v_response.status_code);
-  END IF;
-
-  RAISE EXCEPTION 'Brevo error %: %', v_response.status_code,
-    left(coalesce(v_response.body, '(no body)'), 400);
+  -- IMPORTANT: NO polling here. PostgREST applies a short
+  -- statement_timeout to the `anon` role (~3s in self-hosted
+  -- Supabase), so any pg_sleep inside the function causes the call
+  -- to bail with "57014 canceling statement due to statement
+  -- timeout" — observed as a generic "no se pudo procesar el
+  -- registro" in the app. Fire-and-forget instead: net.http_post
+  -- has already queued the request and stored its id; if Brevo
+  -- rejects, the next attempt (resend, or another signup) surfaces
+  -- the error through net._http_response with a non-blocking
+  -- diagnostic query.
+  RETURN jsonb_build_object(
+    'ok', true,
+    'status', 'queued',
+    'request_id', v_request_id
+  );
 END;
 $$;
 
