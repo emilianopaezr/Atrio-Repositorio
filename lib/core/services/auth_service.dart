@@ -241,16 +241,12 @@ class AuthService {
     await SupabaseConfig.auth.signOut();
   }
 
-  /// Reset password
-  static Future<void> resetPassword(String email) async {
-    try {
-      await SupabaseConfig.auth.resetPasswordForEmail(email);
-    } on AuthApiException catch (e) {
-      throw _mapAuthError(e);
-    } catch (e) {
-      throw _mapGenericError(e);
-    }
-  }
+  /// Reset password — sends a 6-digit OTP via our branded Brevo flow
+  /// instead of the built-in Supabase recovery link (which only works
+  /// with a real configured SMTP). The user then calls
+  /// [verifyPasswordReset] with the code + new password to complete.
+  static Future<void> resetPassword(String email) =>
+      requestPasswordResetCode(email);
 
   static User? get currentUser => SupabaseConfig.auth.currentUser;
   static Session? get currentSession => SupabaseConfig.auth.currentSession;
@@ -368,6 +364,52 @@ class AuthService {
       'No se pudo procesar el registro. Intenta de nuevo.',
       code: 'pending_signup_error',
     );
+  }
+
+  /// Asks the backend to email a 6-digit password-recovery code. To
+  /// avoid email-enumeration, the RPC always returns success — the
+  /// email is only actually sent when the address exists.
+  static Future<void> requestPasswordResetCode(String email) async {
+    try {
+      await SupabaseConfig.client.rpc(
+        'request_password_reset',
+        params: {'p_email': email},
+      );
+    } on PostgrestException catch (e) {
+      throw _mapPendingSignupError(e);
+    } catch (e) {
+      throw AuthException(
+        'No se pudo enviar el código. Intenta de nuevo.',
+        code: 'reset_request_error',
+      );
+    }
+  }
+
+  /// Completes the password reset: validates the 6-digit code and
+  /// updates `auth.users.encrypted_password`. The DB trigger fires the
+  /// "contraseña actualizada" confirmation email automatically.
+  static Future<void> verifyPasswordReset({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    try {
+      await SupabaseConfig.client.rpc(
+        'verify_password_reset',
+        params: {
+          'p_email': email,
+          'p_code': code,
+          'p_new_password': newPassword,
+        },
+      );
+    } on PostgrestException catch (e) {
+      throw _mapPendingSignupError(e);
+    } catch (e) {
+      throw AuthException(
+        'Error al actualizar la contraseña. Intenta de nuevo.',
+        code: 'reset_verify_error',
+      );
+    }
   }
 
   /// Legacy method retained for the resend-from-verify-screen flow
