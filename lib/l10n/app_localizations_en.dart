@@ -397,6 +397,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verifySendFail => 'Could not send the code. Please try again.';
 
   @override
+  String get verifyBackToLogin => 'Back to login';
+
+  @override
   String get homeEyebrow => 'EXPLORE';
 
   @override

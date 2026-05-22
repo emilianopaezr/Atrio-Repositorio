@@ -854,6 +854,12 @@ abstract class AppLocalizations {
   /// **'No se pudo enviar el código. Intenta de nuevo.'**
   String get verifySendFail;
 
+  /// No description provided for @verifyBackToLogin.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al login'**
+  String get verifyBackToLogin;
+
   /// No description provided for @homeEyebrow.
   ///
   /// In es, this message translates to:

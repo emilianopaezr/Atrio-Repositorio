@@ -140,6 +140,7 @@
   "verifyErrorCheck": "Error al verificar el código. Intenta de nuevo.",
   "verifyResent": "Código reenviado a tu email.",
   "verifySendFail": "No se pudo enviar el código. Intenta de nuevo.",
+  "verifyBackToLogin": "Volver al login",
 
   "homeEyebrow": "EXPLORA",
   "homeHeroTitle": "¿Qué necesitas hoy?",

@@ -442,6 +442,37 @@ class _EmailVerificationScreenState
                   ),
                 ),
                 const SizedBox(height: 28),
+                // Escape hatch: if the email never arrives, the user can
+                // jump straight back to the login screen instead of being
+                // stuck on this page.
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      // Cancel the unverified session so we don't leave the
+                      // user authenticated-but-half-signed-up in memory.
+                      try {
+                        await AuthService.signOut();
+                      } catch (_) {}
+                      if (!context.mounted) return;
+                      context.go('/auth/login');
+                    },
+                    icon: const Icon(Icons.arrow_back_rounded,
+                        size: 16, color: AtrioColors.guestTextSecondary),
+                    label: Text(
+                      l.verifyBackToLogin,
+                      style: GoogleFonts.inter(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AtrioColors.guestTextSecondary,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
               ],
             ),
           ),

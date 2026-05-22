@@ -400,6 +400,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get verifySendFail => 'No se pudo enviar el código. Intenta de nuevo.';
 
   @override
+  String get verifyBackToLogin => 'Volver al login';
+
+  @override
   String get homeEyebrow => 'EXPLORA';
 
   @override
