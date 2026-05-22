@@ -403,6 +403,39 @@ class AppLocalizationsEs extends AppLocalizations {
   String get verifyBackToLogin => 'Volver al login';
 
   @override
+  String get forgotPasswordTitle => '¿Olvidaste tu contraseña?';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Ingresa tu email y te enviaremos un código de 6 dígitos para crear una nueva contraseña.';
+
+  @override
+  String get forgotPasswordCta => 'Enviar código';
+
+  @override
+  String get forgotPasswordBackToLogin => 'Volver al login';
+
+  @override
+  String get resetPasswordTitle => 'Nueva contraseña';
+
+  @override
+  String resetPasswordSubtitle(String email) {
+    return 'Enviamos un código de 6 dígitos a $email. Ingrésalo y elige tu nueva contraseña.';
+  }
+
+  @override
+  String get resetPasswordCodeLabel => 'Código de verificación';
+
+  @override
+  String get resetPasswordNewPassword => 'Nueva contraseña';
+
+  @override
+  String get resetPasswordCta => 'Cambiar contraseña';
+
+  @override
+  String get resetPasswordSuccess => 'Contraseña actualizada correctamente';
+
+  @override
   String get homeEyebrow => 'EXPLORA';
 
   @override

@@ -8,6 +8,8 @@ import '../../core/services/auth_service.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/email_verification_screen.dart';
+import '../../features/auth/presentation/forgot_password_screen.dart';
+import '../../features/auth/presentation/reset_password_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/search/presentation/search_screen.dart';
 import '../../features/bookings/presentation/bookings_screen.dart';
@@ -122,6 +124,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth/register',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/auth/forgot-password',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final email = state.extra is String ? state.extra as String : null;
+          return ForgotPasswordScreen(initialEmail: email);
+        },
+      ),
+      GoRoute(
+        path: '/auth/reset-password',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          // Email is required — the only path here is from
+          // ForgotPasswordScreen.push with the address as extra.
+          final email = state.extra is String ? state.extra as String : '';
+          return ResetPasswordScreen(email: email);
+        },
       ),
       GoRoute(
         path: '/auth/verify-email',

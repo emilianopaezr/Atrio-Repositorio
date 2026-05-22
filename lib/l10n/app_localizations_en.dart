@@ -400,6 +400,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verifyBackToLogin => 'Back to login';
 
   @override
+  String get forgotPasswordTitle => 'Forgot your password?';
+
+  @override
+  String get forgotPasswordSubtitle =>
+      'Enter your email and we\'ll send you a 6-digit code to set a new password.';
+
+  @override
+  String get forgotPasswordCta => 'Send code';
+
+  @override
+  String get forgotPasswordBackToLogin => 'Back to login';
+
+  @override
+  String get resetPasswordTitle => 'New password';
+
+  @override
+  String resetPasswordSubtitle(String email) {
+    return 'We sent a 6-digit code to $email. Enter it and pick your new password.';
+  }
+
+  @override
+  String get resetPasswordCodeLabel => 'Verification code';
+
+  @override
+  String get resetPasswordNewPassword => 'New password';
+
+  @override
+  String get resetPasswordCta => 'Update password';
+
+  @override
+  String get resetPasswordSuccess => 'Password updated successfully';
+
+  @override
   String get homeEyebrow => 'EXPLORE';
 
   @override

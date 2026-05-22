@@ -93,86 +93,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
-  Future<void> _resetPassword() async {
-    final l = AppLocalizations.of(context);
-    final resetEmailController = TextEditingController(text: _emailController.text.trim());
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AtrioColors.guestSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          l.authResetPasswordTitle,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w800,
-            color: AtrioColors.guestTextPrimary,
-            letterSpacing: -0.4,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l.authResetPasswordHint,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AtrioColors.guestTextSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: resetEmailController,
-              keyboardType: TextInputType.emailAddress,
-              autofocus: true,
-              cursorColor: AtrioColors.guestTextPrimary,
-              decoration: InputDecoration(
-                hintText: l.authYourEmail,
-                hintStyle: GoogleFonts.inter(color: AtrioColors.guestTextTertiary),
-                filled: true,
-                fillColor: AtrioColors.guestSurfaceVariant,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              style: GoogleFonts.inter(color: AtrioColors.guestTextPrimary, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l.btnCancel, style: GoogleFonts.inter(color: AtrioColors.guestTextSecondary, fontWeight: FontWeight.w600)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AtrioColors.neonLime,
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l.btnSend, style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
-          ),
-        ],
-      ),
+  /// Forgot-password entry: routes to the dedicated screen,
+  /// pre-filling whatever email the user typed in the login form.
+  void _resetPassword() {
+    final email = _emailController.text.trim();
+    context.push(
+      '/auth/forgot-password',
+      extra: email.isEmpty ? null : email,
     );
-
-    if (confirmed != true) return;
-
-    final email = resetEmailController.text.trim();
-    if (email.isEmpty) {
-      _showError(l.authResetEnterEmail);
-      return;
-    }
-
-    try {
-      await AuthService.resetPassword(email);
-    } catch (_) {}
-    if (!mounted) return;
-    _showSuccess(l.authResetSent);
   }
 
   void _showError(String message) {
@@ -187,29 +115,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ],
         ),
         backgroundColor: AtrioColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.black, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(message,
-                  style: GoogleFonts.inter(
-                      fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black)),
-            ),
-          ],
-        ),
-        backgroundColor: AtrioColors.neonLime,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -313,7 +218,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: _resetPassword,
+                      onPressed: () => _resetPassword(),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         minimumSize: Size.zero,

@@ -142,6 +142,18 @@
   "verifySendFail": "Could not send the code. Please try again.",
   "verifyBackToLogin": "Back to login",
 
+  "forgotPasswordTitle": "Forgot your password?",
+  "forgotPasswordSubtitle": "Enter your email and we'll send you a 6-digit code to set a new password.",
+  "forgotPasswordCta": "Send code",
+  "forgotPasswordBackToLogin": "Back to login",
+  "resetPasswordTitle": "New password",
+  "resetPasswordSubtitle": "We sent a 6-digit code to {email}. Enter it and pick your new password.",
+  "@resetPasswordSubtitle": { "placeholders": { "email": { "type": "String" } } },
+  "resetPasswordCodeLabel": "Verification code",
+  "resetPasswordNewPassword": "New password",
+  "resetPasswordCta": "Update password",
+  "resetPasswordSuccess": "Password updated successfully",
+
   "homeEyebrow": "EXPLORE",
   "homeHeroTitle": "What do you need today?",
   "homeTrendingTitle": "Trending now",

@@ -860,6 +860,66 @@ abstract class AppLocalizations {
   /// **'Volver al login'**
   String get verifyBackToLogin;
 
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Olvidaste tu contraseña?'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu email y te enviaremos un código de 6 dígitos para crear una nueva contraseña.'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @forgotPasswordCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviar código'**
+  String get forgotPasswordCta;
+
+  /// No description provided for @forgotPasswordBackToLogin.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver al login'**
+  String get forgotPasswordBackToLogin;
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva contraseña'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Enviamos un código de 6 dígitos a {email}. Ingrésalo y elige tu nueva contraseña.'**
+  String resetPasswordSubtitle(String email);
+
+  /// No description provided for @resetPasswordCodeLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'Código de verificación'**
+  String get resetPasswordCodeLabel;
+
+  /// No description provided for @resetPasswordNewPassword.
+  ///
+  /// In es, this message translates to:
+  /// **'Nueva contraseña'**
+  String get resetPasswordNewPassword;
+
+  /// No description provided for @resetPasswordCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambiar contraseña'**
+  String get resetPasswordCta;
+
+  /// No description provided for @resetPasswordSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Contraseña actualizada correctamente'**
+  String get resetPasswordSuccess;
+
   /// No description provided for @homeEyebrow.
   ///
   /// In es, this message translates to:

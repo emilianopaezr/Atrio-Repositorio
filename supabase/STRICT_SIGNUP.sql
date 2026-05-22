@@ -241,7 +241,11 @@ BEGIN
     RAISE EXCEPTION 'Email already registered';
   END IF;
 
-  -- Create auth.users (compatible with Supabase Auth's expected schema)
+  -- Create auth.users (compatible with Supabase Auth's expected schema).
+  -- IMPORTANT: confirmed_at is a generated column in modern Supabase
+  -- (derived from email_confirmed_at / phone_confirmed_at) and inserting
+  -- into it raises 428C9. Only set email_confirmed_at — confirmed_at
+  -- populates itself.
   v_user_id := gen_random_uuid();
   INSERT INTO auth.users (
     instance_id,
@@ -251,7 +255,6 @@ BEGIN
     email,
     encrypted_password,
     email_confirmed_at,
-    confirmed_at,
     raw_app_meta_data,
     raw_user_meta_data,
     created_at,
@@ -266,7 +269,6 @@ BEGIN
     'authenticated',
     v_pending.email,
     v_pending.password_hash,
-    NOW(),
     NOW(),
     jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
     jsonb_build_object('display_name', v_pending.display_name),

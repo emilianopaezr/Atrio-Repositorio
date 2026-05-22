@@ -142,6 +142,18 @@
   "verifySendFail": "No se pudo enviar el código. Intenta de nuevo.",
   "verifyBackToLogin": "Volver al login",
 
+  "forgotPasswordTitle": "¿Olvidaste tu contraseña?",
+  "forgotPasswordSubtitle": "Ingresa tu email y te enviaremos un código de 6 dígitos para crear una nueva contraseña.",
+  "forgotPasswordCta": "Enviar código",
+  "forgotPasswordBackToLogin": "Volver al login",
+  "resetPasswordTitle": "Nueva contraseña",
+  "resetPasswordSubtitle": "Enviamos un código de 6 dígitos a {email}. Ingrésalo y elige tu nueva contraseña.",
+  "@resetPasswordSubtitle": { "placeholders": { "email": { "type": "String" } } },
+  "resetPasswordCodeLabel": "Código de verificación",
+  "resetPasswordNewPassword": "Nueva contraseña",
+  "resetPasswordCta": "Cambiar contraseña",
+  "resetPasswordSuccess": "Contraseña actualizada correctamente",
+
   "homeEyebrow": "EXPLORA",
   "homeHeroTitle": "¿Qué necesitas hoy?",
   "homeTrendingTitle": "En tendencia",

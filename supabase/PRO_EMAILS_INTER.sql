@@ -61,11 +61,8 @@ AS $$
           '<table role="presentation" width="600" class="atrio-card" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 8px 32px rgba(10,10,10,0.06);">',
             -- Lime stripe at the very top
             '<tr><td style="background:#D4FF00;height:6px;line-height:6px;font-size:6px;">&nbsp;</td></tr>',
-            -- Tiny eyebrow + isologo
-            '<tr><td align="center" class="atrio-pad" style="padding:44px 40px 4px;">',
-              '<div style="font-size:11px;font-weight:700;letter-spacing:2px;color:#9a9a9a;text-transform:uppercase;margin-bottom:18px;">',
-                'A · T · R · I · O',
-              '</div>',
+            -- Isologo (centrado, sin eyebrow)
+            '<tr><td align="center" class="atrio-pad" style="padding:48px 40px 4px;">',
               '<img src="https://raw.githubusercontent.com/emilianopaezr/Atrio-Repositorio/main/assets/images/isotipo_atrio_negro.png" alt="Atrio" width="132" style="display:block;width:132px;max-width:55%;height:auto;border:0;">',
             '</td></tr>',
             -- Heading (Inter Bold, tight tracking — editorial)
