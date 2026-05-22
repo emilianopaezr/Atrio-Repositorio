@@ -223,11 +223,17 @@ BEGIN
     RAISE EXCEPTION 'Email already registered';
   END IF;
 
-  -- Create auth.users (compatible with Supabase Auth's expected schema).
-  -- IMPORTANT: confirmed_at is a generated column in modern Supabase
-  -- (derived from email_confirmed_at / phone_confirmed_at) and inserting
-  -- into it raises 428C9. Only set email_confirmed_at — confirmed_at
-  -- populates itself.
+  -- Create auth.users (compatible with Supabase Auth / GoTrue).
+  --
+  -- Quirks of this schema we have to honour:
+  --   • confirmed_at is a generated column (derived from
+  --     email_confirmed_at / phone_confirmed_at). Inserting into it
+  --     raises 428C9.
+  --   • GoTrue scans the token columns as Go strings; NULL values
+  --     cause "Database error querying schema" on sign-in. Native
+  --     Supabase signups always populate them as empty strings, so
+  --     we mirror that here.
+  --   • is_super_admin defaults to NULL on Supabase-native rows.
   v_user_id := gen_random_uuid();
   INSERT INTO auth.users (
     instance_id,
@@ -241,9 +247,16 @@ BEGIN
     raw_user_meta_data,
     created_at,
     updated_at,
-    is_super_admin,
     is_sso_user,
-    is_anonymous
+    is_anonymous,
+    confirmation_token,
+    recovery_token,
+    email_change_token_new,
+    email_change_token_current,
+    reauthentication_token,
+    phone_change,
+    phone_change_token,
+    email_change
   ) VALUES (
     '00000000-0000-0000-0000-000000000000',
     v_user_id,
@@ -253,12 +266,16 @@ BEGIN
     v_pending.password_hash,
     NOW(),
     jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
-    jsonb_build_object('display_name', v_pending.display_name),
+    jsonb_build_object(
+      'display_name', v_pending.display_name,
+      'email_verified', true
+    ),
     NOW(),
     NOW(),
     false,
     false,
-    false
+    '', '', '', '', '',
+    '', '', ''
   );
 
   -- Create the identity row that Supabase signin expects (so identities is non-empty)
