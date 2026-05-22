@@ -10,6 +10,10 @@
 -- Idempotent: re-running just replaces the function.
 -- =============================================
 
+-- 0. Drop first because we're changing the return type from void → jsonb.
+--    CREATE OR REPLACE alone can't change return types.
+DROP FUNCTION IF EXISTS request_verification();
+
 -- 1. Add brevo_request_id column if missing (idempotent).
 ALTER TABLE otp_codes
   ADD COLUMN IF NOT EXISTS brevo_request_id BIGINT;
