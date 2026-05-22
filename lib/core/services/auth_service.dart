@@ -50,6 +50,17 @@ class AuthService {
   }
 
   /// Sign up with email & password
+  ///
+  /// Handles a tricky edge case: when an email exists in `auth.users` but
+  /// was never verified (e.g. user signed up, never received/used the
+  /// OTP), Supabase reports the email as taken — but the user can't
+  /// actually log in. To unstick them, when we detect this we try the
+  /// password we were given:
+  ///   • If it matches → restore the session, reset the verified flag,
+  ///     request a fresh OTP, and let the caller route to the verify
+  ///     screen.
+  ///   • If it doesn't match → it's someone else's account; surface the
+  ///     normal "ya registrado" error so they go to login.
   static Future<AuthResponse> signUpWithEmail({
     required String email,
     required String password,
@@ -66,15 +77,53 @@ class AuthService {
         throw AuthException('No se pudo crear la cuenta. Intenta de nuevo.');
       }
 
-      // Check if email confirmation is needed (user exists but no session)
-      if (response.session == null && response.user != null) {
-        // Check if the user identity list is empty (means email already registered)
-        if (response.user!.identities?.isEmpty ?? false) {
-          throw AuthException(
-            'Este email ya está registrado. Intenta iniciar sesión.',
-            code: 'email_exists',
+      // Email taken case: identities list is empty when Supabase silently
+      // refuses to recreate an existing account.
+      final emailAlreadyTaken =
+          response.session == null && (response.user!.identities?.isEmpty ?? false);
+
+      if (emailAlreadyTaken) {
+        // Try to log in with the password the user just gave us. If it
+        // works AND the email isn't verified yet, we treat this as a
+        // resumed signup: fire a new OTP and bubble the session up so the
+        // UI can land on /auth/verify-email.
+        try {
+          final loginResp = await SupabaseConfig.auth.signInWithPassword(
+            email: email,
+            password: password,
           );
+          if (loginResp.session != null && loginResp.user != null) {
+            final isVerified = await isEmailVerified();
+            if (!isVerified) {
+              emailVerified = false;
+              // Re-issue verification code; best-effort, ignore failures.
+              try {
+                await requestVerificationCode();
+              } catch (_) {}
+              return loginResp;
+            }
+            // Email IS already verified — the account is fully usable.
+            // Tell the caller so they route to login.
+            await SupabaseConfig.auth.signOut();
+            throw AuthException(
+              'Este email ya está registrado. Intenta iniciar sesión.',
+              code: 'email_exists',
+            );
+          }
+        } on AuthException {
+          rethrow;
+        } catch (_) {
+          // Password didn't match: surface the standard "already taken"
+          // error so the user is sent to login.
         }
+
+        throw AuthException(
+          'Este email ya está registrado. Intenta iniciar sesión.',
+          code: 'email_exists',
+        );
+      }
+
+      if (response.session == null && response.user != null) {
         // Auto-confirm trigger should handle this, but if not:
         throw AuthException(
           'Cuenta creada. Revisa tu email para confirmar tu cuenta.',
