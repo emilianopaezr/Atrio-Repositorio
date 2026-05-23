@@ -97,9 +97,12 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                   final list = _applyChip(base);
                   if (list.isEmpty) {
                     return _EmptyBookings(
-                      message: _selectedTab == 0
+                      title: _selectedTab == 0
                           ? l.bookingsNoUpcoming
                           : l.bookingsNoPast,
+                      subtitle: _selectedTab == 0
+                          ? l.bookingsNoUpcomingSubtitle
+                          : l.bookingsNoPastSubtitle,
                     );
                   }
                   return RefreshIndicator(
@@ -777,37 +780,51 @@ class _BookingCard extends StatelessWidget {
 // Empty state
 // ═══════════════════════════════════════════════════════════════
 class _EmptyBookings extends StatelessWidget {
-  final String message;
-  const _EmptyBookings({required this.message});
+  final String title;
+  final String subtitle;
+  const _EmptyBookings({required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
+    // Matches the chat empty state visual language: a generous lime
+    // disc, an icon, a strong title, and a soft subtitle line.
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 80),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
       children: [
-        Container(
-          width: 64,
-          height: 64,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AtrioColors.neonLime.withValues(alpha: 0.18),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.event_available_rounded,
-            color: AtrioColors.neonLimeDark,
-            size: 30,
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: AtrioColors.neonLime.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.event_available_rounded,
+              size: 36,
+              color: AtrioColors.guestTextPrimary,
+            ),
           ),
         ),
         const SizedBox(height: 18),
         Text(
-          message,
+          title,
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w600,
-            color: AtrioColors.guestTextSecondary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AtrioColors.guestTextPrimary,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w500,
+            color: AtrioColors.guestTextTertiary,
             height: 1.4,
           ),
         ),

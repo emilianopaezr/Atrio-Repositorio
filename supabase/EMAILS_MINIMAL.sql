@@ -108,12 +108,14 @@ AS $$
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0;">',
       '<tr><td align="center">',
         '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #e8e8e8;border-radius:14px;">',
-          '<tr><td align="center" style="padding:26px 36px 18px;">',
-            '<div class="atrio-code" style="font-family:''SF Mono'',''Menlo'',''Consolas'',''Courier New'',monospace;font-size:38px;font-weight:600;letter-spacing:12px;color:#0a0a0a;line-height:1;padding-right:0;">',
+          '<tr><td align="center" style="padding:26px 36px 22px;">',
+            -- The code: 6 digits at 38px / letter-spacing 12px ≈ 230px wide.
+            -- The lime underline matches that width exactly so it reads as
+            -- the code's own underline, not a detached accent.
+            '<div class="atrio-code" style="display:inline-block;font-family:''SF Mono'',''Menlo'',''Consolas'',''Courier New'',monospace;font-size:38px;font-weight:600;letter-spacing:12px;color:#0a0a0a;line-height:1;padding-right:0;border-bottom:3px solid #D4FF00;padding-bottom:12px;">',
               p_code,
             '</div>',
-            '<div style="height:2px;width:42px;background:#D4FF00;margin:14px auto 0;line-height:2px;font-size:2px;">&nbsp;</div>',
-            '<div style="margin-top:14px;font-family:''Inter'',-apple-system,BlinkMacSystemFont,''Segoe UI'',Roboto,Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;color:#9a9a9a;letter-spacing:1.2px;text-transform:uppercase;">',
+            '<div style="margin-top:16px;font-family:''Inter'',-apple-system,BlinkMacSystemFont,''Segoe UI'',Roboto,Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;color:#9a9a9a;letter-spacing:1.2px;text-transform:uppercase;">',
               p_label,
             '</div>',
           '</td></tr>',

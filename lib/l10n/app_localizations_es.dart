@@ -695,7 +695,25 @@ class AppLocalizationsEs extends AppLocalizations {
   String get bookingsNoUpcoming => 'No tienes reservas próximas';
 
   @override
+  String get bookingsNoUpcomingSubtitle =>
+      'Cuando reserves un espacio o servicio, aparecerá aquí.';
+
+  @override
   String get bookingsNoPast => 'Aún no has completado ninguna reserva';
+
+  @override
+  String get bookingsNoPastSubtitle =>
+      'Tu historial de reservas se mostrará en este lugar.';
+
+  @override
+  String get calendarEmptyTitle => 'Aún no tienes publicaciones';
+
+  @override
+  String get calendarEmptySubtitle =>
+      'Crea tu primer anuncio para gestionar disponibilidad, bloqueos y reservas desde el calendario.';
+
+  @override
+  String get calendarEmptyCta => 'Crear mi primer anuncio';
 
   @override
   String get bookingsLoadError => 'Error al cargar reservas';

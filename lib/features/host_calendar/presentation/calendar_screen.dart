@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme/app_colors.dart';
-import '../../../config/theme/app_typography.dart';
 import '../../../core/providers/listings_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
@@ -403,22 +402,83 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       body: listingsAsync.when(
         data: (listings) {
           if (listings.isEmpty) {
+            // Editorial empty state: lime disc, headline, supporting
+            // copy, and a pill CTA — matches the language used on the
+            // guest "no bookings" screen.
             return SafeArea(
               child: Center(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.calendar_today, size: 48, color: AtrioColors.hostTextTertiary),
-                  const SizedBox(height: 16),
-                  Text(l.calendarEmptyMessage, textAlign: TextAlign.center, style: AtrioTypography.bodyMedium.copyWith(color: AtrioColors.hostTextSecondary)),
-                  const SizedBox(height: 20),
-                  GestureDetector(
-                    onTap: () => context.push('/host/create-listing'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      decoration: BoxDecoration(color: AtrioColors.neonLime, borderRadius: BorderRadius.circular(12)),
-                      child: Text(l.calendarCreateListing, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black)),
-                    ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(26),
+                        decoration: BoxDecoration(
+                          color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.calendar_today_rounded,
+                          size: 40,
+                          color: AtrioColors.neonLime,
+                        ),
+                      ),
+                      const SizedBox(height: 26),
+                      Text(
+                        l.calendarEmptyTitle,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.6,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        l.calendarEmptySubtitle,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AtrioColors.hostTextSecondary,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      GestureDetector(
+                        onTap: () => context.push('/host/create-listing'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 22, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: AtrioColors.neonLime,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                l.calendarEmptyCta,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.black,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward_rounded,
+                                  size: 16, color: Colors.black),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ]),
+                ),
               ),
             );
           }

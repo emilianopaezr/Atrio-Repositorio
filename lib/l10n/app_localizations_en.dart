@@ -692,7 +692,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookingsNoUpcoming => 'You have no upcoming bookings';
 
   @override
+  String get bookingsNoUpcomingSubtitle =>
+      'When you book a space or service it will appear here.';
+
+  @override
   String get bookingsNoPast => 'You haven\'t completed any bookings yet';
+
+  @override
+  String get bookingsNoPastSubtitle =>
+      'Your booking history will show up in this list.';
+
+  @override
+  String get calendarEmptyTitle => 'You don\'t have any listings yet';
+
+  @override
+  String get calendarEmptySubtitle =>
+      'Create your first listing to manage availability, blocks and bookings from the calendar.';
+
+  @override
+  String get calendarEmptyCta => 'Create my first listing';
 
   @override
   String get bookingsLoadError => 'Error loading bookings';

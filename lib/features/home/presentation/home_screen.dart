@@ -1190,25 +1190,11 @@ class _BecomeHostBanner extends StatelessWidget {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AtrioColors.guestCardBorder),
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Lime accent stripe on the left
-                Container(
-                  width: 6,
-                  decoration: const BoxDecoration(
-                    color: AtrioColors.neonLime,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      bottomLeft: Radius.circular(24),
-                    ),
-                  ),
-                ),
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+          // Lime stripe removed by request — the lime "1% COMISIÓN"
+          // chip + the lime arrow on the CTA already provide enough
+          // brand presence on this card.
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1308,10 +1294,6 @@ class _BecomeHostBanner extends StatelessWidget {
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

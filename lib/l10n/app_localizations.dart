@@ -1400,11 +1400,41 @@ abstract class AppLocalizations {
   /// **'No tienes reservas próximas'**
   String get bookingsNoUpcoming;
 
+  /// No description provided for @bookingsNoUpcomingSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando reserves un espacio o servicio, aparecerá aquí.'**
+  String get bookingsNoUpcomingSubtitle;
+
   /// No description provided for @bookingsNoPast.
   ///
   /// In es, this message translates to:
   /// **'Aún no has completado ninguna reserva'**
   String get bookingsNoPast;
+
+  /// No description provided for @bookingsNoPastSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu historial de reservas se mostrará en este lugar.'**
+  String get bookingsNoPastSubtitle;
+
+  /// No description provided for @calendarEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Aún no tienes publicaciones'**
+  String get calendarEmptyTitle;
+
+  /// No description provided for @calendarEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Crea tu primer anuncio para gestionar disponibilidad, bloqueos y reservas desde el calendario.'**
+  String get calendarEmptySubtitle;
+
+  /// No description provided for @calendarEmptyCta.
+  ///
+  /// In es, this message translates to:
+  /// **'Crear mi primer anuncio'**
+  String get calendarEmptyCta;
 
   /// No description provided for @bookingsLoadError.
   ///
