@@ -9,6 +9,8 @@ import '../../../config/theme/app_colors.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
+import '../../../config/supabase/supabase_config.dart';
+import '../../../shared/widgets/edit_listing_sheet.dart';
 import '../../../core/services/mercadopago_service.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../l10n/app_localizations.dart';
@@ -542,6 +544,11 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     final hostVerified = host?['is_verified'] == true;
     final hostPhoto = host?['photo_url'] as String?;
     final category = service['category'] ?? service['type'] ?? '';
+    // If the service belongs to the signed-in user we surface
+    // Edit/Delete affordances at the top of the sheet — guests never
+    // see them.
+    final currentUserId = SupabaseConfig.auth.currentUser?.id;
+    final isOwner = currentUserId != null && currentUserId == hostId;
 
     showModalBottomSheet(
       context: context,
@@ -570,6 +577,129 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                   ),
                 ),
               ),
+              if (isOwner) ...[
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _OwnerActionPill(
+                        icon: Icons.edit_outlined,
+                        label: l.qsEditService,
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          final saved = await showEditListingSheet(
+                            context,
+                            listing: service,
+                            // Services don't use a separate cleaning fee.
+                            showCleaningFee: false,
+                          );
+                          if (saved == true) {
+                            await _loadServices();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(l.qsEditServiceSavedSnack),
+                                  backgroundColor: AtrioColors.neonLimeDark,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(12)),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _OwnerActionPill(
+                        icon: Icons.delete_outline_rounded,
+                        label: l.qsDeleteService,
+                        danger: true,
+                        onTap: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (dialogCtx) => AlertDialog(
+                              backgroundColor: AtrioColors.guestSurface,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20)),
+                              title: Text(
+                                l.qsDeleteService,
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w800,
+                                  color: AtrioColors.guestTextPrimary,
+                                ),
+                              ),
+                              content: Text(
+                                l.qsDeleteServiceConfirm(title.toString()),
+                                style: GoogleFonts.inter(
+                                  color: AtrioColors.guestTextSecondary,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(dialogCtx, false),
+                                  child: Text(l.btnCancel,
+                                      style: GoogleFonts.inter(
+                                        color:
+                                            AtrioColors.guestTextSecondary,
+                                      )),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(dialogCtx, true),
+                                  child: Text(l.btnDelete,
+                                      style: GoogleFonts.inter(
+                                        color: AtrioColors.error,
+                                        fontWeight: FontWeight.w800,
+                                      )),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            try {
+                              await DatabaseService.deleteListing(
+                                  service['id'] as String);
+                              if (!mounted) return;
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              await _loadServices();
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(l.qsDeleteServiceSnack),
+                                    backgroundColor:
+                                        AtrioColors.guestTextPrimary,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
+                                  ),
+                                );
+                              }
+                            } catch (_) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(l.hostListingsEditError),
+                                    backgroundColor: AtrioColors.error,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
+                                  ),
+                                );
+                              }
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 24),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1620,6 +1750,62 @@ class _RequestCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small dual-action pill used when the host views their own
+/// service in the Quick Services detail sheet. Lime tint for the
+/// neutral edit action, soft-red tint for the destructive delete.
+class _OwnerActionPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  const _OwnerActionPill({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = danger
+        ? AtrioColors.error.withValues(alpha: 0.12)
+        : AtrioColors.neonLime.withValues(alpha: 0.18);
+    final fg = danger ? AtrioColors.error : AtrioColors.neonLimeDark;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 17, color: fg),
+            const SizedBox(width: 7),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: fg,
+                  letterSpacing: -0.2,
+                ),
+              ),
             ),
           ],
         ),

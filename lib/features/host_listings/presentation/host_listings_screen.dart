@@ -9,6 +9,7 @@ import '../../../core/providers/listings_provider.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/edit_listing_sheet.dart';
 
 class HostListingsScreen extends ConsumerWidget {
   const HostListingsScreen({super.key});
@@ -320,6 +321,36 @@ class HostListingsScreen extends ConsumerWidget {
               onTap: () {
                 Navigator.pop(ctx);
                 context.push('/listing/$listingId');
+              },
+            ),
+            _OptionTile(
+              icon: Icons.edit_outlined,
+              label: l.hostListingsEditListing,
+              color: AtrioColors.hostTextPrimary,
+              onTap: () async {
+                Navigator.pop(ctx);
+                // Spaces/experiences usually have a cleaning fee; services
+                // don't, so we hide the field for service listings.
+                final type = listing['type'] as String? ?? '';
+                final saved = await showEditListingSheet(
+                  context,
+                  listing: listing,
+                  showCleaningFee: type != 'service',
+                );
+                if (saved == true) {
+                  ref.invalidate(hostListingsProvider(userId));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l.hostListingsEditSavedSnack),
+                        backgroundColor: AtrioColors.neonLimeDark,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  }
+                }
               },
             ),
             if (status == 'published')

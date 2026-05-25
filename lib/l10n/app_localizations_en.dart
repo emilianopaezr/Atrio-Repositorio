@@ -1747,6 +1747,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hostListingsDeletedSnack => 'Listing deleted';
 
   @override
+  String get hostListingsEditListing => 'Edit listing';
+
+  @override
+  String get hostListingsEditTitle => 'Edit listing';
+
+  @override
+  String get hostListingsEditFieldTitle => 'Title';
+
+  @override
+  String get hostListingsEditFieldDescription => 'Description';
+
+  @override
+  String get hostListingsEditFieldPrice => 'Base price (CLP)';
+
+  @override
+  String get hostListingsEditFieldCleaningFee => 'Cleaning fee (CLP)';
+
+  @override
+  String get hostListingsEditSave => 'Save changes';
+
+  @override
+  String get hostListingsEditSavedSnack => 'Changes saved';
+
+  @override
+  String get hostListingsEditError => 'Could not save. Please try again.';
+
+  @override
+  String get hostListingsEditValidationTitle => 'Title cannot be empty';
+
+  @override
+  String get hostListingsEditValidationPrice => 'Enter a valid price';
+
+  @override
+  String get qsEditService => 'Edit service';
+
+  @override
+  String get qsDeleteService => 'Delete service';
+
+  @override
+  String qsDeleteServiceConfirm(String title) {
+    return '\"$title\" will be permanently deleted. This action cannot be undone.';
+  }
+
+  @override
+  String get qsDeleteServiceSnack => 'Service deleted';
+
+  @override
+  String get qsEditServiceSavedSnack => 'Service updated';
+
+  @override
   String get hostListingsStatusPublished => 'Published';
 
   @override

@@ -3326,6 +3326,102 @@ abstract class AppLocalizations {
   /// **'Anuncio eliminado'**
   String get hostListingsDeletedSnack;
 
+  /// No description provided for @hostListingsEditListing.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar anuncio'**
+  String get hostListingsEditListing;
+
+  /// No description provided for @hostListingsEditTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar publicación'**
+  String get hostListingsEditTitle;
+
+  /// No description provided for @hostListingsEditFieldTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Título'**
+  String get hostListingsEditFieldTitle;
+
+  /// No description provided for @hostListingsEditFieldDescription.
+  ///
+  /// In es, this message translates to:
+  /// **'Descripción'**
+  String get hostListingsEditFieldDescription;
+
+  /// No description provided for @hostListingsEditFieldPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'Precio base (CLP)'**
+  String get hostListingsEditFieldPrice;
+
+  /// No description provided for @hostListingsEditFieldCleaningFee.
+  ///
+  /// In es, this message translates to:
+  /// **'Tarifa de limpieza (CLP)'**
+  String get hostListingsEditFieldCleaningFee;
+
+  /// No description provided for @hostListingsEditSave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar cambios'**
+  String get hostListingsEditSave;
+
+  /// No description provided for @hostListingsEditSavedSnack.
+  ///
+  /// In es, this message translates to:
+  /// **'Cambios guardados'**
+  String get hostListingsEditSavedSnack;
+
+  /// No description provided for @hostListingsEditError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo guardar. Inténtalo de nuevo.'**
+  String get hostListingsEditError;
+
+  /// No description provided for @hostListingsEditValidationTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'El título no puede estar vacío'**
+  String get hostListingsEditValidationTitle;
+
+  /// No description provided for @hostListingsEditValidationPrice.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa un precio válido'**
+  String get hostListingsEditValidationPrice;
+
+  /// No description provided for @qsEditService.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar servicio'**
+  String get qsEditService;
+
+  /// No description provided for @qsDeleteService.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar servicio'**
+  String get qsDeleteService;
+
+  /// No description provided for @qsDeleteServiceConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Se eliminará \"{title}\" permanentemente. Esta acción no se puede deshacer.'**
+  String qsDeleteServiceConfirm(String title);
+
+  /// No description provided for @qsDeleteServiceSnack.
+  ///
+  /// In es, this message translates to:
+  /// **'Servicio eliminado'**
+  String get qsDeleteServiceSnack;
+
+  /// No description provided for @qsEditServiceSavedSnack.
+  ///
+  /// In es, this message translates to:
+  /// **'Servicio actualizado'**
+  String get qsEditServiceSavedSnack;
+
   /// No description provided for @hostListingsStatusPublished.
   ///
   /// In es, this message translates to:

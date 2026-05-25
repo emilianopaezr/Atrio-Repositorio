@@ -1752,6 +1752,57 @@ class AppLocalizationsEs extends AppLocalizations {
   String get hostListingsDeletedSnack => 'Anuncio eliminado';
 
   @override
+  String get hostListingsEditListing => 'Editar anuncio';
+
+  @override
+  String get hostListingsEditTitle => 'Editar publicación';
+
+  @override
+  String get hostListingsEditFieldTitle => 'Título';
+
+  @override
+  String get hostListingsEditFieldDescription => 'Descripción';
+
+  @override
+  String get hostListingsEditFieldPrice => 'Precio base (CLP)';
+
+  @override
+  String get hostListingsEditFieldCleaningFee => 'Tarifa de limpieza (CLP)';
+
+  @override
+  String get hostListingsEditSave => 'Guardar cambios';
+
+  @override
+  String get hostListingsEditSavedSnack => 'Cambios guardados';
+
+  @override
+  String get hostListingsEditError => 'No se pudo guardar. Inténtalo de nuevo.';
+
+  @override
+  String get hostListingsEditValidationTitle =>
+      'El título no puede estar vacío';
+
+  @override
+  String get hostListingsEditValidationPrice => 'Ingresa un precio válido';
+
+  @override
+  String get qsEditService => 'Editar servicio';
+
+  @override
+  String get qsDeleteService => 'Eliminar servicio';
+
+  @override
+  String qsDeleteServiceConfirm(String title) {
+    return 'Se eliminará \"$title\" permanentemente. Esta acción no se puede deshacer.';
+  }
+
+  @override
+  String get qsDeleteServiceSnack => 'Servicio eliminado';
+
+  @override
+  String get qsEditServiceSavedSnack => 'Servicio actualizado';
+
+  @override
   String get hostListingsStatusPublished => 'Publicado';
 
   @override

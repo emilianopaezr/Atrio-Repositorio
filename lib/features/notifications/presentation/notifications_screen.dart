@@ -553,30 +553,29 @@ class _EmptyState extends StatelessWidget {
         ? AtrioColors.hostTextSecondary
         : AtrioColors.guestTextSecondary;
 
+    // Same visual language as the chat + bookings empty states:
+    // lime disc, icon centered, strong title, soft subtitle. No border,
+    // no rounded square — keeps the empty states consistent across
+    // the bottom-nav tabs.
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
+        padding: const EdgeInsets.symmetric(horizontal: 40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 88,
-              height: 88,
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                color: AtrioColors.neonLime.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: AtrioColors.neonLime.withValues(alpha: 0.3),
-                  width: 1,
-                ),
+                color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications_none_rounded,
                 size: 36,
-                color: AtrioColors.neonLimeDark,
+                color: textP,
               ),
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 18),
             Text(
               l.notificationsEmpty,
               textAlign: TextAlign.center,
@@ -584,10 +583,10 @@ class _EmptyState extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: textP,
-                letterSpacing: -0.4,
+                letterSpacing: -0.5,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               l.notificationsEmptyDesc,
               textAlign: TextAlign.center,
@@ -595,7 +594,7 @@ class _EmptyState extends StatelessWidget {
                 fontSize: 13.5,
                 fontWeight: FontWeight.w500,
                 color: textS,
-                height: 1.45,
+                height: 1.4,
               ),
             ),
           ],
