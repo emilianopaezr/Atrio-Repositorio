@@ -10,6 +10,7 @@ import '../../../core/utils/extensions.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../config/supabase/supabase_config.dart';
+import '../../../shared/widgets/atrio_snackbar.dart';
 import '../../../shared/widgets/edit_listing_sheet.dart';
 import '../../../core/services/mercadopago_service.dart';
 import '../../../core/utils/error_handler.dart';
@@ -596,16 +597,8 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                           if (saved == true) {
                             await _loadServices();
                             if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(l.qsEditServiceSavedSnack),
-                                  backgroundColor: AtrioColors.neonLimeDark,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12)),
-                                ),
-                              );
+                              AtrioSnackbar.success(
+                                  context, l.qsEditServiceSavedSnack);
                             }
                           }
                         },
@@ -667,30 +660,13 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                               if (ctx.mounted) Navigator.pop(ctx);
                               await _loadServices();
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(l.qsDeleteServiceSnack),
-                                    backgroundColor:
-                                        AtrioColors.guestTextPrimary,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12)),
-                                  ),
-                                );
+                                AtrioSnackbar.info(
+                                    context, l.qsDeleteServiceSnack);
                               }
                             } catch (_) {
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(l.hostListingsEditError),
-                                    backgroundColor: AtrioColors.error,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12)),
-                                  ),
-                                );
+                                AtrioSnackbar.danger(
+                                    context, l.hostListingsEditError);
                               }
                             }
                           }

@@ -1703,7 +1703,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get hostListingsTapToManage => 'Mantén presionado para gestionar';
+  String get hostListingsTapToManage => 'Toca el menú · · · para gestionar';
 
   @override
   String hostListingsKeepRate(String rate) {

@@ -1698,7 +1698,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get hostListingsTapToManage => 'Long-press to manage';
+  String get hostListingsTapToManage => 'Tap the · · · menu to manage';
 
   @override
   String hostListingsKeepRate(String rate) {

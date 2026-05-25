@@ -573,7 +573,7 @@
   "hostListingsAllSection": "Todos tus anuncios",
   "hostListingsAllSectionSubtitle": "{count, plural, =1{1 publicación} other{{count} publicaciones}}",
   "@hostListingsAllSectionSubtitle": { "placeholders": { "count": { "type": "int" } } },
-  "hostListingsTapToManage": "Mantén presionado para gestionar",
+  "hostListingsTapToManage": "Toca el menú · · · para gestionar",
   "hostListingsKeepRate": "Tu recibes el {rate}% de tus ingresos",
   "@hostListingsKeepRate": { "placeholders": { "rate": { "type": "String" } } },
   "hostListingsNoListingsTitle": "Sin publicaciones aún",

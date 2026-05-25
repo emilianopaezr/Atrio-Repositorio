@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,7 @@ import '../../../core/providers/listings_provider.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/atrio_snackbar.dart';
 import '../../../shared/widgets/edit_listing_sheet.dart';
 
 class HostListingsScreen extends ConsumerWidget {
@@ -228,7 +230,7 @@ class HostListingsScreen extends ConsumerWidget {
                                     listing: listing,
                                     onTap: () => context
                                         .push('/listing/${listing['id']}'),
-                                    onLongPress: () => _showListingOptions(
+                                    onMenuTap: () => _showListingOptions(
                                         context, ref, listing, userId),
                                   ),
                                 ))
@@ -340,15 +342,8 @@ class HostListingsScreen extends ConsumerWidget {
                 if (saved == true) {
                   ref.invalidate(hostListingsProvider(userId));
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l.hostListingsEditSavedSnack),
-                        backgroundColor: AtrioColors.neonLimeDark,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    );
+                    AtrioSnackbar.success(
+                        context, l.hostListingsEditSavedSnack);
                   }
                 }
               },
@@ -422,15 +417,7 @@ class HostListingsScreen extends ConsumerWidget {
                   await DatabaseService.deleteListing(listingId);
                   ref.invalidate(hostListingsProvider(userId));
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l.hostListingsDeletedSnack),
-                        backgroundColor: AtrioColors.hostTextPrimary,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    );
+                    AtrioSnackbar.info(context, l.hostListingsDeletedSnack);
                   }
                 }
               },
@@ -509,11 +496,11 @@ class _StatCard extends StatelessWidget {
 class _HostListingCard extends StatelessWidget {
   final Map<String, dynamic> listing;
   final VoidCallback onTap;
-  final VoidCallback onLongPress;
+  final VoidCallback onMenuTap;
   const _HostListingCard({
     required this.listing,
     required this.onTap,
-    required this.onLongPress,
+    required this.onMenuTap,
   });
 
   @override
@@ -529,7 +516,9 @@ class _HostListingCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      onLongPress: onLongPress,
+      // Long-press still works as a shortcut, but the visible menu
+      // button is the primary affordance now.
+      onLongPress: onMenuTap,
       child: Container(
         decoration: BoxDecoration(
           color: AtrioColors.hostSurface,
@@ -571,6 +560,14 @@ class _HostListingCard extends StatelessWidget {
                       top: 12,
                       left: 12,
                       child: _StatusPill(status: status),
+                    ),
+                    // Floating menu button top-right — primary entry
+                    // point for edit/pause/delete (long-press still
+                    // works as a shortcut).
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: _CardMenuButton(onTap: onMenuTap),
                     ),
                     // Price pill bottom-right
                     if (basePrice != null)
@@ -672,6 +669,47 @@ class _HostListingCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CARD MENU BUTTON — floating "···" affordance on each listing card
+// ═══════════════════════════════════════════════════════════════════
+class _CardMenuButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _CardMenuButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.55),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.12),
+              width: 0.5,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.more_horiz_rounded,
+            size: 18,
+            color: Colors.white,
+          ),
         ),
       ),
     );

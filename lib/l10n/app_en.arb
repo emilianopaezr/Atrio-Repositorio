@@ -573,7 +573,7 @@
   "hostListingsAllSection": "All your listings",
   "hostListingsAllSectionSubtitle": "{count, plural, =1{1 listing} other{{count} listings}}",
   "@hostListingsAllSectionSubtitle": { "placeholders": { "count": { "type": "int" } } },
-  "hostListingsTapToManage": "Long-press to manage",
+  "hostListingsTapToManage": "Tap the · · · menu to manage",
   "hostListingsKeepRate": "You receive {rate}% of your earnings",
   "@hostListingsKeepRate": { "placeholders": { "rate": { "type": "String" } } },
   "hostListingsNoListingsTitle": "No listings yet",

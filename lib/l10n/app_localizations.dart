@@ -3245,7 +3245,7 @@ abstract class AppLocalizations {
   /// No description provided for @hostListingsTapToManage.
   ///
   /// In es, this message translates to:
-  /// **'Mantén presionado para gestionar'**
+  /// **'Toca el menú · · · para gestionar'**
   String get hostListingsTapToManage;
 
   /// No description provided for @hostListingsKeepRate.
