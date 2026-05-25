@@ -283,16 +283,23 @@ class HostListingsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      // Devices with gesture navigation (and the Honor 400 Lite is one)
+      // overlap a few px of the system nav bar onto the sheet, which
+      // was eating the last option. SafeArea(bottom) + a 12px breath at
+      // the end of the column protects against that.
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(24),
         decoration: const BoxDecoration(
           color: AtrioColors.hostBackground,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Center(
               child: Container(
                 width: 40,
@@ -422,8 +429,10 @@ class HostListingsScreen extends ConsumerWidget {
                 }
               },
             ),
-            const SizedBox(height: 12),
-          ],
+            const SizedBox(height: 4),
+              ],
+            ),
+          ),
         ),
       ),
     );

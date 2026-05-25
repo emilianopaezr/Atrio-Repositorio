@@ -568,115 +568,37 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
             controller: scrollCtrl,
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
             children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AtrioColors.guestCardBorder,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              if (isOwner) ...[
-                const SizedBox(height: 18),
-                Row(
+              // Header row: drag handle centred, "···" menu top-right
+              // when the signed-in user owns this service. Mirrors the
+              // affordance pattern used on the host listings cards.
+              SizedBox(
+                height: 28,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Expanded(
-                      child: _OwnerActionPill(
-                        icon: Icons.edit_outlined,
-                        label: l.qsEditService,
-                        onTap: () async {
-                          Navigator.pop(ctx);
-                          final saved = await showEditListingSheet(
-                            context,
-                            listing: service,
-                            // Services don't use a separate cleaning fee.
-                            showCleaningFee: false,
-                          );
-                          if (saved == true) {
-                            await _loadServices();
-                            if (mounted) {
-                              AtrioSnackbar.success(
-                                  context, l.qsEditServiceSavedSnack);
-                            }
-                          }
-                        },
+                    Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AtrioColors.guestCardBorder,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _OwnerActionPill(
-                        icon: Icons.delete_outline_rounded,
-                        label: l.qsDeleteService,
-                        danger: true,
-                        onTap: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (dialogCtx) => AlertDialog(
-                              backgroundColor: AtrioColors.guestSurface,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20)),
-                              title: Text(
-                                l.qsDeleteService,
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w800,
-                                  color: AtrioColors.guestTextPrimary,
-                                ),
-                              ),
-                              content: Text(
-                                l.qsDeleteServiceConfirm(title.toString()),
-                                style: GoogleFonts.inter(
-                                  color: AtrioColors.guestTextSecondary,
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(dialogCtx, false),
-                                  child: Text(l.btnCancel,
-                                      style: GoogleFonts.inter(
-                                        color:
-                                            AtrioColors.guestTextSecondary,
-                                      )),
-                                ),
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(dialogCtx, true),
-                                  child: Text(l.btnDelete,
-                                      style: GoogleFonts.inter(
-                                        color: AtrioColors.error,
-                                        fontWeight: FontWeight.w800,
-                                      )),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirm == true) {
-                            try {
-                              await DatabaseService.deleteListing(
-                                  service['id'] as String);
-                              if (!mounted) return;
-                              if (ctx.mounted) Navigator.pop(ctx);
-                              await _loadServices();
-                              if (mounted) {
-                                AtrioSnackbar.info(
-                                    context, l.qsDeleteServiceSnack);
-                              }
-                            } catch (_) {
-                              if (mounted) {
-                                AtrioSnackbar.danger(
-                                    context, l.hostListingsEditError);
-                              }
-                            }
-                          }
-                        },
+                    if (isOwner)
+                      Positioned(
+                        right: 0,
+                        child: _ServiceMenuButton(
+                          onTap: () => _showServiceOwnerOptions(
+                            ctx,
+                            service: service,
+                            title: title.toString(),
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
-              ],
-              const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 18),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -962,6 +884,153 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // OWNER OPTIONS SHEET (Edit / Delete)
+  // Mirrors host_listings: a small menu sheet opened from the
+  // "···" button on the service detail, instead of two loud pills.
+  // ─────────────────────────────────────────────────────────────
+  void _showServiceOwnerOptions(
+    BuildContext detailCtx, {
+    required Map<String, dynamic> service,
+    required String title,
+  }) {
+    final l = AppLocalizations.of(context);
+    showModalBottomSheet(
+      context: detailCtx,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: AtrioColors.guestBackground,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AtrioColors.guestCardBorder,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AtrioColors.guestTextPrimary,
+                    letterSpacing: -0.4,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 22),
+                _ServiceOptionTile(
+                  icon: Icons.edit_outlined,
+                  label: l.qsEditService,
+                  color: AtrioColors.guestTextPrimary,
+                  onTap: () async {
+                    Navigator.pop(ctx); // close options sheet
+                    Navigator.pop(detailCtx); // close detail sheet
+                    final saved = await showEditListingSheet(
+                      context,
+                      listing: service,
+                      // Services don't use a separate cleaning fee.
+                      showCleaningFee: false,
+                    );
+                    if (saved == true) {
+                      await _loadServices();
+                      if (mounted) {
+                        AtrioSnackbar.success(
+                            context, l.qsEditServiceSavedSnack);
+                      }
+                    }
+                  },
+                ),
+                _ServiceOptionTile(
+                  icon: Icons.delete_outline_rounded,
+                  label: l.qsDeleteService,
+                  color: AtrioColors.error,
+                  onTap: () async {
+                    Navigator.pop(ctx); // close options sheet
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogCtx) => AlertDialog(
+                        backgroundColor: AtrioColors.guestSurface,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        title: Text(
+                          l.qsDeleteService,
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w800,
+                            color: AtrioColors.guestTextPrimary,
+                          ),
+                        ),
+                        content: Text(
+                          l.qsDeleteServiceConfirm(title),
+                          style: GoogleFonts.inter(
+                            color: AtrioColors.guestTextSecondary,
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogCtx, false),
+                            child: Text(l.btnCancel,
+                                style: GoogleFonts.inter(
+                                  color: AtrioColors.guestTextSecondary,
+                                )),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogCtx, true),
+                            child: Text(l.btnDelete,
+                                style: GoogleFonts.inter(
+                                  color: AtrioColors.error,
+                                  fontWeight: FontWeight.w800,
+                                )),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      try {
+                        await DatabaseService.deleteListing(
+                            service['id'] as String);
+                        if (!mounted) return;
+                        if (detailCtx.mounted) Navigator.pop(detailCtx);
+                        await _loadServices();
+                        if (mounted) {
+                          AtrioSnackbar.info(
+                              context, l.qsDeleteServiceSnack);
+                        }
+                      } catch (_) {
+                        if (mounted) {
+                          AtrioSnackbar.danger(
+                              context, l.hostListingsEditError);
+                        }
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
           ),
         ),
       ),
@@ -1734,58 +1803,99 @@ class _RequestCard extends StatelessWidget {
   }
 }
 
-/// Small dual-action pill used when the host views their own
-/// service in the Quick Services detail sheet. Lime tint for the
-/// neutral edit action, soft-red tint for the destructive delete.
-class _OwnerActionPill extends StatelessWidget {
+/// Small "···" affordance shown next to the drag handle of the Quick
+/// Services detail sheet when the signed-in user owns the service.
+/// Tapping it surfaces a sheet with Editar / Eliminar — same pattern
+/// as host_listings cards.
+class _ServiceMenuButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ServiceMenuButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: AtrioColors.guestSurface,
+            shape: BoxShape.circle,
+            border: Border.all(color: AtrioColors.guestCardBorder),
+          ),
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.more_horiz_rounded,
+            size: 16,
+            color: AtrioColors.guestTextPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Bordered option row used inside the owner options sheet (Editar /
+/// Eliminar). Matches the _OptionTile style from host_listings but
+/// uses the guest (light) palette for the Quick Services context.
+class _ServiceOptionTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final Color color;
   final VoidCallback onTap;
-  final bool danger;
 
-  const _OwnerActionPill({
+  const _ServiceOptionTile({
     required this.icon,
     required this.label,
+    required this.color,
     required this.onTap,
-    this.danger = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bg = danger
-        ? AtrioColors.error.withValues(alpha: 0.12)
-        : AtrioColors.neonLime.withValues(alpha: 0.18);
-    final fg = danger ? AtrioColors.error : AtrioColors.neonLimeDark;
     return GestureDetector(
       onTap: onTap,
-      // Treat the whole pill as the tap target so the gap between icon
-      // and label still triggers the action.
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(14),
+          color: AtrioColors.guestSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AtrioColors.guestCardBorder),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 17, color: fg),
-            const SizedBox(width: 7),
-            Flexible(
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
               child: Text(
                 label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: fg,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                  color: color,
                   letterSpacing: -0.2,
                 ),
               ),
             ),
+            const Icon(Icons.chevron_right_rounded,
+                size: 18, color: AtrioColors.guestTextTertiary),
           ],
         ),
       ),
