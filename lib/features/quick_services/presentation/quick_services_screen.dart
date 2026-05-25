@@ -1782,6 +1782,9 @@ class _OwnerActionPill extends StatelessWidget {
     final fg = danger ? AtrioColors.error : AtrioColors.neonLimeDark;
     return GestureDetector(
       onTap: onTap,
+      // Treat the whole pill as the tap target so the gap between icon
+      // and label still triggers the action.
+      behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
