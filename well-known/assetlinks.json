@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.atrio.atrio",
+      "sha256_cert_fingerprints": [
+        "C8:23:4F:A3:A4:19:0F:D4:2F:C9:CC:D5:7B:C1:B9:AF:E4:1E:DC:7A:2C:8C:56:85:94:9E:71:63:16:E4:7F:7A",
+        "28:80:57:B3:86:0C:1D:DD:BB:8A:E1:FE:99:89:C6:1F:E4:C8:C0:78:AB:97:45:C7:28:30:B1:1B:68:4D:69:57"
+      ]
+    }
+  }
+]

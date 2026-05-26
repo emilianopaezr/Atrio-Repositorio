@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "TEAMID.com.atrio.atrio"
+        ],
+        "components": [
+          { "/": "/listing/*",          "comment": "Public listing detail" },
+          { "/": "/booking-detail/*",   "comment": "Direct to a booking" },
+          { "/": "/chat/*",             "comment": "Open a conversation" },
+          { "/": "/quick-services",     "comment": "Quick Services tab" },
+          { "/": "/host/listings",      "comment": "Host listings" },
+          { "/": "/auth/reset-password","comment": "Password reset deep link" },
+          { "/": "/auth/verify-email",  "comment": "Email verify deep link" }
+        ]
+      }
+    ]
+  }
+}
