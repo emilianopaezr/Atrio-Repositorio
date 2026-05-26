@@ -4064,7 +4064,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qsServicePrice => 'Service price';
 
   @override
-  String get qsAtrioFee => 'Atrio fee (7%)';
+  String get qsAtrioFee => 'Atrio service';
+
+  @override
+  String get qsAtrioFeeInitial => 'Initial Atrio service';
+
+  @override
+  String get qsAtrioFeeMinApplied => 'Atrio service — minimum applied';
+
+  @override
+  String get qsAtrioBenefitNote =>
+      'Initial benefit: 5% Atrio service on the host\'s first 5 bookings. Minimum \$1,490.';
 
   @override
   String get qsTotal => 'Total';

@@ -7,8 +7,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../config/theme/app_colors.dart';
 import '../../../core/utils/extensions.dart';
+import '../../../core/models/atrio_pricing_result.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/services/pricing_engine_service.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../shared/widgets/atrio_snackbar.dart';
 import '../../../shared/widgets/edit_listing_sheet.dart';
@@ -1043,15 +1045,21 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
   void _showHireConfirmation(Map<String, dynamic> service) {
     final l = AppLocalizations.of(context);
     final title = service['title'] ?? l.qsServiceDefault;
-    final price = (service['base_price'] as num?)?.toDouble() ?? 0;
+    final price = (service['base_price'] as num?)?.toInt() ?? 0;
     final priceUnit = service['price_unit'] ?? 'session';
     final hostId = service['host_id'] as String;
     final host = service['host'] as Map<String, dynamic>?;
     final hostName = host?['display_name'] ?? l.qsProviderDefault;
     final listingId = service['id'] as String;
-    const serviceFeeRate = 0.07;
-    final serviceFee = price * serviceFeeRate;
-    final total = price + serviceFee;
+    // Server-side single source of truth. Fire ONCE before showing the
+    // sheet — captured in the closure so rebuilds don't re-trigger the
+    // RPC, but the same future is awaited by FutureBuilder + the pay
+    // button (so we never act on stale numbers).
+    final pricingFuture = PricingEngineService.calculateAtrioPricing(
+      hostId: hostId,
+      basePrice: price,
+      units: 1,
+    );
     bool hiring = false;
 
     showModalBottomSheet(
@@ -1099,14 +1107,91 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                 ),
               ),
               const SizedBox(height: 18),
-              // Total + collapsible breakdown (Airbnb-style).
-              PriceBreakdownCard(
-                totalLabel: l.qsTotal,
-                total: total,
-                items: [
-                  PriceBreakdownItem(l.qsServicePrice, price),
-                  PriceBreakdownItem(l.qsAtrioFee, serviceFee),
-                ],
+              // Server-driven pricing: never compute totals here.
+              FutureBuilder<AtrioPricingResult>(
+                future: pricingFuture,
+                builder: (ctx, snap) {
+                  if (snap.connectionState != ConnectionState.done) {
+                    return Container(
+                      height: 110,
+                      decoration: BoxDecoration(
+                        color: AtrioColors.guestSurface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                            color: AtrioColors.guestCardBorder),
+                      ),
+                      alignment: Alignment.center,
+                      child: const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AtrioColors.guestTextSecondary,
+                        ),
+                      ),
+                    );
+                  }
+                  if (snap.hasError || snap.data == null) {
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AtrioColors.error.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        l.hostListingsEditError,
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          color: AtrioColors.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }
+                  final p = snap.data!;
+                  final feeLabel = p.servicioAtrioMinimoAplicado
+                      ? l.qsAtrioFeeMinApplied
+                      : (p.initialBenefitApplied
+                          ? l.qsAtrioFeeInitial
+                          : l.qsAtrioFee);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      PriceBreakdownCard(
+                        totalLabel: l.qsTotal,
+                        total: p.precioTotal.toDouble(),
+                        items: [
+                          PriceBreakdownItem(
+                              l.qsServicePrice, p.precioBase.toDouble()),
+                          PriceBreakdownItem(
+                              '$feeLabel (${p.porcentajeLabel})',
+                              p.servicioAtrioAmount.toDouble()),
+                        ],
+                      ),
+                      if (p.initialBenefitApplied) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: AtrioColors.neonLime
+                                .withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            l.qsAtrioBenefitNote,
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5,
+                              color: AtrioColors.guestTextPrimary,
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 12),
               // MP card
@@ -1187,13 +1272,16 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                           HapticFeedback.lightImpact();
                           setSheetState(() => hiring = true);
                           try {
+                            // Always read the canonical pricing from the
+                            // same Future the UI rendered, so we can never
+                            // pay an amount the user didn't see.
+                            final pricing = await pricingFuture;
+                            if (!ctx.mounted) return;
                             await _hireAndPay(
                               hostId: hostId,
                               listingId: listingId,
                               title: title,
-                              price: price,
-                              fee: serviceFee,
-                              total: total,
+                              pricing: pricing,
                               sheetCtx: ctx,
                             );
                           } catch (e) {
@@ -1217,27 +1305,38 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
                             color: Colors.white,
                           ),
                         )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.lock_outline_rounded,
-                                size: 16, color: AtrioColors.neonLime),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                l.qsPayWithMp(total.toCLP),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: -0.3,
+                      : FutureBuilder<AtrioPricingResult>(
+                          future: pricingFuture,
+                          builder: (ctx, snap) {
+                            // Show "—" while the price is loading so the
+                            // button is never empty mid-render.
+                            final amount = snap.data?.precioTotal
+                                    .toDouble()
+                                    .toCLP ??
+                                '—';
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.lock_outline_rounded,
+                                    size: 16, color: AtrioColors.neonLime),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    l.qsPayWithMp(amount),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ],
+                              ],
+                            );
+                          },
                         ),
                 ),
               ),
@@ -1267,20 +1366,22 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     required String hostId,
     required String listingId,
     required String title,
-    required double price,
-    required double fee,
-    required double total,
+    required AtrioPricingResult pricing,
     required BuildContext sheetCtx,
   }) async {
     final l = AppLocalizations.of(context);
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return;
 
-    // Step 1 — Create the pending booking.
-    // `special_requests` is the real DB column; `notes` does not exist and
-    // PostgREST throws a 400 that bubbles up here. Wrapping in try/catch so
-    // any future schema mismatch surfaces as a snackbar instead of a silent
-    // dead-end on the "Pagar con MP" button.
+    // Convenience locals — the canonical numbers live on `pricing`.
+    final price = pricing.precioBase.toDouble();
+    final fee = pricing.servicioAtrioAmount.toDouble();
+    final total = pricing.precioTotal.toDouble();
+
+    // Step 1 — Create the pending booking. Persist BOTH the legacy
+    // (base_total / service_fee / total) columns and the new Servicio
+    // Atrio snapshot, so anything that still reads the old shape keeps
+    // working while we migrate consumers in later phases.
     final now = DateTime.now();
     final String bookingId;
     try {
@@ -1291,10 +1392,13 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
         'check_in': now.toIso8601String(),
         'check_out': now.add(const Duration(hours: 2)).toIso8601String(),
         'guests_count': 1,
+        // Legacy columns (kept for backward compat during the migration)
         'base_total': price,
         'cleaning_fee': 0,
         'service_fee': fee,
         'total': total,
+        // Servicio Atrio snapshot (new canonical columns)
+        ...pricing.toBookingColumns(),
         'status': 'pending',
         'payment_status': 'pending',
         'rental_mode': 'hours',

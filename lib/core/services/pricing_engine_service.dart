@@ -1,4 +1,5 @@
 import '../../config/supabase/supabase_config.dart';
+import '../models/atrio_pricing_result.dart';
 import '../models/pricing_result_model.dart';
 
 /// Centralized pricing calculation engine.
@@ -11,6 +12,41 @@ import '../models/pricing_result_model.dart';
 ///   - Host commission: 1% (early adopter) or progressive
 class PricingEngineService {
   PricingEngineService._();
+
+  // ────────────────────────────────────────────────────────────
+  // Servicio Atrio (new pricing model — single source of truth)
+  // 5% initial (first 5 paid+confirmed+non-refunded for verified
+  // hosts) or 9% normal, floored at $1.490 CLP. Customer pays
+  // base + servicio_atrio. Host always receives full base.
+  // ────────────────────────────────────────────────────────────
+
+  /// Calls the `calculate_atrio_pricing` RPC to obtain the canonical
+  /// pricing breakdown for a listing. All amounts come from the
+  /// server — the client never decides them.
+  ///
+  /// Throws if the RPC call fails or returns an unexpected shape.
+  static Future<AtrioPricingResult> calculateAtrioPricing({
+    required String hostId,
+    required int basePrice,
+    int units = 1,
+  }) async {
+    final response = await SupabaseConfig.client.rpc(
+      'calculate_atrio_pricing',
+      params: {
+        'p_host_id': hostId,
+        'p_precio_base': basePrice,
+        'p_units': units,
+      },
+    );
+
+    if (response is Map<String, dynamic>) {
+      if (response.containsKey('error')) {
+        throw Exception(response['error']);
+      }
+      return AtrioPricingResult.fromJson(response);
+    }
+    throw Exception('calculate_atrio_pricing: invalid response shape');
+  }
 
   /// Standard commission rate
   static const double standardFeeRate = 0.07;

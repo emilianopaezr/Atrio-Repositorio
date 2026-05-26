@@ -7398,8 +7398,26 @@ abstract class AppLocalizations {
   /// No description provided for @qsAtrioFee.
   ///
   /// In es, this message translates to:
-  /// **'Tarifa Atrio (7%)'**
+  /// **'Servicio Atrio'**
   String get qsAtrioFee;
+
+  /// No description provided for @qsAtrioFeeInitial.
+  ///
+  /// In es, this message translates to:
+  /// **'Servicio Atrio inicial'**
+  String get qsAtrioFeeInitial;
+
+  /// No description provided for @qsAtrioFeeMinApplied.
+  ///
+  /// In es, this message translates to:
+  /// **'Servicio Atrio — mínimo aplicado'**
+  String get qsAtrioFeeMinApplied;
+
+  /// No description provided for @qsAtrioBenefitNote.
+  ///
+  /// In es, this message translates to:
+  /// **'Beneficio inicial: Servicio Atrio al 5% en las primeras 5 reservas del host. Mínimo \$1.490.'**
+  String get qsAtrioBenefitNote;
 
   /// No description provided for @qsTotal.
   ///
