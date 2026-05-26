@@ -1099,6 +1099,8 @@
   "writeReviewCommentHint": "Cuéntanos más sobre tu experiencia (opcional)",
   "writeReviewSubmitButton": "Enviar Reseña",
   "writeReviewSentSuccess": "¡Reseña enviada!",
+  "writeReviewBookingNotCompleted": "Solo puedes escribir reseñas de reservas completadas.",
+  "writeReviewBookingNotYours": "Esta reserva no te pertenece.",
 
   "splashTagline": "Vive experiencias únicas",
   "splashCategories": "Espacios · Experiencias · Servicios",

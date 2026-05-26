@@ -6187,6 +6187,18 @@ abstract class AppLocalizations {
   /// **'¡Reseña enviada!'**
   String get writeReviewSentSuccess;
 
+  /// No description provided for @writeReviewBookingNotCompleted.
+  ///
+  /// In es, this message translates to:
+  /// **'Solo puedes escribir reseñas de reservas completadas.'**
+  String get writeReviewBookingNotCompleted;
+
+  /// No description provided for @writeReviewBookingNotYours.
+  ///
+  /// In es, this message translates to:
+  /// **'Esta reserva no te pertenece.'**
+  String get writeReviewBookingNotYours;
+
   /// No description provided for @splashTagline.
   ///
   /// In es, this message translates to:

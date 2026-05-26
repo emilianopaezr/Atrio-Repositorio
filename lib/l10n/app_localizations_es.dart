@@ -3301,6 +3301,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get writeReviewSentSuccess => '¡Reseña enviada!';
 
   @override
+  String get writeReviewBookingNotCompleted =>
+      'Solo puedes escribir reseñas de reservas completadas.';
+
+  @override
+  String get writeReviewBookingNotYours => 'Esta reserva no te pertenece.';
+
+  @override
   String get splashTagline => 'Vive experiencias únicas';
 
   @override

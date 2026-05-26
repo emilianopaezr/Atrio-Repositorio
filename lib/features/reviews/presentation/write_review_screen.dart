@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/supabase/supabase_config.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/atrio_snackbar.dart';
 
 class WriteReviewScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -39,15 +41,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
   Future<void> _submitReview() async {
     final l = AppLocalizations.of(context);
     if (_rating == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l.writeReviewSelectRating,
-              style: GoogleFonts.inter(color: Colors.white)),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      AtrioSnackbar.info(context, l.writeReviewSelectRating);
       return;
     }
 
@@ -56,6 +50,33 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
     try {
       final userId = SupabaseConfig.auth.currentUser?.id;
       if (userId == null) throw Exception(l.writeReviewNotAuthenticated);
+
+      // ── Anti-spam gate ──
+      // Verify the booking belongs to this user AND is completed before
+      // we accept the review. RLS would catch ownership but not status,
+      // so this also prevents reviews on cancelled / no-show bookings.
+      final booking = await SupabaseConfig.client
+          .from('bookings')
+          .select('id, guest_id, status')
+          .eq('id', widget.bookingId)
+          .maybeSingle();
+
+      if (booking == null || booking['guest_id'] != userId) {
+        AppLogger.w(
+          'review attempt on foreign booking',
+          tag: 'reviews',
+          data: {'booking_id': widget.bookingId, 'user_id': userId},
+        );
+        throw Exception(l.writeReviewBookingNotYours);
+      }
+      if (booking['status'] != 'completed') {
+        AppLogger.w(
+          'review attempt before completion (status=${booking['status']})',
+          tag: 'reviews',
+          data: {'booking_id': widget.bookingId},
+        );
+        throw Exception(l.writeReviewBookingNotCompleted);
+      }
 
       // Validate rating range
       final safeRating = _rating.clamp(1, 5);
@@ -75,16 +96,7 @@ class _WriteReviewScreenState extends ConsumerState<WriteReviewScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l.writeReviewSentSuccess,
-                style: GoogleFonts.inter(color: Colors.black)),
-            backgroundColor: AtrioColors.neonLime,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        AtrioSnackbar.success(context, l.writeReviewSentSuccess);
         context.pop(true);
       }
     } catch (e) {

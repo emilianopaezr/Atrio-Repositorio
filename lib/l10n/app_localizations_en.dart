@@ -3289,6 +3289,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get writeReviewSentSuccess => 'Review sent!';
 
   @override
+  String get writeReviewBookingNotCompleted =>
+      'You can only review completed bookings.';
+
+  @override
+  String get writeReviewBookingNotYours => 'This booking is not yours.';
+
+  @override
   String get splashTagline => 'Live unique experiences';
 
   @override

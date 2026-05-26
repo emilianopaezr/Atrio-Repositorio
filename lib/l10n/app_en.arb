@@ -1099,6 +1099,8 @@
   "writeReviewCommentHint": "Tell us more about your experience (optional)",
   "writeReviewSubmitButton": "Submit Review",
   "writeReviewSentSuccess": "Review sent!",
+  "writeReviewBookingNotCompleted": "You can only review completed bookings.",
+  "writeReviewBookingNotYours": "This booking is not yours.",
 
   "splashTagline": "Live unique experiences",
   "splashCategories": "Spaces · Experiences · Services",
