@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/widgets/atrio_snackbar.dart';
+
 /// Centralized error handler that maps raw exceptions to
 /// user-friendly Spanish messages for the Atrio app.
 class ErrorHandler {
@@ -158,46 +160,15 @@ class ErrorHandler {
     return 'Error de autenticación. Intenta de nuevo.';
   }
 
-  /// Show a SnackBar with the friendly error message.
+  /// Show the editorial black-pill snackbar with the friendly error message.
+  /// Routed through [AtrioSnackbar] so the entire app shares one visual
+  /// language for transient feedback.
   static void showError(BuildContext context, Object error) {
-    final message = friendlyMessage(error);
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 18),
-            const SizedBox(width: 10),
-            Expanded(child: Text(message, style: const TextStyle(fontSize: 13))),
-          ],
-        ),
-        backgroundColor: const Color(0xFFD32F2F),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    AtrioSnackbar.danger(context, friendlyMessage(error));
   }
 
-  /// Show a success SnackBar.
+  /// Show the editorial black-pill snackbar with a success accent.
   static void showSuccess(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle_outline, color: Colors.black, size: 18),
-            const SizedBox(width: 10),
-            Expanded(child: Text(message, style: const TextStyle(fontSize: 13, color: Colors.black))),
-          ],
-        ),
-        backgroundColor: const Color(0xFFD4FF00),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+    AtrioSnackbar.success(context, message);
   }
 }
