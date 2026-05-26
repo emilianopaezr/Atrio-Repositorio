@@ -13,15 +13,15 @@
 -- =============================================
 
 -- 0. Config keys (so the constants can be tweaked without redeploying)
-INSERT INTO pricing_config (key, value, description, active) VALUES
-  ('PLATFORM_FEE_PERCENTAGE',       '0.09', 'Servicio Atrio normal rate',            true),
-  ('INITIAL_HOST_FEE_PERCENTAGE',   '0.05', 'Servicio Atrio inicial rate (first 5)', true),
-  ('SERVICE_FEE_MIN_CLP',           '1490', 'Mínimo Servicio Atrio en CLP',          true),
-  ('INITIAL_HOST_RESERVATION_LIMIT','5',    'Reservas con beneficio inicial',        true)
+-- pricing_config.value is JSONB; numbers must be valid JSON literals.
+INSERT INTO pricing_config (key, value, description) VALUES
+  ('PLATFORM_FEE_PERCENTAGE',       '0.09'::jsonb, 'Servicio Atrio normal rate'),
+  ('INITIAL_HOST_FEE_PERCENTAGE',   '0.05'::jsonb, 'Servicio Atrio inicial rate (first 5)'),
+  ('SERVICE_FEE_MIN_CLP',           '1490'::jsonb, 'Mínimo Servicio Atrio en CLP'),
+  ('INITIAL_HOST_RESERVATION_LIMIT','5'::jsonb,    'Reservas con beneficio inicial')
 ON CONFLICT (key) DO UPDATE
   SET value = EXCLUDED.value,
-      description = EXCLUDED.description,
-      active = EXCLUDED.active;
+      description = EXCLUDED.description;
 
 -- 1. New columns on bookings (nullable for backward compat) ------
 ALTER TABLE bookings
@@ -116,20 +116,20 @@ DECLARE
   v_label         TEXT;
   v_total         INTEGER;
 BEGIN
-  -- Read tunables from pricing_config with safe defaults
-  SELECT value::numeric INTO v_pct_initial
+  -- Read tunables from pricing_config (JSONB → text → numeric) with safe defaults
+  SELECT (value #>> '{}')::numeric INTO v_pct_initial
     FROM pricing_config WHERE key = 'INITIAL_HOST_FEE_PERCENTAGE';
   v_pct_initial := COALESCE(v_pct_initial, 0.05);
 
-  SELECT value::numeric INTO v_pct_normal
+  SELECT (value #>> '{}')::numeric INTO v_pct_normal
     FROM pricing_config WHERE key = 'PLATFORM_FEE_PERCENTAGE';
   v_pct_normal := COALESCE(v_pct_normal, 0.09);
 
-  SELECT value::int INTO v_min_clp
+  SELECT (value #>> '{}')::int INTO v_min_clp
     FROM pricing_config WHERE key = 'SERVICE_FEE_MIN_CLP';
   v_min_clp := COALESCE(v_min_clp, 1490);
 
-  SELECT value::int INTO v_limit
+  SELECT (value #>> '{}')::int INTO v_limit
     FROM pricing_config WHERE key = 'INITIAL_HOST_RESERVATION_LIMIT';
   v_limit := COALESCE(v_limit, 5);
 
