@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/models/listing_model.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/section_eyebrow.dart';
@@ -198,7 +199,7 @@ class FavoritesScreen extends ConsumerWidget {
                         );
                     }
                   } catch (e) {
-                    debugPrint('favorites error: $e');
+                    AppLogger.w('favorites: $e', tag: 'favorites');
                   }
                 },
               );

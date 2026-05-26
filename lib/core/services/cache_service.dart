@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
+import '../utils/app_logger.dart';
 
 /// Lightweight offline cache layer built on Hive.
 ///
@@ -38,7 +39,7 @@ class CacheService {
       ]);
       _initialized = true;
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] init failed: $e');
+      AppLogger.w('init failed: $e', tag: 'cache');
     }
   }
 
@@ -72,7 +73,7 @@ class CacheService {
         DateTime.now().toUtc().toIso8601String(),
       );
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] putListingsList($key): $e');
+      AppLogger.w('putListingsList($key): $e', tag: 'cache');
     }
   }
 
@@ -88,7 +89,7 @@ class CacheService {
             .toList(growable: false);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] getListingsList($key): $e');
+      AppLogger.w('getListingsList($key): $e', tag: 'cache');
     }
     return null;
   }
@@ -107,7 +108,7 @@ class CacheService {
         DateTime.now().toUtc().toIso8601String(),
       );
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] putListingDetail: $e');
+      AppLogger.w('putListingDetail: $e', tag: 'cache');
     }
   }
 
@@ -118,7 +119,7 @@ class CacheService {
       final raw = box.get('$keyListingDetailPrefix$listingId');
       if (raw is Map) return Map<String, dynamic>.from(raw);
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] getListingDetail: $e');
+      AppLogger.w('getListingDetail: $e', tag: 'cache');
     }
     return null;
   }
@@ -138,7 +139,7 @@ class CacheService {
         DateTime.now().toUtc().toIso8601String(),
       );
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] putBookingsList($key): $e');
+      AppLogger.w('putBookingsList($key): $e', tag: 'cache');
     }
   }
 
@@ -154,7 +155,7 @@ class CacheService {
             .toList(growable: false);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] getBookingsList($key): $e');
+      AppLogger.w('getBookingsList($key): $e', tag: 'cache');
     }
     return null;
   }
@@ -185,7 +186,7 @@ class CacheService {
       await _bookings?.delete(key);
       await _meta?.delete('$key$_writtenAtSuffix');
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] invalidate($key): $e');
+      AppLogger.w('invalidate($key): $e', tag: 'cache');
     }
   }
 
@@ -210,7 +211,7 @@ class CacheService {
         await meta.deleteAll(metaKeys);
       }
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] invalidatePrefix($prefix): $e');
+      AppLogger.w('invalidatePrefix($prefix): $e', tag: 'cache');
     }
   }
 
@@ -221,7 +222,7 @@ class CacheService {
       await _bookings?.clear();
       await _meta?.clear();
     } catch (e) {
-      if (kDebugMode) debugPrint('[CacheService] clearAll: $e');
+      AppLogger.w('clearAll: $e', tag: 'cache');
     }
   }
 }

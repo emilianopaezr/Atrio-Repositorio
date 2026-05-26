@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'app_logger.dart';
 
 /// Public URLs hosted at github.com/emilianopaezr/atrio-legal.
 /// GitHub renders the markdown automatically — no Pages config required.
@@ -16,7 +17,8 @@ class LegalUrls {
     try {
       return await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      if (kDebugMode) debugPrint('LegalUrls.open failed for $url: $e');
+      AppLogger.w('open failed: $e',
+          tag: 'legal_urls', data: {'url': url});
       return false;
     }
   }

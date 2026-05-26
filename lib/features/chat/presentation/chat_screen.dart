@@ -10,6 +10,7 @@ import '../../../config/theme/app_colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../l10n/app_localizations.dart';
@@ -97,7 +98,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           .eq('id', widget.conversationId)
           .maybeSingle();
       if (mounted) setState(() => _conversation = data);
-    } catch (e) { debugPrint('chat error: $e'); }
+    } catch (e) { AppLogger.w('chat: $e', tag: 'chat'); }
   }
 
   Future<void> _loadMessages() async {

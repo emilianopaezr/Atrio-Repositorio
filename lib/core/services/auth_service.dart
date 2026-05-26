@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase/supabase_config.dart';
+import '../utils/app_logger.dart';
 import '../utils/constants.dart';
 import 'analytics_service.dart';
 import 'observability_service.dart';
@@ -42,7 +42,7 @@ class AuthService {
           .maybeSingle();
       emailVerified = result?['email_verified'] == true;
     } catch (e) {
-      debugPrint('Error fetching email_verified: $e');
+      AppLogger.w('fetch email_verified: $e', tag: 'auth');
       // On error, keep previous state or set null to retry later
       emailVerified ??= null;
     }
@@ -139,7 +139,7 @@ class AuthService {
             'display_name': displayName ?? email.split('@').first,
           });
         } catch (e) {
-          debugPrint('Profile creation note: $e');
+          AppLogger.w('profile creation: $e', tag: 'auth');
         }
       }
 
@@ -184,7 +184,7 @@ class AuthService {
             });
           }
         } catch (e) {
-          debugPrint('Profile check note: $e');
+          AppLogger.w('profile check: $e', tag: 'auth');
         }
 
         // Wire identity into observability + analytics, register FCM token.
@@ -419,7 +419,7 @@ class AuthService {
     try {
       await SupabaseConfig.client.rpc('request_verification');
     } catch (e) {
-      debugPrint('Error requesting verification: $e');
+      AppLogger.w('request verification: $e', tag: 'auth');
       throw AuthException(
         'No se pudo enviar el código. Intenta de nuevo.',
         code: 'verification_send_error',
@@ -441,7 +441,7 @@ class AuthService {
       return result == true;
     } catch (e) {
       if (e is AuthException) rethrow;
-      debugPrint('Error verifying OTP: $e');
+      AppLogger.w('verify OTP: $e', tag: 'auth');
       throw AuthException(
         'Error al verificar el código. Intenta de nuevo.',
         code: 'verification_error',
@@ -463,7 +463,7 @@ class AuthService {
 
       return result?['email_verified'] == true;
     } catch (e) {
-      debugPrint('Error checking email verification: $e');
+      AppLogger.w('check email verification: $e', tag: 'auth');
       return false;
     }
   }
@@ -544,7 +544,8 @@ class AuthService {
     }
 
     // Generic auth error
-    debugPrint('Unhandled auth error: ${e.message} (code: ${e.code})');
+    AppLogger.w('unhandled auth error: ${e.message} (code: ${e.code})',
+        tag: 'auth');
     return AuthException(
       'Error de autenticación. Intenta de nuevo.',
       code: 'auth_error',
@@ -578,7 +579,7 @@ class AuthService {
       );
     }
 
-    debugPrint('Unhandled error: $e');
+    AppLogger.w('unhandled error: $e', tag: 'auth');
     return AuthException(
       'Ocurrió un error inesperado. Intenta de nuevo.',
       code: 'unknown',

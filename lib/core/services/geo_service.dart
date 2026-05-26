@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:geolocator/geolocator.dart';
+
+import '../utils/app_logger.dart';
 
 /// Device-location helpers (permissions + current position) and a
 /// small lat/lng value object used by the nearby search flow.
@@ -14,7 +16,7 @@ class GeoService {
     try {
       final servicesEnabled = await Geolocator.isLocationServiceEnabled();
       if (!servicesEnabled) {
-        debugPrint('[Geo] Location services disabled');
+        AppLogger.d('services disabled', tag: 'geo');
         return null;
       }
 
@@ -24,7 +26,7 @@ class GeoService {
       }
       if (permission == LocationPermission.deniedForever ||
           permission == LocationPermission.denied) {
-        debugPrint('[Geo] Permission not granted: $permission');
+        AppLogger.d('permission not granted: $permission', tag: 'geo');
         return null;
       }
 
@@ -32,7 +34,7 @@ class GeoService {
         locationSettings: LocationSettings(accuracy: accuracy, timeLimit: timeout),
       );
     } catch (e) {
-      debugPrint('[Geo] getCurrentPosition failed: $e');
+      AppLogger.w('getCurrentPosition failed: $e', tag: 'geo');
       return null;
     }
   }

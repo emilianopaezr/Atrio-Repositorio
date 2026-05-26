@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../../config/supabase/supabase_config.dart';
+import '../utils/app_logger.dart';
 
 /// Mercado Pago integration — uses **Checkout API** (custom card form), NOT
 /// Checkout Pro WebView.
@@ -89,7 +89,8 @@ class MercadoPagoService {
       'installments': installments,
     });
 
-    debugPrint('[MP] Submitting payment for booking $bookingId');
+    AppLogger.i('submitting payment',
+        tag: 'mp', data: {'booking_id': bookingId});
 
     final response = await http.post(
       Uri.parse(_createPaymentUrl),
@@ -104,7 +105,9 @@ class MercadoPagoService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final status = data['status'] as String? ?? 'unknown';
-      debugPrint('[MP] Payment ${data['payment_id']} → $status');
+      AppLogger.i('payment $status',
+          tag: 'mp',
+          data: {'payment_id': data['payment_id'], 'status': status});
       return PaymentResult(
         status: status,
         paymentId: (data['payment_id'] as String?) ?? '',
@@ -113,7 +116,11 @@ class MercadoPagoService {
       );
     }
 
-    debugPrint('[MP] Payment error ${response.statusCode}: ${response.body}');
+    // Body may contain card error_detail — keep it in a breadcrumb (debug
+    // log + Sentry breadcrumb), NOT a captured event, so users see context
+    // but we don't fire a Sentry alert for declined cards.
+    AppLogger.w('payment error ${response.statusCode}: ${response.body}',
+        tag: 'mp');
     String message;
     try {
       final j = jsonDecode(response.body) as Map<String, dynamic>;

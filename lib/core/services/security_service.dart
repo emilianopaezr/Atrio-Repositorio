@@ -5,6 +5,8 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../utils/app_logger.dart';
+
 /// SecurityService - Runtime security checks for Atrio
 /// Protects against:
 /// - Root/Jailbreak detection
@@ -169,7 +171,7 @@ class SecurityService {
       const platform = MethodChannel('com.atrio.atrio/security');
       await platform.invokeMethod('enableSecureMode');
     } catch (e) {
-      debugPrint('Secure mode not available: $e');
+      AppLogger.w('Secure mode not available: $e', tag: 'security');
     }
   }
 

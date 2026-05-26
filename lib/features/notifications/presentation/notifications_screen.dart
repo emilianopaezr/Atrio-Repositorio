@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/providers/notifications_provider.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/section_eyebrow.dart';
 
@@ -101,7 +102,8 @@ class NotificationsScreen extends ConsumerWidget {
                                   .eq('is_read', false);
                               ref.invalidate(notificationsProvider);
                             } catch (e) {
-                              debugPrint('markAllRead error: $e');
+                              AppLogger.w('markAllRead: $e',
+                                  tag: 'notifications');
                             }
                           },
                         ),
@@ -221,7 +223,8 @@ class NotificationsScreen extends ConsumerWidget {
                               .update({'is_read': true}).eq('id', notifId);
                           ref.invalidate(notificationsProvider);
                         } catch (e) {
-                          debugPrint('markNotificationRead: $e');
+                          AppLogger.w('markNotificationRead: $e',
+                              tag: 'notifications');
                         }
                       },
                       onDismiss: (notifId) async {
@@ -233,7 +236,8 @@ class NotificationsScreen extends ConsumerWidget {
                               .eq('id', notifId);
                           ref.invalidate(notificationsProvider);
                         } catch (e) {
-                          debugPrint('deleteNotification: $e');
+                          AppLogger.w('deleteNotification: $e',
+                              tag: 'notifications');
                           ref.invalidate(notificationsProvider);
                         }
                       },

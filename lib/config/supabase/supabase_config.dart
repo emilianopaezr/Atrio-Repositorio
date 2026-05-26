@@ -1,6 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../core/utils/app_logger.dart';
 
 /// Supabase configuration with secure key management.
 ///
@@ -55,9 +56,10 @@ class SupabaseConfig {
       ),
     );
 
-    if (kDebugMode) {
-      debugPrint('Supabase initialized (${_defineUrl.isNotEmpty ? "dart-define" : ".env"})');
-    }
+    AppLogger.i(
+      'initialized (${_defineUrl.isNotEmpty ? "dart-define" : ".env"})',
+      tag: 'supabase',
+    );
   }
 
   static SupabaseClient get client => Supabase.instance.client;

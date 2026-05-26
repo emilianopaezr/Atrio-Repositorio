@@ -15,6 +15,7 @@ import '../../../core/providers/host_detail_provider.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/models/enums.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../core/utils/extensions.dart';
 import '../../../core/utils/rules_catalog.dart';
 import '../../../l10n/app_localizations.dart';
@@ -71,7 +72,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         setState(() => _isFav = favs.contains(widget.listingId));
       }
     } catch (e) {
-      debugPrint('_checkFav error: $e');
+      AppLogger.w('_checkFav: $e', tag: 'listing_detail');
     }
   }
 
@@ -91,7 +92,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       }
       await SupabaseConfig.client.from('profiles').update({'favorite_listing_ids': favs}).eq('id', uid);
     } catch (e) {
-      debugPrint('_toggleFav error: $e');
+      AppLogger.w('_toggleFav: $e', tag: 'listing_detail');
       if (mounted) setState(() => _isFav = !newState);
     }
   }
@@ -101,7 +102,7 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
       final data = await DatabaseService.getListingReviews(widget.listingId);
       if (mounted) setState(() { _reviews = data; _loadingReviews = false; });
     } catch (e) {
-      debugPrint('_loadReviews error: $e');
+      AppLogger.w('_loadReviews: $e', tag: 'listing_detail');
       if (mounted) setState(() => _loadingReviews = false);
     }
   }

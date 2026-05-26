@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/supabase/supabase_config.dart';
+import '../utils/app_logger.dart';
 
 class AnalyticsData {
   final double totalRevenue;
@@ -98,7 +98,10 @@ final analyticsProvider = FutureProvider.family<AnalyticsData, int>((ref, period
   final dailyKeys = dailyMap.keys.toList()..sort();
   final daily = dailyKeys.take(7).map((k) => dailyMap[k]!).toList();
 
-  debugPrint('Analytics loaded: rev=$rev, bookings=${bookingList.length}, reviews=${reviewList.length}');
+  AppLogger.d(
+    'loaded rev=$rev bookings=${bookingList.length} reviews=${reviewList.length}',
+    tag: 'analytics',
+  );
 
   return AnalyticsData(
     totalRevenue: rev,

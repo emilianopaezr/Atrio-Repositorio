@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../config/supabase/supabase_config.dart';
+import '../utils/app_logger.dart';
 import 'notification_prefs.dart';
 
 /// Background handler must be a top-level function annotated with `@pragma`.
@@ -64,9 +65,7 @@ class PushService {
 
       _initialized = true;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[PushService] initialize skipped: $e');
-      }
+      AppLogger.w('initialize skipped: $e', tag: 'push');
       // Missing google-services.json, offline, etc. Silently no-op.
     }
   }
@@ -95,7 +94,7 @@ class PushService {
         'p_app_version': null,
       });
     } catch (e) {
-      if (kDebugMode) debugPrint('[PushService] registerCurrentUser: $e');
+      AppLogger.w('registerCurrentUser: $e', tag: 'push');
     }
   }
 
@@ -111,7 +110,7 @@ class PushService {
       await FirebaseMessaging.instance.deleteToken();
       _cachedToken = null;
     } catch (e) {
-      if (kDebugMode) debugPrint('[PushService] unregisterCurrentDevice: $e');
+      AppLogger.w('unregisterCurrentDevice: $e', tag: 'push');
     }
   }
 
@@ -182,7 +181,7 @@ class PushService {
         'p_app_version': null,
       });
     } catch (e) {
-      if (kDebugMode) debugPrint('[PushService] token refresh persist: $e');
+      AppLogger.w('token refresh persist: $e', tag: 'push');
     }
   }
 

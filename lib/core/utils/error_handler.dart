@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shared/widgets/atrio_snackbar.dart';
+import 'app_logger.dart';
 
 /// Centralized error handler that maps raw exceptions to
 /// user-friendly Spanish messages for the Atrio app.
@@ -85,7 +86,7 @@ class ErrorHandler {
     }
 
     // ── Generic ──
-    debugPrint('ErrorHandler unhandled: $error');
+    AppLogger.w('unhandled: $error', tag: 'error_handler');
     return 'Ocurrió un error inesperado. Intenta de nuevo.';
   }
 
@@ -113,7 +114,7 @@ class ErrorHandler {
       return 'La consulta tardó demasiado. Intenta de nuevo.';
     }
 
-    debugPrint('PostgREST error: ${e.code} - ${e.message}');
+    AppLogger.w('PostgREST: ${e.code} - ${e.message}', tag: 'error_handler');
     return 'Error al acceder a los datos. Intenta de nuevo.';
   }
 
@@ -134,7 +135,7 @@ class ErrorHandler {
       return 'Ya existe un archivo con ese nombre.';
     }
 
-    debugPrint('Storage error: ${e.message}');
+    AppLogger.w('Storage: ${e.message}', tag: 'error_handler');
     return 'Error al procesar el archivo. Intenta de nuevo.';
   }
 
@@ -156,7 +157,7 @@ class ErrorHandler {
       return 'Demasiados intentos. Espera un momento.';
     }
 
-    debugPrint('Auth API error: ${e.message} (code: ${e.code})');
+    AppLogger.w('Auth API: ${e.message} (code: ${e.code})', tag: 'error_handler');
     return 'Error de autenticación. Intenta de nuevo.';
   }
 

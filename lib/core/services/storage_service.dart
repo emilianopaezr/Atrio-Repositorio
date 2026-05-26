@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../config/supabase/supabase_config.dart';
+import '../utils/app_logger.dart';
 import '../utils/constants.dart';
 
 /// Service for Supabase Storage operations
@@ -43,10 +44,12 @@ class StorageService {
         quality: quality,
         format: CompressFormat.jpeg,
       );
-      debugPrint('Image compressed: ${bytes.length} → ${result.length} bytes');
+      AppLogger.d(
+          'compressed ${bytes.length} → ${result.length} bytes',
+          tag: 'storage');
       return result;
     } catch (e) {
-      debugPrint('Image compression skipped: $e');
+      AppLogger.w('compression skipped: $e', tag: 'storage');
       return bytes;
     }
   }

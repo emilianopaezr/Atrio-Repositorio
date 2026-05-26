@@ -10,6 +10,7 @@ import '../../../config/supabase/supabase_config.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../core/utils/error_handler.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/section_eyebrow.dart';
@@ -120,7 +121,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _initialInterests = Set.from(_interests);
       }
     } catch (e) {
-      debugPrint('_loadProfile error: $e');
+      AppLogger.w('_loadProfile: $e', tag: 'edit_profile');
     }
     if (mounted) setState(() => _isLoading = false);
   }
@@ -173,7 +174,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _toast(AppLocalizations.of(context).editProfilePhotoUpdated);
       }
     } catch (e) {
-      debugPrint('_pickAndUploadAvatar error: $e');
+      AppLogger.w('_pickAndUploadAvatar: $e', tag: 'edit_profile');
       if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
@@ -213,7 +214,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         if (mounted) Navigator.of(context).pop();
       }
     } catch (e) {
-      debugPrint('_saveProfile error: $e');
+      AppLogger.w('_saveProfile: $e', tag: 'edit_profile');
       if (mounted) ErrorHandler.showError(context, e);
     } finally {
       if (mounted) setState(() => _isSaving = false);

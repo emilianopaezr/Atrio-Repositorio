@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/utils/app_logger.dart';
 import '../../../l10n/app_localizations.dart';
 
 class ReviewsListScreen extends StatefulWidget {
@@ -31,7 +32,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
       final data = await DatabaseService.getListingReviews(widget.listingId);
       if (mounted) setState(() { _reviews = data; _loading = false; });
     } catch (e) {
-      debugPrint('ReviewsList error: $e');
+      AppLogger.w('reviews list: $e', tag: 'reviews');
       if (mounted) {
         final l = AppLocalizations.of(context);
         setState(() { _loading = false; _error = l.reviewsError; });

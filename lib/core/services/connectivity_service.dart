@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../utils/app_logger.dart';
 
 /// Reactive network status. `true` = at least one transport reports connected
 /// (wifi / mobile / ethernet / vpn). Does not guarantee actual internet reach;
@@ -18,7 +19,7 @@ class ConnectivityService {
       final result = await _connectivity.checkConnectivity();
       return _isOnline(result);
     } catch (e) {
-      if (kDebugMode) debugPrint('[ConnectivityService] isOnline: $e');
+      AppLogger.w('isOnline failed: $e', tag: 'connectivity');
       // If the plugin fails, assume online so we don't block the UI.
       return true;
     }
