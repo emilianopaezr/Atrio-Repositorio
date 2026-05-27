@@ -86,14 +86,14 @@ class AboutScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _StatBox(
-                            value: '7%',
+                            value: '5–9%',
                             label: l.aboutStatCommission,
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: _StatBox(
-                            value: '\$90.000',
+                            value: '\$1.490',
                             label: l.aboutStatMaxFee,
                           ),
                         ),

@@ -25,10 +25,23 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
   @override
   void initState() {
     super.initState();
+    // Three tabs: Todos / Anfitrión / Huésped. The Anfitrión tab shows
+    // threads where the signed-in user is the host of the listing,
+    // Huésped shows threads where they're writing to someone else's host.
     _tabController = TabController(length: 3, vsync: this)
       ..addListener(() {
         if (mounted) setState(() {});
       });
+  }
+
+  /// True when the signed-in user is the host of this conversation's
+  /// listing. Defaults to false when listing info is missing (orphaned
+  /// thread / system message) so those land in the "Huésped" bucket.
+  bool _isHostOfConversation(Map<String, dynamic> conv, String? userId) {
+    if (userId == null) return false;
+    final listing = conv['listing'] as Map<String, dynamic>?;
+    final hostId = listing?['host_id'] as String?;
+    return hostId != null && hostId == userId;
   }
 
   @override
@@ -59,8 +72,11 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
             final unread = conversations
                 .where((c) => _isUnread(c, currentUserId))
                 .toList();
-            final read = conversations
-                .where((c) => !_isUnread(c, currentUserId))
+            final hostThreads = conversations
+                .where((c) => _isHostOfConversation(c, currentUserId))
+                .toList();
+            final guestThreads = conversations
+                .where((c) => !_isHostOfConversation(c, currentUserId))
                 .toList();
 
             return Column(
@@ -75,11 +91,11 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
                 _Tabs(
                   controller: _tabController,
                   allCount: conversations.length,
-                  unreadCount: unread.length,
-                  readCount: read.length,
+                  hostCount: hostThreads.length,
+                  guestCount: guestThreads.length,
                   allLabel: l.chatTabAll,
-                  unreadLabel: l.chatTabUnread,
-                  readLabel: l.chatTabRead,
+                  hostLabel: l.chatTabHost,
+                  guestLabel: l.chatTabGuest,
                 ),
                 const SizedBox(height: 16),
                 Expanded(
@@ -96,21 +112,21 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
                         ref: ref,
                       ),
                       _buildList(
-                        conversations: unread,
+                        conversations: hostThreads,
                         currentUserId: currentUserId,
-                        emptyTitle: l.chatUnreadEmptyTitle,
-                        emptySubtitle: l.chatUnreadEmptySubtitle,
-                        emptyIcon: Icons.mark_email_read_rounded,
+                        emptyTitle: l.chatHostEmptyTitle,
+                        emptySubtitle: l.chatHostEmptySubtitle,
+                        emptyIcon: Icons.house_outlined,
                         showUnreadBadge: true,
                         ref: ref,
                       ),
                       _buildList(
-                        conversations: read,
+                        conversations: guestThreads,
                         currentUserId: currentUserId,
-                        emptyTitle: l.chatReadEmptyTitle,
-                        emptySubtitle: l.chatReadEmptySubtitle,
-                        emptyIcon: Icons.inbox_rounded,
-                        showUnreadBadge: false,
+                        emptyTitle: l.chatGuestEmptyTitle,
+                        emptySubtitle: l.chatGuestEmptySubtitle,
+                        emptyIcon: Icons.luggage_outlined,
+                        showUnreadBadge: true,
                         ref: ref,
                       ),
                     ],
@@ -303,19 +319,19 @@ class _SearchPill extends StatelessWidget {
 class _Tabs extends StatelessWidget {
   final TabController controller;
   final int allCount;
-  final int unreadCount;
-  final int readCount;
+  final int hostCount;
+  final int guestCount;
   final String allLabel;
-  final String unreadLabel;
-  final String readLabel;
+  final String hostLabel;
+  final String guestLabel;
   const _Tabs({
     required this.controller,
     required this.allCount,
-    required this.unreadCount,
-    required this.readCount,
+    required this.hostCount,
+    required this.guestCount,
     required this.allLabel,
-    required this.unreadLabel,
-    required this.readLabel,
+    required this.hostLabel,
+    required this.guestLabel,
   });
 
   @override
@@ -341,18 +357,18 @@ class _Tabs extends StatelessWidget {
               highlightCount: false,
             ),
             _tab(
-              label: unreadLabel,
-              count: unreadCount,
+              label: hostLabel,
+              count: hostCount,
               selected: controller.index == 1,
               onTap: () {
                 HapticFeedback.selectionClick();
                 controller.animateTo(1);
               },
-              highlightCount: true,
+              highlightCount: false,
             ),
             _tab(
-              label: readLabel,
-              count: readCount,
+              label: guestLabel,
+              count: guestCount,
               selected: controller.index == 2,
               onTap: () {
                 HapticFeedback.selectionClick();

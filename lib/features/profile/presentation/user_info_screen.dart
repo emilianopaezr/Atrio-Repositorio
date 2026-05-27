@@ -706,42 +706,60 @@ class _StatsRow extends StatelessWidget {
       children: [
         for (int i = 0; i < stats.length; i++) ...[
           Expanded(
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (stats[i].prefix != null)
-                      Text(
-                        stats[i].prefix!,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFFFFB800),
+            child: Padding(
+              // Breathing room between the divider and the column so
+              // long labels (CONFIABILIDAD, CANCELACIONES) don't kiss
+              // the line. FittedBox below picks up the rest.
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (stats[i].prefix != null)
+                          Text(
+                            stats[i].prefix!,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFFFFB800),
+                            ),
+                          ),
+                        Text(
+                          stats[i].value,
+                          maxLines: 1,
+                          style: GoogleFonts.inter(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: textP,
+                            letterSpacing: -0.6,
+                          ),
                         ),
-                      ),
-                    Text(
-                      stats[i].value,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Scale the label down to fit instead of wrapping.
+                  // Caps the upper bound by setting a single-line Text
+                  // inside a FittedBox — keeps the typography consistent
+                  // across the three columns.
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      stats[i].label.toUpperCase(),
+                      maxLines: 1,
                       style: GoogleFonts.inter(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: textP,
-                        letterSpacing: -0.6,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: textT,
+                        letterSpacing: 0.8,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  stats[i].label.toUpperCase(),
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: textT,
-                    letterSpacing: 0.8,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           if (i < stats.length - 1)

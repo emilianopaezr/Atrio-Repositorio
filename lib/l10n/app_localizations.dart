@@ -1736,6 +1736,42 @@ abstract class AppLocalizations {
   /// **'Leídos'**
   String get chatTabRead;
 
+  /// No description provided for @chatTabHost.
+  ///
+  /// In es, this message translates to:
+  /// **'Anfitrión'**
+  String get chatTabHost;
+
+  /// No description provided for @chatTabGuest.
+  ///
+  /// In es, this message translates to:
+  /// **'Huésped'**
+  String get chatTabGuest;
+
+  /// No description provided for @chatHostEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes mensajes como anfitrión'**
+  String get chatHostEmptyTitle;
+
+  /// No description provided for @chatHostEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando un huésped te escriba sobre una de tus publicaciones, aparecerá aquí.'**
+  String get chatHostEmptySubtitle;
+
+  /// No description provided for @chatGuestEmptyTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'No tienes mensajes como huésped'**
+  String get chatGuestEmptyTitle;
+
+  /// No description provided for @chatGuestEmptySubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando escribas a un anfitrión sobre una publicación, aparecerá aquí.'**
+  String get chatGuestEmptySubtitle;
+
   /// No description provided for @chatAllEmptyTitle.
   ///
   /// In es, this message translates to:
@@ -5338,7 +5374,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutDescription.
   ///
   /// In es, this message translates to:
-  /// **'Atrio es el marketplace premium que conecta anfitriones con usuarios a través de espacios únicos, experiencias memorables y servicios profesionales.\n\nNuestra plataforma ofrece un ecosistema completo: búsqueda inteligente, reservas en tiempo real con 3 modalidades (por horas, día completo y noches), chat directo con anfitriones, sistema de reseñas verificadas, verificación de identidad (KYC), gestión de pagos con comisiones transparentes (7%, máx \$90.000 CLP), panel de control para anfitriones con analítica de ingresos, calendario de disponibilidad interactivo, notificaciones en tiempo real, servicios rápidos bajo demanda, experiencias con cupos y horarios, sistema de niveles y logros, y resolución de disputas integrada.\n\nYa sea que busques un loft industrial para un shooting, una villa para un retiro creativo, un tour gastronómico, o un servicio de fotografía profesional, Atrio te conecta con las mejores opciones curadas por nuestra comunidad.\n\nDesarrollada con pasión en Santiago de Chile 🇨🇱'**
+  /// **'Atrio es el marketplace que conecta anfitriones con clientes a través de espacios únicos, experiencias memorables y servicios profesionales.\n\nLa plataforma incluye un ecosistema completo: búsqueda inteligente, reservas en tiempo real en tres modalidades (por horas, día completo y noches), chat directo con anfitriones, reseñas verificadas, verificación de identidad (KYC) y pagos con Servicio Atrio transparente — 5% en las primeras 5 reservas de cada anfitrión verificado y 9% después, con mínimo de \$1.490 CLP. El anfitrión recibe siempre el 100% del precio base que publica.\n\nTambién ofrece panel de control con analítica de ingresos, calendario de disponibilidad interactivo, notificaciones en tiempo real, servicios rápidos bajo demanda, experiencias con cupos y horarios, sistema de niveles y logros, y resolución de disputas integrada.\n\nYa sea que busques un loft industrial para un shooting, una villa para un retiro creativo, un tour gastronómico, o un servicio de fotografía profesional, Atrio te conecta con las mejores opciones curadas por la comunidad.\n\nDesarrollada con pasión en Santiago de Chile 🇨🇱'**
   String get aboutDescription;
 
   /// No description provided for @aboutFeatSpaces.
@@ -5416,13 +5452,13 @@ abstract class AppLocalizations {
   /// No description provided for @aboutStatCommission.
   ///
   /// In es, this message translates to:
-  /// **'Comisión estándar'**
+  /// **'Servicio Atrio'**
   String get aboutStatCommission;
 
   /// No description provided for @aboutStatMaxFee.
   ///
   /// In es, this message translates to:
-  /// **'Fee máximo'**
+  /// **'Mínimo CLP'**
   String get aboutStatMaxFee;
 
   /// No description provided for @aboutStatSupport.

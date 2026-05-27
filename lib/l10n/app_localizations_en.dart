@@ -896,6 +896,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatTabRead => 'Read';
 
   @override
+  String get chatTabHost => 'Hosting';
+
+  @override
+  String get chatTabGuest => 'Traveling';
+
+  @override
+  String get chatHostEmptyTitle => 'No host messages yet';
+
+  @override
+  String get chatHostEmptySubtitle =>
+      'When a guest writes to you about one of your listings, it will appear here.';
+
+  @override
+  String get chatGuestEmptyTitle => 'No traveler messages yet';
+
+  @override
+  String get chatGuestEmptySubtitle =>
+      'When you message a host about a listing, it will appear here.';
+
+  @override
   String get chatAllEmptyTitle => 'No conversations yet';
 
   @override
@@ -2824,7 +2844,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'Atrio is the premium marketplace that connects hosts with users through unique spaces, memorable experiences, and professional services.\n\nOur platform offers a complete ecosystem: smart search, real-time bookings with 3 modalities (hourly, full day, and nights), direct chat with hosts, verified review system, identity verification (KYC), payment management with transparent commissions (7%, max \$90,000 CLP), host dashboard with earnings analytics, interactive availability calendar, real-time notifications, on-demand quick services, experiences with slots and schedules, levels and achievements system, and integrated dispute resolution.\n\nWhether you\'re looking for an industrial loft for a photo shoot, a villa for a creative retreat, a food tour, or professional photography, Atrio connects you with the best options curated by our community.\n\nBuilt with passion in Santiago, Chile 🇨🇱';
+      'Atrio is the marketplace that connects hosts with clients through unique spaces, memorable experiences, and professional services.\n\nThe platform includes a complete ecosystem: smart search, real-time bookings in three modalities (hourly, full day, nights), direct chat with hosts, verified reviews, identity verification (KYC), and transparent Atrio Service pricing — 5% on each verified host\'s first 5 bookings and 9% thereafter, with a minimum of \$1,490 CLP. The host always receives 100% of the base price they publish.\n\nIt also offers a dashboard with earnings analytics, an interactive availability calendar, real-time notifications, on-demand quick services, experiences with slots and schedules, a levels and achievements system, and integrated dispute resolution.\n\nWhether you\'re looking for an industrial loft for a photo shoot, a villa for a creative retreat, a food tour, or professional photography, Atrio connects you with the best options curated by the community.\n\nBuilt with passion in Santiago, Chile 🇨🇱';
 
   @override
   String get aboutFeatSpaces => 'Spaces';
@@ -2864,10 +2884,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutFeatNotificationsDesc => 'Real-time updates';
 
   @override
-  String get aboutStatCommission => 'Standard commission';
+  String get aboutStatCommission => 'Atrio service';
 
   @override
-  String get aboutStatMaxFee => 'Max fee';
+  String get aboutStatMaxFee => 'Minimum CLP';
 
   @override
   String get aboutStatSupport => 'Support';

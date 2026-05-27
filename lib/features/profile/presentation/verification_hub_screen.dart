@@ -27,7 +27,12 @@ class VerificationHubScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final profileAsync = ref.watch(userProfileStreamProvider);
+    // Use the FutureProvider (regular SELECT) instead of the stream
+    // provider. The stream requires the `profiles` table to be in the
+    // `supabase_realtime` publication, which it isn't, so the stream
+    // errors and the user sees "No se pudo cargar tu perfil". A
+    // one-shot fetch on every screen open is plenty for this hub.
+    final profileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,

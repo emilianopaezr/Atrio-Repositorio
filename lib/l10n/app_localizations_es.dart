@@ -899,6 +899,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatTabRead => 'Leídos';
 
   @override
+  String get chatTabHost => 'Anfitrión';
+
+  @override
+  String get chatTabGuest => 'Huésped';
+
+  @override
+  String get chatHostEmptyTitle => 'No tienes mensajes como anfitrión';
+
+  @override
+  String get chatHostEmptySubtitle =>
+      'Cuando un huésped te escriba sobre una de tus publicaciones, aparecerá aquí.';
+
+  @override
+  String get chatGuestEmptyTitle => 'No tienes mensajes como huésped';
+
+  @override
+  String get chatGuestEmptySubtitle =>
+      'Cuando escribas a un anfitrión sobre una publicación, aparecerá aquí.';
+
+  @override
   String get chatAllEmptyTitle => 'Sin conversaciones';
 
   @override
@@ -2835,7 +2855,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'Atrio es el marketplace premium que conecta anfitriones con usuarios a través de espacios únicos, experiencias memorables y servicios profesionales.\n\nNuestra plataforma ofrece un ecosistema completo: búsqueda inteligente, reservas en tiempo real con 3 modalidades (por horas, día completo y noches), chat directo con anfitriones, sistema de reseñas verificadas, verificación de identidad (KYC), gestión de pagos con comisiones transparentes (7%, máx \$90.000 CLP), panel de control para anfitriones con analítica de ingresos, calendario de disponibilidad interactivo, notificaciones en tiempo real, servicios rápidos bajo demanda, experiencias con cupos y horarios, sistema de niveles y logros, y resolución de disputas integrada.\n\nYa sea que busques un loft industrial para un shooting, una villa para un retiro creativo, un tour gastronómico, o un servicio de fotografía profesional, Atrio te conecta con las mejores opciones curadas por nuestra comunidad.\n\nDesarrollada con pasión en Santiago de Chile 🇨🇱';
+      'Atrio es el marketplace que conecta anfitriones con clientes a través de espacios únicos, experiencias memorables y servicios profesionales.\n\nLa plataforma incluye un ecosistema completo: búsqueda inteligente, reservas en tiempo real en tres modalidades (por horas, día completo y noches), chat directo con anfitriones, reseñas verificadas, verificación de identidad (KYC) y pagos con Servicio Atrio transparente — 5% en las primeras 5 reservas de cada anfitrión verificado y 9% después, con mínimo de \$1.490 CLP. El anfitrión recibe siempre el 100% del precio base que publica.\n\nTambién ofrece panel de control con analítica de ingresos, calendario de disponibilidad interactivo, notificaciones en tiempo real, servicios rápidos bajo demanda, experiencias con cupos y horarios, sistema de niveles y logros, y resolución de disputas integrada.\n\nYa sea que busques un loft industrial para un shooting, una villa para un retiro creativo, un tour gastronómico, o un servicio de fotografía profesional, Atrio te conecta con las mejores opciones curadas por la comunidad.\n\nDesarrollada con pasión en Santiago de Chile 🇨🇱';
 
   @override
   String get aboutFeatSpaces => 'Espacios';
@@ -2874,10 +2894,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get aboutFeatNotificationsDesc => 'Actualizaciones en tiempo real';
 
   @override
-  String get aboutStatCommission => 'Comisión estándar';
+  String get aboutStatCommission => 'Servicio Atrio';
 
   @override
-  String get aboutStatMaxFee => 'Fee máximo';
+  String get aboutStatMaxFee => 'Mínimo CLP';
 
   @override
   String get aboutStatSupport => 'Soporte';

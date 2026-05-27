@@ -700,10 +700,14 @@ class DatabaseService {
   // =============================================
 
   /// Get conversations for a user
+  ///
+  /// Includes `listing.host_id` so the chat list can split between
+  /// "Anfitrión" (the signed-in user is the host of this thread) and
+  /// "Huésped" (the user is the guest writing to someone else's host).
   static Future<List<Map<String, dynamic>>> getConversations(String userId) async {
     final response = await _client
         .from(AppConstants.tableConversations)
-        .select('*, listing:listings(id, title, images)')
+        .select('*, listing:listings(id, title, images, host_id)')
         .contains('participant_ids', [userId])
         .order('last_message_at', ascending: false);
 
