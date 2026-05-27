@@ -170,7 +170,9 @@ class _AdminKycDetailScreenState extends ConsumerState<AdminKycDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final me = ref.watch(userProfileStreamProvider);
+    // Mirror the list screen — read profile via FutureProvider since
+    // the realtime publication doesn't include `profiles`.
+    final me = ref.watch(userProfileProvider);
     final isAdmin = me.maybeWhen(
       data: (p) => p?.isAdmin ?? false,
       orElse: () => false,

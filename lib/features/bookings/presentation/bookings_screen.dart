@@ -538,12 +538,15 @@ class _BookingCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ─── Hero image — full-width, 16:9, lime type chip ───
+              // ─── Hero image — full-width, 21:9 letterbox so it's
+              //    present but not dominant, lime circle + type icon
+              //    overlaid (no text, just the icon as a glanceable
+              //    badge in the corner). ───
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(21)),
                 child: AspectRatio(
-                  aspectRatio: 16 / 9,
+                  aspectRatio: 21 / 9,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -556,7 +559,7 @@ class _BookingCard extends StatelessWidget {
                           errorWidget: (_, _, _) => Container(
                             color: AtrioColors.guestSurfaceVariant,
                             child: Icon(_typeIcon(type),
-                                size: 36,
+                                size: 32,
                                 color: AtrioColors.guestTextTertiary),
                           ),
                         )
@@ -564,37 +567,23 @@ class _BookingCard extends StatelessWidget {
                         Container(
                           color: AtrioColors.guestSurfaceVariant,
                           child: Icon(_typeIcon(type),
-                              size: 36,
+                              size: 32,
                               color: AtrioColors.guestTextTertiary),
                         ),
-                      // Lime type pill — bottom-left, icon + tiny label.
+                      // Lime circle with the type icon — bottom-left.
                       Positioned(
-                        bottom: 12,
-                        left: 12,
+                        bottom: 10,
+                        left: 10,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 9, vertical: 6),
-                          decoration: BoxDecoration(
+                          width: 32,
+                          height: 32,
+                          decoration: const BoxDecoration(
                             color: AtrioColors.neonLime,
-                            borderRadius: BorderRadius.circular(20),
+                            shape: BoxShape.circle,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(_typeIcon(type),
-                                  size: 13, color: Colors.black),
-                              const SizedBox(width: 6),
-                              Text(
-                                _typeLabel(context, type),
-                                style: GoogleFonts.inter(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.black,
-                                  letterSpacing: 0.4,
-                                ),
-                              ),
-                            ],
-                          ),
+                          alignment: Alignment.center,
+                          child: Icon(_typeIcon(type),
+                              size: 16, color: Colors.black),
                         ),
                       ),
                     ],
@@ -703,20 +692,6 @@ class _BookingCard extends StatelessWidget {
     );
   }
 
-  /// Human label for the type chip on the image.
-  String _typeLabel(BuildContext context, String? t) {
-    final l = AppLocalizations.of(context);
-    switch (t) {
-      case 'space':
-        return l.qsCatAll == 'Todos' ? 'ESPACIO' : 'SPACE';
-      case 'experience':
-        return l.qsCatAll == 'Todos' ? 'EXPERIENCIA' : 'EXPERIENCE';
-      case 'service':
-        return l.qsCatAll == 'Todos' ? 'SERVICIO' : 'SERVICE';
-      default:
-        return l.qsCatAll == 'Todos' ? 'RESERVA' : 'BOOKING';
-    }
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════

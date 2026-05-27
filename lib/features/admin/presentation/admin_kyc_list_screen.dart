@@ -24,7 +24,12 @@ class AdminKycListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(userProfileStreamProvider);
+    // FutureProvider, not the stream — the `profiles` table isn't in
+    // the supabase_realtime publication, so the stream errors and
+    // forever falls through to "Acceso restringido" even for real
+    // admins. A regular SELECT on every screen open is plenty for an
+    // admin tool.
+    final profileAsync = ref.watch(userProfileProvider);
     final isAdmin = profileAsync.maybeWhen(
       data: (p) => p?.isAdmin ?? false,
       orElse: () => false,
