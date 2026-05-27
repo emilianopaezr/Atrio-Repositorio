@@ -45,7 +45,6 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             _Header(
               eyebrow: l.bookingsEyebrow,
               title: l.bookingsTitle,
-              subtitle: l.bookingsHeroSubtitle,
             ),
             const SizedBox(height: 22),
             // Single segmented control with the same look as Mensajes:
@@ -234,10 +233,8 @@ class _Buckets {
 class _Header extends StatelessWidget {
   final String eyebrow;
   final String title;
-  final String subtitle;
 
-  const _Header(
-      {required this.eyebrow, required this.title, required this.subtitle});
+  const _Header({required this.eyebrow, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -264,16 +261,6 @@ class _Header extends StatelessWidget {
               color: AtrioColors.guestTextPrimary,
               letterSpacing: -1.0,
               height: 1.05,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: GoogleFonts.inter(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-              color: AtrioColors.guestTextSecondary,
-              height: 1.35,
             ),
           ),
         ],

@@ -261,16 +261,6 @@ class _Header extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            l.chatHeroSubtitle,
-            style: GoogleFonts.inter(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-              color: AtrioColors.guestTextSecondary,
-              height: 1.35,
-            ),
-          ),
         ],
       ),
     );
