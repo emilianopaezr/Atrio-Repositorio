@@ -249,7 +249,11 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     return Scaffold(
       backgroundColor: AtrioColors.guestBackground,
       body: SafeArea(
+        // Force the outer column to stretch its children to full width
+        // so the _Header's back button + eyebrow land on the left
+        // margin instead of centering with the column's natural sizing.
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _Header(
               step: _step,

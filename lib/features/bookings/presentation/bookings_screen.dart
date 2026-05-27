@@ -28,7 +28,8 @@ class BookingsScreen extends ConsumerStatefulWidget {
 }
 
 class _BookingsScreenState extends ConsumerState<BookingsScreen> {
-  int _selectedTab = 0; // 0 = Próximas, 1 = Pasadas
+  // 0 = Todas, 1 = Pendientes, 2 = Confirmadas, 3 = Pasadas
+  int _selectedTab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -47,29 +48,32 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               subtitle: l.bookingsHeroSubtitle,
             ),
             const SizedBox(height: 22),
-            // Single segmented control — matches the Messages screen.
-            // The old double-bar (tab pills + filter chips) felt heavy;
-            // the status (pending / confirmed / etc.) is already
-            // surfaced as a coloured pill on every booking card, so the
-            // sub-filter became redundant noise.
+            // Single segmented control with the same look as Mensajes:
+            // dark selected pill, neutral count badge (no lime).
             bookingsAsync.when(
               data: (bookings) {
-                final partition = _partition(bookings);
+                final buckets = _buckets(bookings);
                 return _TabPillsRow(
-                  upcomingCount: partition.upcoming.length,
-                  pastCount: partition.past.length,
+                  allCount: buckets.all.length,
+                  pendingCount: buckets.pending.length,
+                  confirmedCount: buckets.confirmed.length,
+                  pastCount: buckets.past.length,
                   selectedTab: _selectedTab,
                   onChanged: (i) => setState(() => _selectedTab = i),
                 );
               },
               loading: () => _TabPillsRow(
-                upcomingCount: null,
+                allCount: null,
+                pendingCount: null,
+                confirmedCount: null,
                 pastCount: null,
                 selectedTab: _selectedTab,
                 onChanged: (i) => setState(() => _selectedTab = i),
               ),
               error: (_, _) => _TabPillsRow(
-                upcomingCount: null,
+                allCount: null,
+                pendingCount: null,
+                confirmedCount: null,
                 pastCount: null,
                 selectedTab: _selectedTab,
                 onChanged: (i) => setState(() => _selectedTab = i),
@@ -79,18 +83,20 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
             Expanded(
               child: bookingsAsync.when(
                 data: (bookings) {
-                  final partition = _partition(bookings);
-                  final list = _selectedTab == 0
-                      ? partition.upcoming
-                      : partition.past;
+                  final buckets = _buckets(bookings);
+                  final list = switch (_selectedTab) {
+                    1 => buckets.pending,
+                    2 => buckets.confirmed,
+                    3 => buckets.past,
+                    _ => buckets.all,
+                  };
                   if (list.isEmpty) {
+                    final isPast = _selectedTab == 3;
                     return _EmptyBookings(
-                      title: _selectedTab == 0
-                          ? l.bookingsNoUpcoming
-                          : l.bookingsNoPast,
-                      subtitle: _selectedTab == 0
-                          ? l.bookingsNoUpcomingSubtitle
-                          : l.bookingsNoPastSubtitle,
+                      title: isPast ? l.bookingsNoPast : l.bookingsNoUpcoming,
+                      subtitle: isPast
+                          ? l.bookingsNoPastSubtitle
+                          : l.bookingsNoUpcomingSubtitle,
                     );
                   }
                   return RefreshIndicator(
@@ -164,12 +170,21 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   ///   - end date < today (everything else with overdue date is past)
   ///
   /// Otherwise it's **upcoming**.
-  _Partition _partition(List<Map<String, dynamic>> bookings) {
+  ///
+  /// Returns four buckets used by the four-tab segmented control:
+  ///   - all       → everything the user has booked
+  ///   - pending   → status == pending
+  ///   - confirmed → status in {confirmed, active}
+  ///   - past      → finished by status, payment failure, or overdue date
+  _Buckets _buckets(List<Map<String, dynamic>> bookings) {
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
-    final upcoming = <Map<String, dynamic>>[];
+    final all = <Map<String, dynamic>>[];
+    final pending = <Map<String, dynamic>>[];
+    final confirmed = <Map<String, dynamic>>[];
     final past = <Map<String, dynamic>>[];
     for (final b in bookings) {
+      all.add(b);
       final status = (b['status'] as String? ?? '').toLowerCase();
       final payment = (b['payment_status'] as String? ?? '').toLowerCase();
       final isFinishedStatus =
@@ -180,11 +195,13 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
       final isOverdue = end != null && end.isBefore(todayDate);
       if (isFinishedStatus || isFinishedPayment || isOverdue) {
         past.add(b);
-      } else {
-        upcoming.add(b);
+      } else if (status == 'pending') {
+        pending.add(b);
+      } else if (status == 'confirmed' || status == 'active') {
+        confirmed.add(b);
       }
     }
-    return _Partition(upcoming, past);
+    return _Buckets(all: all, pending: pending, confirmed: confirmed, past: past);
   }
 
   static DateTime? _bookingEndDate(Map<String, dynamic> b) {
@@ -198,10 +215,17 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
 
 }
 
-class _Partition {
-  final List<Map<String, dynamic>> upcoming;
+class _Buckets {
+  final List<Map<String, dynamic>> all;
+  final List<Map<String, dynamic>> pending;
+  final List<Map<String, dynamic>> confirmed;
   final List<Map<String, dynamic>> past;
-  _Partition(this.upcoming, this.past);
+  _Buckets({
+    required this.all,
+    required this.pending,
+    required this.confirmed,
+    required this.past,
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -259,16 +283,22 @@ class _Header extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Tab pills
+// Tab pills — 4 segmentos (Todas / Pendientes / Confirmadas /
+// Pasadas) en una sola fila, estilo Messages: badge neutro,
+// sin acento lima.
 // ═══════════════════════════════════════════════════════════════
 class _TabPillsRow extends StatelessWidget {
-  final int? upcomingCount;
+  final int? allCount;
+  final int? pendingCount;
+  final int? confirmedCount;
   final int? pastCount;
   final int selectedTab;
   final ValueChanged<int> onChanged;
 
   const _TabPillsRow({
-    required this.upcomingCount,
+    required this.allCount,
+    required this.pendingCount,
+    required this.confirmedCount,
     required this.pastCount,
     required this.selectedTab,
     required this.onChanged,
@@ -289,8 +319,8 @@ class _TabPillsRow extends StatelessWidget {
           children: [
             Expanded(
               child: _TabPill(
-                label: l.bookingsUpcoming,
-                count: upcomingCount,
+                label: l.bookingsAll,
+                count: allCount,
                 selected: selectedTab == 0,
                 onTap: () {
                   HapticFeedback.selectionClick();
@@ -300,12 +330,34 @@ class _TabPillsRow extends StatelessWidget {
             ),
             Expanded(
               child: _TabPill(
-                label: l.bookingsPast,
-                count: pastCount,
+                label: l.bookingsPending,
+                count: pendingCount,
                 selected: selectedTab == 1,
                 onTap: () {
                   HapticFeedback.selectionClick();
                   onChanged(1);
+                },
+              ),
+            ),
+            Expanded(
+              child: _TabPill(
+                label: l.bookingsConfirmed,
+                count: confirmedCount,
+                selected: selectedTab == 2,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(2);
+                },
+              ),
+            ),
+            Expanded(
+              child: _TabPill(
+                label: l.bookingsPast,
+                count: pastCount,
+                selected: selectedTab == 3,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(3);
                 },
               ),
             ),
@@ -342,49 +394,57 @@ class _TabPill extends StatelessWidget {
           color: selected ? AtrioColors.guestTextPrimary : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 13.5,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  color: selected
-                      ? Colors.white
-                      : AtrioColors.guestTextSecondary,
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ),
-            if (count != null) ...[
-              const SizedBox(width: 7),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AtrioColors.neonLime
-                      : AtrioColors.guestCardBorder,
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: Text(
-                  '$count',
-                  style: GoogleFonts.inter(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: selected
-                        ? Colors.black
-                        : AtrioColors.guestTextSecondary,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      color: selected
+                          ? Colors.white
+                          : AtrioColors.guestTextSecondary,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                 ),
               ),
+              if (count != null) ...[
+                const SizedBox(width: 6),
+                // Badge neutral — semi-transparent white over the dark
+                // selected pill (matches Mensajes), light gray when not
+                // selected. Lime accent intentionally avoided.
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Colors.white24
+                        : AtrioColors.guestCardBorder,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: GoogleFonts.inter(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: selected
+                          ? Colors.white
+                          : AtrioColors.guestTextSecondary,
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
