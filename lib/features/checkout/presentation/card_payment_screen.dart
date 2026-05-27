@@ -220,29 +220,16 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Eyebrow + title
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                color: AtrioColors.neonLime,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'CHECKOUT',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                color: AtrioColors.guestTextSecondary,
-                                letterSpacing: 1.4,
-                              ),
-                            ),
-                          ],
+                        // Eyebrow + title — no lime stripe, flush-left
+                        // editorial style to match the rest of the app.
+                        Text(
+                          'CHECKOUT',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AtrioColors.guestTextTertiary,
+                            letterSpacing: 1.4,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -384,23 +371,27 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   height: 56,
+                  // Mirrors the "Contratar por …" CTA from Quick
+                  // Services: black pill, white label, lime accent
+                  // for the trailing arrow. Keeps a consistent
+                  // "commit-to-this-action" affordance app-wide.
                   child: ElevatedButton(
                     onPressed: _submitting ? null : _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AtrioColors.neonLime,
-                      foregroundColor: Colors.black,
+                      backgroundColor: AtrioColors.guestTextPrimary,
+                      foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18)),
-                      disabledBackgroundColor:
-                          AtrioColors.neonLime.withValues(alpha: 0.4),
+                      disabledBackgroundColor: AtrioColors.guestTextPrimary
+                          .withValues(alpha: 0.5),
                     ),
                     child: _submitting
                         ? const SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
-                              color: Colors.black,
+                              color: Colors.white,
                               strokeWidth: 2.5,
                             ),
                           )
@@ -416,14 +407,14 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w800,
-                                    color: Colors.black,
+                                    color: Colors.white,
                                     letterSpacing: -0.3,
                                   ),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               const Icon(Icons.arrow_forward_rounded,
-                                  size: 18, color: Colors.black),
+                                  size: 18, color: AtrioColors.neonLime),
                             ],
                           ),
                   ),
