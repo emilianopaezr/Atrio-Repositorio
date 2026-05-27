@@ -22,6 +22,7 @@ import '../../features/profile/presentation/user_info_screen.dart';
 import '../../features/profile/presentation/about_screen.dart';
 import '../../features/profile/presentation/terms_screen.dart';
 import '../../features/profile/presentation/privacy_screen.dart';
+import '../../features/profile/presentation/host_payment_connect_screen.dart';
 import '../../features/profile/presentation/payment_methods_screen.dart';
 import '../../features/profile/presentation/kyc_screen.dart';
 import '../../features/profile/presentation/verification_hub_screen.dart';
@@ -348,6 +349,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/payment-methods',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const PaymentMethodsScreen(),
+      ),
+      // Host-side: connect Mercado Pago marketplace account so split
+      // payments route base price directly to the host's wallet.
+      GoRoute(
+        path: '/host/payment-connect',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HostPaymentConnectScreen(),
       ),
       // Identity verification hub (3 cards: email / phone / KYC)
       GoRoute(

@@ -675,6 +675,26 @@ class DatabaseService {
     }
   }
 
+  /// Pre-flight before creating a booking: confirms the host has an
+  /// active MP marketplace account so split payments can route base
+  /// price to them. When this returns false the UI should surface a
+  /// friendly "the host hasn't finished setting up payments yet"
+  /// message instead of letting the user pay into a void.
+  ///
+  /// IMPORTANT: We treat the call as opt-in via the
+  /// `MP_REQUIRE_HOST_CONNECT` flag. While the marketplace conversion
+  /// is in progress this stays false and the legacy collect model
+  /// keeps working transparently.
+  static Future<bool> hostHasPaymentAccount(String hostId) async {
+    try {
+      final result = await _client
+          .rpc('host_has_payment_account', params: {'p_host_id': hostId});
+      return result == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // =============================================
   // CONVERSATIONS & MESSAGES
   // =============================================

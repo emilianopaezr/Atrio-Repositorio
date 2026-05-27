@@ -78,6 +78,31 @@ serve(async (req) => {
       .filter(Boolean)
       .join(" - ");
 
+    // ── MP Marketplace split ────────────────────────────────────
+    // If the host has connected their MP account, ask the DB for the
+    // split parameters (collector_id + marketplace_fee). The Edge
+    // Function then creates the preference with marketplace mode so
+    // MP automatically routes funds to the host's account.
+    // When the host hasn't connected yet, we fall back to "collect"
+    // mode (everything goes to Atrio's account; Atrio pays out later).
+    let useSplit = false;
+    let collectorId: string | null = null;
+    let marketplaceFee = 0;
+    try {
+      const { data: split } = await admin.rpc("mp_split_data", {
+        p_booking_id: bookingId,
+      });
+      if (split && split.can_split === true) {
+        useSplit = true;
+        collectorId = String(split.collector_id);
+        marketplaceFee = Number(split.marketplace_fee) || 0;
+      } else {
+        console.log("[mp] split unavailable", split?.reason);
+      }
+    } catch (e) {
+      console.error("[mp] mp_split_data RPC failed", e);
+    }
+
     const prefBody: Record<string, unknown> = {
       items: [
         {
@@ -101,6 +126,13 @@ serve(async (req) => {
       expiration_date_to: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
     };
     if (WEBHOOK_URL) prefBody.notification_url = WEBHOOK_URL;
+    if (useSplit && collectorId && marketplaceFee > 0) {
+      // marketplace_fee: amount in CLP that stays with Atrio.
+      // collector_id: the host's MP user_id that receives the rest.
+      prefBody.marketplace = "MP-MKT-ATRIO";
+      prefBody.marketplace_fee = marketplaceFee;
+      prefBody.collector_id = Number(collectorId);
+    }
 
     const mpRes = await fetch(`${MP_BASE}/checkout/preferences`, {
       method: "POST",

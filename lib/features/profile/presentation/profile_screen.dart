@@ -259,6 +259,17 @@ class ProfileScreen extends ConsumerWidget {
                         darkAccent: const Color(0xFFFB923C),
                         onTap: () => context.push('/payment-methods'),
                       ),
+                      // Host-only entry: connect MP marketplace account
+                      // so split payments land in the host's wallet
+                      // directly.
+                      _SettingsItem(
+                        icon: Icons.account_balance_wallet_outlined,
+                        title: 'Cobros (Mercado Pago)',
+                        accentBg: const Color(0xFFCCEEFB),
+                        accentFg: const Color(0xFF009EE3),
+                        darkAccent: const Color(0xFF35B6EB),
+                        onTap: () => context.push('/host/payment-connect'),
+                      ),
                       _SettingsItem(
                         icon: Icons.insights_outlined,
                         title: l.profileUserInfo,
