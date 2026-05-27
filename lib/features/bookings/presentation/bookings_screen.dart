@@ -29,7 +29,6 @@ class BookingsScreen extends ConsumerStatefulWidget {
 
 class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   int _selectedTab = 0; // 0 = Próximas, 1 = Pasadas
-  int _selectedFilter = 0; // 0 = Todas, 1+2 = sub-filters
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +47,11 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
               subtitle: l.bookingsHeroSubtitle,
             ),
             const SizedBox(height: 22),
+            // Single segmented control — matches the Messages screen.
+            // The old double-bar (tab pills + filter chips) felt heavy;
+            // the status (pending / confirmed / etc.) is already
+            // surfaced as a coloured pill on every booking card, so the
+            // sub-filter became redundant noise.
             bookingsAsync.when(
               data: (bookings) {
                 final partition = _partition(bookings);
@@ -55,46 +59,30 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
                   upcomingCount: partition.upcoming.length,
                   pastCount: partition.past.length,
                   selectedTab: _selectedTab,
-                  onChanged: (i) => setState(() {
-                    _selectedTab = i;
-                    _selectedFilter = 0;
-                  }),
+                  onChanged: (i) => setState(() => _selectedTab = i),
                 );
               },
               loading: () => _TabPillsRow(
                 upcomingCount: null,
                 pastCount: null,
                 selectedTab: _selectedTab,
-                onChanged: (i) => setState(() {
-                  _selectedTab = i;
-                  _selectedFilter = 0;
-                }),
+                onChanged: (i) => setState(() => _selectedTab = i),
               ),
               error: (_, _) => _TabPillsRow(
                 upcomingCount: null,
                 pastCount: null,
                 selectedTab: _selectedTab,
-                onChanged: (i) => setState(() {
-                  _selectedTab = i;
-                  _selectedFilter = 0;
-                }),
+                onChanged: (i) => setState(() => _selectedTab = i),
               ),
             ),
-            const SizedBox(height: 12),
-            _FilterChipsRow(
-              selectedTab: _selectedTab,
-              selectedFilter: _selectedFilter,
-              onChanged: (i) => setState(() => _selectedFilter = i),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 18),
             Expanded(
               child: bookingsAsync.when(
                 data: (bookings) {
                   final partition = _partition(bookings);
-                  final base = _selectedTab == 0
+                  final list = _selectedTab == 0
                       ? partition.upcoming
                       : partition.past;
-                  final list = _applyChip(base);
                   if (list.isEmpty) {
                     return _EmptyBookings(
                       title: _selectedTab == 0
@@ -208,16 +196,6 @@ class _BookingsScreenState extends ConsumerState<BookingsScreen> {
     return DateTime(parsed.year, parsed.month, parsed.day);
   }
 
-  List<Map<String, dynamic>> _applyChip(List<Map<String, dynamic>> base) {
-    if (_selectedFilter == 0) return base; // Todas
-    final isUpcomingTab = _selectedTab == 0;
-    final target = isUpcomingTab
-        ? (_selectedFilter == 1 ? 'pending' : 'confirmed')
-        : (_selectedFilter == 1 ? 'completed' : 'cancelled');
-    return base
-        .where((b) => (b['status'] as String? ?? '').toLowerCase() == target)
-        .toList();
-  }
 }
 
 class _Partition {
@@ -408,75 +386,6 @@ class _TabPill extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Filter chips
-// ═══════════════════════════════════════════════════════════════
-class _FilterChipsRow extends StatelessWidget {
-  final int selectedTab;
-  final int selectedFilter;
-  final ValueChanged<int> onChanged;
-
-  const _FilterChipsRow({
-    required this.selectedTab,
-    required this.selectedFilter,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final labels = selectedTab == 0
-        ? [l.bookingsAll, l.bookingsPending, l.bookingsConfirmed]
-        : [l.bookingsAll, l.bookingsCompleted, l.bookingsCancelled];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: List.generate(labels.length, (i) {
-          final selected = selectedFilter == i;
-          return Padding(
-            padding: EdgeInsets.only(right: i < labels.length - 1 ? 8 : 0),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onChanged(i);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AtrioColors.guestTextPrimary
-                      : AtrioColors.guestSurfaceVariant,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: selected
-                        ? AtrioColors.guestTextPrimary
-                        : AtrioColors.guestCardBorder,
-                  ),
-                ),
-                child: Text(
-                  labels[i],
-                  style: GoogleFonts.inter(
-                    fontSize: 12.5,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: selected
-                        ? AtrioColors.guestBackground
-                        : AtrioColors.guestTextSecondary,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
       ),
     );
   }

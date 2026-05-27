@@ -110,7 +110,9 @@ class VerificationHubScreen extends ConsumerWidget {
                           total: total,
                         ),
                         const SizedBox(height: 26),
-                        SectionEyebrow(text: l.verifyAccountSteps, small: true),
+                        // Flush-left eyebrow (no lime bar) — same
+                        // language we use elsewhere in the app.
+                        PageEyebrow(text: l.verifyAccountSteps),
                         const SizedBox(height: 14),
 
                         _StepCard(

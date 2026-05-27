@@ -221,8 +221,8 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                     if (mounted) context.pop();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AtrioColors.neonLime,
-                    foregroundColor: Colors.black,
+                    backgroundColor: AtrioColors.guestTextPrimary,
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
@@ -232,7 +232,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w800,
-                      color: Colors.black,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -359,27 +359,16 @@ class _Header extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
           const SizedBox(height: 4),
-          Row(
-            children: [
-              Container(
-                width: 6,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: AtrioColors.neonLime,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                stepLabel,
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AtrioColors.guestTextSecondary,
-                  letterSpacing: 1.4,
-                ),
-              ),
-            ],
+          // Flush-left eyebrow without the lime stripe — matches the
+          // editorial language used in the rest of the app.
+          Text(
+            stepLabel,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: AtrioColors.guestTextTertiary,
+              letterSpacing: 1.4,
+            ),
           ),
           const SizedBox(height: 14),
           if (step > 0)
@@ -694,26 +683,29 @@ class _Footer extends StatelessWidget {
     required VoidCallback? onTap,
     required bool loading,
   }) {
+    // Matches the "Contratar por …" CTA in Quick Services: black pill
+    // with white label and a lime trailing icon. Same affordance the
+    // user sees on every other "commit to this action" surface.
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AtrioColors.neonLime,
-          foregroundColor: Colors.black,
+          backgroundColor: AtrioColors.guestTextPrimary,
+          foregroundColor: Colors.white,
           elevation: 0,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          disabledBackgroundColor:
-              AtrioColors.neonLime.withValues(alpha: 0.4),
+          disabledBackgroundColor: AtrioColors.guestTextPrimary
+              .withValues(alpha: 0.5),
         ),
         child: loading
             ? const SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
-                  color: Colors.black,
+                  color: Colors.white,
                   strokeWidth: 2.5,
                 ),
               )
@@ -729,13 +721,13 @@ class _Footer extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black,
+                        color: Colors.white,
                         letterSpacing: -0.3,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Icon(icon, size: 18, color: Colors.black),
+                  Icon(icon, size: 18, color: AtrioColors.neonLime),
                 ],
               ),
       ),
