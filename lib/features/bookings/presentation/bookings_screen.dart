@@ -564,180 +564,137 @@ class _BookingCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AtrioColors.guestCardBorder),
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Image
-                ClipRRect(
-                  borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(19)),
-                  child: SizedBox(
-                    width: 108,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (firstImage != null)
-                          CachedNetworkImage(
-                            imageUrl: firstImage,
-                            fit: BoxFit.cover,
-                            placeholder: (_, _) => Container(
-                                color: AtrioColors.guestSurfaceVariant),
-                            errorWidget: (_, _, _) => Container(
-                              color: AtrioColors.guestSurfaceVariant,
-                              child: const Icon(Icons.image_outlined,
-                                  color: AtrioColors.guestTextTertiary),
-                            ),
-                          )
-                        else
-                          Container(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Thumbnail — square, 86px, rounded. Drops the lime
+              // overlay circle that felt like visual noise.
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  width: 86,
+                  height: 86,
+                  child: firstImage != null
+                      ? CachedNetworkImage(
+                          imageUrl: firstImage,
+                          fit: BoxFit.cover,
+                          placeholder: (_, _) => Container(
+                              color: AtrioColors.guestSurfaceVariant),
+                          errorWidget: (_, _, _) => Container(
                             color: AtrioColors.guestSurfaceVariant,
-                            child: const Icon(Icons.image_outlined,
+                            child: Icon(_typeIcon(type),
+                                size: 22,
                                 color: AtrioColors.guestTextTertiary),
                           ),
-                        Positioned(
-                          left: 8,
-                          bottom: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: AtrioColors.neonLime,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(_typeIcon(type),
-                                size: 12, color: Colors.black),
+                        )
+                      : Container(
+                          color: AtrioColors.guestSurfaceVariant,
+                          child: Icon(_typeIcon(type),
+                              size: 22,
+                              color: AtrioColors.guestTextTertiary),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Content — title first, tiny status+date eyebrow under,
+              // total + chevron pinned bottom-right of the row.
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AtrioColors.guestTextPrimary,
+                        letterSpacing: -0.4,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Inline status + date — one tight row, no badges
+                    // or background pills.
+                    Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: _statusColor(status),
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Info
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // top
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: _statusColor(status)
-                                    .withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(7),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: _statusColor(status),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Text(
-                                    _statusLabel(context, status),
-                                    style: GoogleFonts.inter(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      color: _statusColor(status),
-                                      letterSpacing: 0.4,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _statusLabel(context, status),
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: _statusColor(status),
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                        if (checkIn != null) ...[
+                          Text(
+                            '  ·  ',
+                            style: GoogleFonts.inter(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: AtrioColors.guestTextTertiary,
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              title,
-                              maxLines: 2,
+                          ),
+                          Flexible(
+                            child: Text(
+                              checkOut != null
+                                  ? '${_date(context, checkIn)} → ${_date(context, checkOut)}'
+                                  : _date(context, checkIn),
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w800,
-                                color: AtrioColors.guestTextPrimary,
-                                letterSpacing: -0.3,
-                                height: 1.2,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: AtrioColors.guestTextSecondary,
+                                letterSpacing: -0.1,
                               ),
                             ),
-                            if (checkIn != null) ...[
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.calendar_today_rounded,
-                                      size: 12,
-                                      color: AtrioColors.guestTextTertiary),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      checkOut != null
-                                          ? '${_date(context, checkIn)} → ${_date(context, checkOut)}'
-                                          : _date(context, checkIn),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color:
-                                            AtrioColors.guestTextSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                        // bottom
-                        Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  total,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w800,
-                                    color: AtrioColors.guestTextPrimary,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.only(left: 8),
-                                child: Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 22,
-                                  color: AtrioColors.guestTextTertiary,
-                                ),
-                              ),
-                            ],
                           ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            total,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: AtrioColors.guestTextPrimary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: AtrioColors.guestTextTertiary,
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
