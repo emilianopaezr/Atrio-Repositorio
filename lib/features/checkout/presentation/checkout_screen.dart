@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_typography.dart';
+import '../../../core/models/atrio_pricing_result.dart';
 import '../../../core/models/listing_model.dart';
 import '../../../core/models/pricing_result_model.dart';
 import '../../../core/providers/listings_provider.dart';
@@ -36,6 +39,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   int _guests = 1;
   bool _isBooking = false;
   PricingResult? _pricingResult;
+  // Server-side Servicio Atrio breakdown — refreshed every time
+  // dates/guests/slots change. Source of truth for fee + total.
+  AtrioPricingResult? _atrioPricing;
   final Set<String> _selectedTimeSlots = {};
   final Map<String, String> _slotEndTimes = {};
 
@@ -184,6 +190,43 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       pricingModel: _isPromoRate ? 'PROMO_1_PERCENT' : 'STANDARD_7_CAP99',
     );
     if (mounted) setState(() => _pricingResult = p);
+
+    // Mirror through the new server-side engine so the displayed fee +
+    // total come from the canonical RPC. Done after the legacy
+    // calculation so the UI shows something immediately, then refines.
+    unawaited(_refreshAtrioPricing(l));
+  }
+
+  /// Calls calculate_atrio_pricing for the current selection and stores
+  /// the result. The "effective base" pre-multiplies nights / blocks /
+  /// guests on the client, and the RPC then derives the rate + minimum.
+  Future<void> _refreshAtrioPricing(Listing l) async {
+    final mode = l.rentalMode;
+    final basePrice = (l.basePrice ?? 0).toInt();
+    final perPerson = _isPerPerson(l);
+    final guestMultiplier = perPerson ? _guests : 1;
+    int units;
+    if (mode == 'hours') {
+      units = _blockCount(l) > 0 ? _blockCount(l) : 1;
+    } else if (mode == 'full_day') {
+      units = 1;
+    } else {
+      if (_checkIn == null || _checkOut == null) return;
+      units = _nights;
+    }
+    final effectiveUnits = units * guestMultiplier;
+    if (basePrice <= 0 || effectiveUnits <= 0) return;
+    try {
+      final p = await PricingEngineService.calculateAtrioPricing(
+        hostId: l.hostId,
+        basePrice: basePrice,
+        units: effectiveUnits,
+      );
+      if (mounted) setState(() => _atrioPricing = p);
+    } catch (_) {
+      // Network failure: leave previous snapshot in place and let the
+      // legacy preview render. The confirm step has its own guard.
+    }
   }
 
   Future<void> _confirm(Listing listing) async {
@@ -246,6 +289,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       final sortedSlots = List<String>.from(_selectedTimeSlots)..sort();
 
+      // Source of truth for the Servicio Atrio fee + total comes from
+      // the most recent RPC response. Re-fetch right before submitting
+      // so the persisted snapshot matches the server (and any host
+      // verification / count changes since the user opened the screen).
+      final atrioPricing =
+          await PricingEngineService.calculateAtrioPricing(
+        hostId: listing.hostId,
+        basePrice: (listing.basePrice ?? 0).toInt(),
+        units: units * (_isPerPerson(listing) ? _guests : 1),
+      );
+
+      // The customer must pay base + cleaning + Servicio Atrio.
+      // Cleaning is treated as a pass-through to the host (RPC ignores it).
+      final effectiveTotal =
+          atrioPricing.precioBase + clean.round() + atrioPricing.servicioAtrioAmount;
+
       final bookingData = {
         'listing_id': listing.id,
         'host_id': listing.hostId,
@@ -253,10 +312,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         'check_in': effectiveCheckIn.toIso8601String(),
         'check_out': effectiveCheckOut.toIso8601String(),
         'guests_count': _guests,
-        'base_total': sub,
+        // Legacy columns (kept for backward compat during the migration)
+        'base_total': atrioPricing.precioBase.toDouble(),
         'cleaning_fee': clean,
-        'service_fee': fee,
-        'total': total,
+        'service_fee': atrioPricing.servicioAtrioAmount.toDouble(),
+        'total': effectiveTotal.toDouble(),
+        // Servicio Atrio snapshot (new canonical columns)
+        ...atrioPricing.toBookingColumns(),
         'status': listing.instantBooking ? 'confirmed' : 'pending',
         'payment_status': 'pending',
         'rental_mode': mode,
@@ -621,11 +683,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final blocks = mode == 'hours' ? (_blockCount(listing) > 0 ? _blockCount(listing) : 1) : 1;
     final totalH = mode == 'hours' ? blocks * blockH : 0;
 
-    // Always use helper methods for correct pricing (ignores potentially stale _pricingResult)
+    // Subtotal + cleaning still come from the helpers (they encode the
+    // multi-mode pricing). The Atrio fee + total are driven by the
+    // server-side snapshot when present, falling back to the legacy
+    // calc while the RPC is loading or after a network failure.
     final sub = _calcSubtotal(listing);
     final clean = mode == 'hours' ? 0.0 : listing.cleaningFee;
-    final fee = _calcServiceFee(sub, clean);
-    final total = sub + clean + fee;
+    final atrio = _atrioPricing;
+    final fee = atrio != null
+        ? atrio.servicioAtrioAmount.toDouble()
+        : _calcServiceFee(sub, clean);
+    final total = atrio != null
+        ? (atrio.precioBase + clean.round() + atrio.servicioAtrioAmount).toDouble()
+        : (sub + clean + fee);
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     String modeLabel;
@@ -872,15 +942,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       PriceBreakdownItem(l.qsServicePrice, sub),
                       if (clean > 0) PriceBreakdownItem(l.checkoutCleaning, clean),
                       PriceBreakdownItem(
-                        _isPromoRate
-                            ? l.checkoutPromoFeeLabel('${(_feeRate * 100).toStringAsFixed(0)}%')
-                            : (fee >= 90000
-                                ? l.checkoutServiceFeeCapped('${(_feeRate * 100).toStringAsFixed(0)}%')
-                                : l.checkoutServiceFeeLabel('${(_feeRate * 100).toStringAsFixed(0)}%')),
+                        _atrioPricing == null
+                            // Loading state — show neutral label.
+                            ? l.qsAtrioFee
+                            : (_atrioPricing!.servicioAtrioMinimoAplicado
+                                ? l.qsAtrioFeeMinApplied
+                                : (_atrioPricing!.initialBenefitApplied
+                                    ? '${l.qsAtrioFeeInitial} (${_atrioPricing!.porcentajeLabel})'
+                                    : '${l.qsAtrioFee} (${_atrioPricing!.porcentajeLabel})')),
                         fee,
                       ),
                     ],
-                    footer: _isPromoRate
+                    footer: (_atrioPricing?.initialBenefitApplied ?? false)
                         ? Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
@@ -893,7 +966,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    l.checkoutPromoRemaining(PricingEngineService.promoBookingThreshold - (_hostBookingsCount ?? 0)),
+                                    l.qsAtrioBenefitNote,
                                     style: GoogleFonts.inter(fontSize: 11, color: AtrioColors.neonLimeDark, fontWeight: FontWeight.w600),
                                   ),
                                 ),
