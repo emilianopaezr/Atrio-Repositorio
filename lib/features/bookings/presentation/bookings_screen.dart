@@ -283,9 +283,11 @@ class _Header extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Tab pills — 4 segmentos (Todas / Pendientes / Confirmadas /
-// Pasadas) en una sola fila, estilo Messages: badge neutro,
-// sin acento lima.
+// Tab chips — 4 filtros (Todas / Pendientes / Confirmadas /
+// Pasadas) en un row con scroll horizontal. Cada chip se auto-
+// dimensiona al texto, así "Confirmadas" no se aprieta y el
+// usuario puede deslizar si la pantalla es chica. Badge neutro
+// estilo Mensajes — sin acento lima.
 // ═══════════════════════════════════════════════════════════════
 class _TabPillsRow extends StatelessWidget {
   final int? allCount;
@@ -307,74 +309,51 @@ class _TabPillsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AtrioColors.guestSurfaceVariant,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: _TabPill(
-                label: l.bookingsAll,
-                count: allCount,
-                selected: selectedTab == 0,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onChanged(0);
-                },
-              ),
-            ),
-            Expanded(
-              child: _TabPill(
-                label: l.bookingsPending,
-                count: pendingCount,
-                selected: selectedTab == 1,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onChanged(1);
-                },
-              ),
-            ),
-            Expanded(
-              child: _TabPill(
-                label: l.bookingsConfirmed,
-                count: confirmedCount,
-                selected: selectedTab == 2,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onChanged(2);
-                },
-              ),
-            ),
-            Expanded(
-              child: _TabPill(
-                label: l.bookingsPast,
-                count: pastCount,
-                selected: selectedTab == 3,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onChanged(3);
-                },
-              ),
-            ),
-          ],
-        ),
+    final items = <_ChipSpec>[
+      _ChipSpec(label: l.bookingsAll, count: allCount, index: 0),
+      _ChipSpec(label: l.bookingsPending, count: pendingCount, index: 1),
+      _ChipSpec(label: l.bookingsConfirmed, count: confirmedCount, index: 2),
+      _ChipSpec(label: l.bookingsPast, count: pastCount, index: 3),
+    ];
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: items.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final spec = items[i];
+          return _TabChip(
+            label: spec.label,
+            count: spec.count,
+            selected: selectedTab == spec.index,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onChanged(spec.index);
+            },
+          );
+        },
       ),
     );
   }
 }
 
-class _TabPill extends StatelessWidget {
+class _ChipSpec {
+  final String label;
+  final int? count;
+  final int index;
+  const _ChipSpec({required this.label, required this.count, required this.index});
+}
+
+class _TabChip extends StatelessWidget {
   final String label;
   final int? count;
   final bool selected;
   final VoidCallback onTap;
 
-  const _TabPill({
+  const _TabChip({
     required this.label,
     required this.count,
     required this.selected,
@@ -388,63 +367,54 @@ class _TabPill extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        height: 40,
-        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AtrioColors.guestTextPrimary : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          color: selected
+              ? AtrioColors.guestTextPrimary
+              : AtrioColors.guestSurfaceVariant,
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    style: GoogleFonts.inter(
-                      fontSize: 12.5,
-                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                      color: selected
-                          ? Colors.white
-                          : AtrioColors.guestTextSecondary,
-                      letterSpacing: -0.2,
-                    ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              maxLines: 1,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                color: selected
+                    ? Colors.white
+                    : AtrioColors.guestTextSecondary,
+                letterSpacing: -0.2,
+              ),
+            ),
+            if (count != null) ...[
+              const SizedBox(width: 7),
+              // Badge neutro — translúcido sobre el chip seleccionado
+              // (estilo Mensajes), gris claro cuando no está activo.
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? Colors.white24
+                      : AtrioColors.guestCardBorder,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Text(
+                  '$count',
+                  style: GoogleFonts.inter(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    color: selected
+                        ? Colors.white
+                        : AtrioColors.guestTextSecondary,
                   ),
                 ),
               ),
-              if (count != null) ...[
-                const SizedBox(width: 6),
-                // Badge neutral — semi-transparent white over the dark
-                // selected pill (matches Mensajes), light gray when not
-                // selected. Lime accent intentionally avoided.
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? Colors.white24
-                        : AtrioColors.guestCardBorder,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Text(
-                    '$count',
-                    style: GoogleFonts.inter(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      color: selected
-                          ? Colors.white
-                          : AtrioColors.guestTextSecondary,
-                    ),
-                  ),
-                ),
-              ],
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -552,7 +522,7 @@ class _BookingCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         onTap: () {
           HapticFeedback.selectionClick();
           final id = booking['id']?.toString() ?? '';
@@ -561,22 +531,24 @@ class _BookingCard extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             color: AtrioColors.guestSurface,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: AtrioColors.guestCardBorder),
           ),
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Thumbnail — square, 86px, rounded. Drops the lime
-              // overlay circle that felt like visual noise.
+              // ─── Hero image — full-width, 16:9, lime type chip ───
               ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: SizedBox(
-                  width: 86,
-                  height: 86,
-                  child: firstImage != null
-                      ? CachedNetworkImage(
+                borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(21)),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (firstImage != null)
+                        CachedNetworkImage(
                           imageUrl: firstImage,
                           fit: BoxFit.cover,
                           placeholder: (_, _) => Container(
@@ -584,22 +556,54 @@ class _BookingCard extends StatelessWidget {
                           errorWidget: (_, _, _) => Container(
                             color: AtrioColors.guestSurfaceVariant,
                             child: Icon(_typeIcon(type),
-                                size: 22,
+                                size: 36,
                                 color: AtrioColors.guestTextTertiary),
                           ),
                         )
-                      : Container(
+                      else
+                        Container(
                           color: AtrioColors.guestSurfaceVariant,
                           child: Icon(_typeIcon(type),
-                              size: 22,
+                              size: 36,
                               color: AtrioColors.guestTextTertiary),
                         ),
+                      // Lime type pill — bottom-left, icon + tiny label.
+                      Positioned(
+                        bottom: 12,
+                        left: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 9, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AtrioColors.neonLime,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_typeIcon(type),
+                                  size: 13, color: Colors.black),
+                              const SizedBox(width: 6),
+                              Text(
+                                _typeLabel(context, type),
+                                style: GoogleFonts.inter(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.black,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(width: 14),
-              // Content — title first, tiny status+date eyebrow under,
-              // total + chevron pinned bottom-right of the row.
-              Expanded(
+              // ─── Content — title, inline status+date, total+chevron ───
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -609,7 +613,7 @@ class _BookingCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: AtrioColors.guestTextPrimary,
                         letterSpacing: -0.4,
@@ -617,8 +621,6 @@ class _BookingCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    // Inline status + date — one tight row, no badges
-                    // or background pills.
                     Row(
                       children: [
                         Container(
@@ -666,7 +668,7 @@ class _BookingCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -677,7 +679,7 @@ class _BookingCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
-                              fontSize: 17,
+                              fontSize: 18,
                               fontWeight: FontWeight.w800,
                               color: AtrioColors.guestTextPrimary,
                               letterSpacing: -0.5,
@@ -686,7 +688,7 @@ class _BookingCard extends StatelessWidget {
                         ),
                         const Icon(
                           Icons.chevron_right_rounded,
-                          size: 20,
+                          size: 22,
                           color: AtrioColors.guestTextTertiary,
                         ),
                       ],
@@ -699,6 +701,21 @@ class _BookingCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Human label for the type chip on the image.
+  String _typeLabel(BuildContext context, String? t) {
+    final l = AppLocalizations.of(context);
+    switch (t) {
+      case 'space':
+        return l.qsCatAll == 'Todos' ? 'ESPACIO' : 'SPACE';
+      case 'experience':
+        return l.qsCatAll == 'Todos' ? 'EXPERIENCIA' : 'EXPERIENCE';
+      case 'service':
+        return l.qsCatAll == 'Todos' ? 'SERVICIO' : 'SERVICE';
+      default:
+        return l.qsCatAll == 'Todos' ? 'RESERVA' : 'BOOKING';
+    }
   }
 }
 
