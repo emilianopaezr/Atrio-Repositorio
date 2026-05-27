@@ -36,6 +36,42 @@ function mapStatus(mpStatus: string): string {
   }
 }
 
+/// Maps MP status → ledger event_type. Mirrors the payment_events
+/// vocabulary defined in migration 029.
+function mapEventType(mpStatus: string): string {
+  switch (mpStatus) {
+    case "approved":
+      return "payment_approved";
+    case "rejected":
+    case "cancelled":
+      return "payment_rejected";
+    case "refunded":
+    case "charged_back":
+      return "payment_refunded";
+    case "in_process":
+    case "pending":
+    case "authorized":
+    default:
+      return "payment_pending";
+  }
+}
+
+/// Default host_payout_status transitions tied to the payment event.
+/// `null` means "don't touch the existing value".
+function payoutStatusForEvent(eventType: string): string | null {
+  switch (eventType) {
+    case "payment_approved":
+      // Funds live in MP until the merchant releases them. Mark as
+      // pending here; a separate event will flip to host_payout_paid.
+      return "host_funds_pending";
+    case "payment_refunded":
+      // Refund undoes the host's pending balance.
+      return "host_payout_failed";
+    default:
+      return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -105,14 +141,22 @@ serve(async (req) => {
       return new Response("ok-no-ref", { status: 200 });
     }
     const dbStatus = mapStatus(payment.status);
+    const eventType = mapEventType(payment.status);
+    const payoutStatus = payoutStatusForEvent(eventType);
 
     const admin = createClient(SUPA_URL, SUPA_SERVICE);
+
+    // 1) Update the booking row (status + payout side-effect).
+    const update: Record<string, unknown> = {
+      payment_status: dbStatus,
+      mp_payment_id: String(payment.id),
+    };
+    if (payoutStatus !== null) {
+      update["host_payout_status"] = payoutStatus;
+    }
     const { error } = await admin
       .from("bookings")
-      .update({
-        payment_status: dbStatus,
-        mp_payment_id: String(payment.id),
-      })
+      .update(update)
       .eq("id", bookingId);
 
     if (error) {
@@ -120,8 +164,33 @@ serve(async (req) => {
       return new Response("DB error", { status: 500 });
     }
 
+    // 2) Append to the payment_events ledger (best-effort: don't fail
+    // the webhook if this insert errors, MP would retry the whole thing
+    // and we'd get duplicate booking-row updates).
+    try {
+      const evtPayload = {
+        mp_status: payment.status,
+        mp_status_detail: payment.status_detail ?? null,
+        transaction_amount: payment.transaction_amount ?? null,
+        net_received_amount:
+          payment.transaction_details?.net_received_amount ?? null,
+        currency_id: payment.currency_id ?? null,
+        date_approved: payment.date_approved ?? null,
+        date_last_updated: payment.date_last_updated ?? null,
+      };
+      await admin.from("payment_events").insert({
+        booking_id: bookingId,
+        event_type: eventType,
+        provider: "mercadopago",
+        provider_id: String(payment.id),
+        payload: evtPayload,
+      });
+    } catch (e) {
+      console.error("[mp-webhook] payment_events insert failed", e);
+    }
+
     console.log(
-      `[mp-webhook] booking=${bookingId} mp_status=${payment.status} -> ${dbStatus}`,
+      `[mp-webhook] booking=${bookingId} mp_status=${payment.status} -> ${dbStatus} event=${eventType}`,
     );
     return new Response("ok", { status: 200 });
   } catch (e) {
