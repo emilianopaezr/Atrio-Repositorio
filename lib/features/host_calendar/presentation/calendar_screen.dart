@@ -929,9 +929,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             bgColor = AtrioColors.neonLime.withValues(alpha: 0.18);
             textColor = AtrioColors.neonLime;
           } else if (booked) {
+            // The tinted background + green text already conveys
+            // the booked state — the extra dot was visual noise.
             bgColor = const Color(0xFF22C55E).withValues(alpha: 0.16);
             textColor = const Color(0xFF4ADE80);
-            statusDot = const Color(0xFF22C55E);
           } else if (blocked) {
             bgColor = const Color(0xFFEF4444).withValues(alpha: 0.14);
             textColor = const Color(0xFFFCA5A5);
@@ -949,7 +950,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             onLongPress: isPast ? null : () => _showDayDetail(date),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              margin: const EdgeInsets.all(3),
+              margin: const EdgeInsets.all(2),
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(12),
@@ -999,7 +1000,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _actionBarContent() {
     final l = AppLocalizations.of(context);
-    final bottomPad = MediaQuery.of(context).padding.bottom;
 
     BoxDecoration decoration() => BoxDecoration(
           color: AtrioColors.hostSurface,
@@ -1030,7 +1030,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (_isRangeMode && _rangeStart != null && _rangeEnd != null) {
       return Container(
         key: const ValueKey('range-ready'),
-        padding: EdgeInsets.fromLTRB(16, 14, 16, bottomPad + 14),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: decoration(),
         child: Row(
           children: [
@@ -1085,7 +1085,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
       return Container(
         key: const ValueKey('single-day'),
-        padding: EdgeInsets.fromLTRB(16, 14, 16, bottomPad + 14),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: decoration(),
         child: Row(
           children: [
@@ -1163,10 +1163,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
 
     // ── Range mode but not yet complete → hint + close ─────────────────
+    // No bottomPad inside the padding: the SizedBox(56 + viewPadding.bottom)
+    // beneath the action bar already accounts for the floating nav, so
+    // adding bottomPad here would push the hint upward off-center.
     if (_isRangeMode && (_rangeStart == null || _rangeEnd == null)) {
       return Container(
         key: const ValueKey('range-hint'),
-        padding: EdgeInsets.fromLTRB(16, 14, 16, bottomPad + 14),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: decoration(),
         child: Row(
           children: [
@@ -1189,11 +1192,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       );
     }
 
-    // No selection → reserve only the safe-area inset.
-    return SizedBox(
-      key: const ValueKey('empty'),
-      height: bottomPad + 8,
-    );
+    // No selection → no extra reservation; the SizedBox below the
+    // action bar already accounts for the floating nav + safe area.
+    return const SizedBox(key: ValueKey('empty'), height: 0);
   }
 
   Widget _legend(Color color, String label) {
