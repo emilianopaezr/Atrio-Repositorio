@@ -166,9 +166,16 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
         ref.invalidate(conversationsProvider);
       },
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         itemCount: conversations.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        // 1px hairline between rows (Airbnb / Instagram inbox style)
+        // instead of card-with-gap. Indented past the avatar so the
+        // divider doesn't cut under the icon.
+        separatorBuilder: (_, _) => Container(
+          margin: const EdgeInsets.only(left: 62),
+          height: 1,
+          color: AtrioColors.guestCardBorder,
+        ),
         itemBuilder: (context, index) {
           final conv = conversations[index];
           final participants = List<String>.from(conv['participant_ids'] ?? []);
@@ -304,7 +311,9 @@ class _SearchPill extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-// TABS — Unread / Read with count pill
+// TABS — Todos / Anfitrión / Huésped. Horizontal-scrollable chip
+// row to match the bookings screen pattern. Each chip auto-sizes
+// to its content, neutral count badge (no lime).
 // ─────────────────────────────────────────────────────────────
 class _Tabs extends StatelessWidget {
   final TabController controller;
@@ -326,114 +335,99 @@ class _Tabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AtrioColors.guestSurfaceVariant,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            _tab(
-              label: allLabel,
-              count: allCount,
-              selected: controller.index == 0,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                controller.animateTo(0);
-              },
-              highlightCount: false,
-            ),
-            _tab(
-              label: hostLabel,
-              count: hostCount,
-              selected: controller.index == 1,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                controller.animateTo(1);
-              },
-              highlightCount: false,
-            ),
-            _tab(
-              label: guestLabel,
-              count: guestCount,
-              selected: controller.index == 2,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                controller.animateTo(2);
-              },
-              highlightCount: false,
-            ),
-          ],
-        ),
+    final items = <(String, int, int)>[
+      (allLabel, allCount, 0),
+      (hostLabel, hostCount, 1),
+      (guestLabel, guestCount, 2),
+    ];
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: items.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final (label, count, idx) = items[i];
+          return _TabChip(
+            label: label,
+            count: count,
+            selected: controller.index == idx,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              controller.animateTo(idx);
+            },
+          );
+        },
       ),
     );
   }
+}
 
-  Widget _tab({
-    required String label,
-    required int count,
-    required bool selected,
-    required VoidCallback onTap,
-    required bool highlightCount,
-  }) {
-    final lime = highlightCount && count > 0;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? AtrioColors.guestTextPrimary : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Text(
-                  label,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 12.5,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    color: selected ? Colors.white : AtrioColors.guestTextSecondary,
-                    letterSpacing: -0.2,
-                  ),
+class _TabChip extends StatelessWidget {
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+  const _TabChip({
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? AtrioColors.guestTextPrimary
+              : AtrioColors.guestSurfaceVariant,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              maxLines: 1,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                color: selected
+                    ? Colors.white
+                    : AtrioColors.guestTextSecondary,
+                letterSpacing: -0.2,
+              ),
+            ),
+            const SizedBox(width: 7),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: selected
+                    ? Colors.white24
+                    : AtrioColors.guestCardBorder,
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: Text(
+                '$count',
+                style: GoogleFonts.inter(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  color: selected
+                      ? Colors.white
+                      : AtrioColors.guestTextSecondary,
                 ),
               ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: lime
-                      ? AtrioColors.neonLime
-                      : (selected
-                          ? Colors.white24
-                          : AtrioColors.guestCardBorder),
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: Text(
-                  '$count',
-                  style: GoogleFonts.inter(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: lime
-                        ? Colors.black
-                        : (selected
-                            ? Colors.white
-                            : AtrioColors.guestTextSecondary),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -475,67 +469,43 @@ class _ConversationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return GestureDetector(
+    // Minimalist card: borderless by default, a single 1px hairline
+     // separator handled by the list. Avatar shrinks to 48px circle,
+     // unread state surfaces as a tiny lime dot to the right of the
+     // time (no loud badge, no thick border).
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AtrioColors.guestSurface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isUnread
-                ? AtrioColors.guestTextPrimary
-                : AtrioColors.guestCardBorder,
-            width: isUnread ? 1.4 : 1,
-          ),
-        ),
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Avatar
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SizedBox(
-                    width: 54,
-                    height: 54,
-                    child: imageUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: imageUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (_, _) => Container(color: AtrioColors.guestSurfaceVariant),
-                            errorWidget: (_, _, _) => Container(
-                              color: AtrioColors.neonLime.withValues(alpha: 0.2),
-                              child: const Icon(Icons.image_rounded,
-                                  color: AtrioColors.guestTextPrimary, size: 22),
-                            ),
-                          )
-                        : Container(
-                            color: AtrioColors.neonLime,
-                            child: const Icon(Icons.chat_bubble_outline_rounded,
-                                color: Colors.black, size: 22),
-                          ),
-                  ),
-                ),
-                if (isUnread)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: AtrioColors.neonLime,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AtrioColors.guestSurface, width: 2),
+            ClipOval(
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: imageUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: imageUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (_, _) => Container(
+                            color: AtrioColors.guestSurfaceVariant),
+                        errorWidget: (_, _, _) => Container(
+                          color: AtrioColors.guestSurfaceVariant,
+                          child: const Icon(Icons.person_rounded,
+                              color: AtrioColors.guestTextTertiary,
+                              size: 22),
+                        ),
+                      )
+                    : Container(
+                        color: AtrioColors.guestSurfaceVariant,
+                        child: const Icon(Icons.person_rounded,
+                            color: AtrioColors.guestTextTertiary, size: 22),
                       ),
-                    ),
-                  ),
-              ],
+              ),
             ),
-            const SizedBox(width: 12),
-            // Text info
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,7 +517,9 @@ class _ConversationCard extends StatelessWidget {
                           title,
                           style: GoogleFonts.inter(
                             fontSize: 15,
-                            fontWeight: isUnread ? FontWeight.w800 : FontWeight.w700,
+                            fontWeight: isUnread
+                                ? FontWeight.w800
+                                : FontWeight.w700,
                             color: AtrioColors.guestTextPrimary,
                             letterSpacing: -0.3,
                           ),
@@ -561,21 +533,35 @@ class _ConversationCard extends StatelessWidget {
                           _formatTime(time!),
                           style: GoogleFonts.inter(
                             fontSize: 11.5,
-                            fontWeight: isUnread ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: isUnread
+                                ? FontWeight.w800
+                                : FontWeight.w500,
                             color: isUnread
                                 ? AtrioColors.guestTextPrimary
                                 : AtrioColors.guestTextTertiary,
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                      ],
+                      if (isUnread) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AtrioColors.neonLime,
+                            shape: BoxShape.circle,
                           ),
                         ),
                       ],
                     ],
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       if (isMe)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 4),
+                        const Padding(
+                          padding: EdgeInsets.only(right: 4),
                           child: Icon(
                             Icons.done_all_rounded,
                             size: 13,
@@ -587,34 +573,18 @@ class _ConversationCard extends StatelessWidget {
                           '${isMe ? l.chatYou : ""}$lastMessage',
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            fontWeight: isUnread ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight: isUnread
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                             color: isUnread
                                 ? AtrioColors.guestTextPrimary
                                 : AtrioColors.guestTextSecondary,
+                            letterSpacing: -0.1,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (isUnread) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AtrioColors.neonLime,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            l.chatNewBadge,
-                            style: GoogleFonts.inter(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.black,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ],
