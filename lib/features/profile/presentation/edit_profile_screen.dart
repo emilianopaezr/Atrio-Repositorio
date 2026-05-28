@@ -576,37 +576,45 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
-                                children: const [
-                                  'Cocina',
-                                  'Viajes',
-                                  'Música',
-                                  'Cine',
-                                  'Fotografía',
-                                  'Arte',
-                                  'Lectura',
-                                  'Naturaleza',
-                                  'Yoga',
-                                  'Fitness',
-                                  'Surf',
-                                  'Senderismo',
-                                  'Vino',
-                                  'Café',
-                                  'Tecnología',
-                                  'Diseño',
-                                  'Mascotas',
-                                  'Plantas',
-                                  'Deporte',
-                                  'Bailar',
-                                ].map((i) {
-                                  final selected = _interests.contains(i);
+                                // Each tuple is (storage key, localised
+                                // label). The storage key stays stable
+                                // across locales so we don't break
+                                // existing rows; the label flips with
+                                // the locale.
+                                children: [
+                                  ('Cocina', l.interestCooking),
+                                  ('Viajes', l.interestTravel),
+                                  ('Música', l.interestMusic),
+                                  ('Cine', l.interestCinema),
+                                  ('Fotografía', l.interestPhotography),
+                                  ('Arte', l.interestArt),
+                                  ('Lectura', l.interestReading),
+                                  ('Naturaleza', l.interestNature),
+                                  ('Yoga', l.interestYoga),
+                                  ('Fitness', l.interestFitness),
+                                  ('Surf', l.interestSurf),
+                                  ('Senderismo', l.interestHiking),
+                                  ('Vino', l.interestWine),
+                                  ('Café', l.interestCoffee),
+                                  ('Tecnología', l.interestTech),
+                                  ('Diseño', l.interestDesign),
+                                  ('Mascotas', l.interestPets),
+                                  ('Plantas', l.interestPlants),
+                                  ('Deporte', l.interestSports),
+                                  ('Bailar', l.interestDance),
+                                ].map((pair) {
+                                  final storageKey = pair.$1;
+                                  final label = pair.$2;
+                                  final selected =
+                                      _interests.contains(storageKey);
                                   return GestureDetector(
                                     onTap: () {
                                       HapticFeedback.selectionClick();
                                       setState(() {
                                         if (selected) {
-                                          _interests.remove(i);
+                                          _interests.remove(storageKey);
                                         } else if (_interests.length < 10) {
-                                          _interests.add(i);
+                                          _interests.add(storageKey);
                                         }
                                       });
                                     },
@@ -626,7 +634,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                         ),
                                       ),
                                       child: Text(
-                                        i,
+                                        label,
                                         style: GoogleFonts.inter(
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w700,

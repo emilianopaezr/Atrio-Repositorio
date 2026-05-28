@@ -2673,6 +2673,141 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAccountError => 'Couldn\'t delete the account. Try again.';
 
   @override
+  String get pmSectionProcessor => 'Processor';
+
+  @override
+  String get pmSectionHowItWorks => 'How it works';
+
+  @override
+  String get pmSectionSecurity => 'Security';
+
+  @override
+  String get pmSectionHostPayouts => 'Host payouts';
+
+  @override
+  String get pmHeroTitle => 'Pay by card\nright inside Atrio';
+
+  @override
+  String get pmHeroBody =>
+      'Without leaving the app. Every payment is encrypted end-to-end and processed by Mercado Pago.';
+
+  @override
+  String get pmBadgeInstant => 'INSTANT';
+
+  @override
+  String get pmBadgeTest => 'TEST';
+
+  @override
+  String get pmBadgeActive => 'ACTIVE';
+
+  @override
+  String get pmMpSubtitle => 'Official processor · Credit, debit and prepaid';
+
+  @override
+  String get pmHostEarnings => 'Your earnings';
+
+  @override
+  String get pmHostEarningsBody =>
+      'Every approved booking credits to your Atrio balance. Set up your bank account from the Dashboard to withdraw.';
+
+  @override
+  String get pmStep1Title => 'Tap \"Pay\"';
+
+  @override
+  String get pmStep1Body => 'The secure Atrio form opens';
+
+  @override
+  String get pmStep2Title => 'Enter your card';
+
+  @override
+  String get pmStep2Body => 'Number + expiry + CVV + RUT';
+
+  @override
+  String get pmStep3Title => 'Atrio encrypts and sends to MP';
+
+  @override
+  String get pmStep3Body => 'Your data is NEVER stored in the app';
+
+  @override
+  String get pmStep4Title => 'Booking confirmed';
+
+  @override
+  String get pmStep4Body => 'Your booking is scheduled instantly';
+
+  @override
+  String get pmSecurityTitle => 'End-to-end encryption';
+
+  @override
+  String get pmSecurityBody =>
+      'We never store your card number. Every transaction uses a unique token issued by Mercado Pago. PCI DSS compliant.';
+
+  @override
+  String get pmSupportTitle => 'Having a payment problem?';
+
+  @override
+  String get pmSupportSubtitle => 'Reach out to the help center';
+
+  @override
+  String get interestCooking => 'Cooking';
+
+  @override
+  String get interestTravel => 'Travel';
+
+  @override
+  String get interestMusic => 'Music';
+
+  @override
+  String get interestCinema => 'Cinema';
+
+  @override
+  String get interestPhotography => 'Photography';
+
+  @override
+  String get interestArt => 'Art';
+
+  @override
+  String get interestReading => 'Reading';
+
+  @override
+  String get interestNature => 'Nature';
+
+  @override
+  String get interestYoga => 'Yoga';
+
+  @override
+  String get interestFitness => 'Fitness';
+
+  @override
+  String get interestSurf => 'Surf';
+
+  @override
+  String get interestHiking => 'Hiking';
+
+  @override
+  String get interestWine => 'Wine';
+
+  @override
+  String get interestCoffee => 'Coffee';
+
+  @override
+  String get interestTech => 'Tech';
+
+  @override
+  String get interestDesign => 'Design';
+
+  @override
+  String get interestPets => 'Pets';
+
+  @override
+  String get interestPlants => 'Plants';
+
+  @override
+  String get interestSports => 'Sports';
+
+  @override
+  String get interestDance => 'Dance';
+
+  @override
   String get profileHelpCenter => 'Help center';
 
   @override

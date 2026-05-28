@@ -242,14 +242,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             tappable: true,
             onTap: () => _showChangePassword(l),
           ),
-          _divider(),
-          _RowTile(
-            icon: Icons.delete_outline_rounded,
-            label: l.lblDeleteAccount,
-            tappable: true,
-            danger: true,
-            onTap: () => _showDeleteConfirmation(l),
-          ),
         ]),
         const SizedBox(height: 32),
 
@@ -404,58 +396,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showDeleteConfirmation(AppLocalizations l) {
-    HapticFeedback.selectionClick();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AtrioColors.guestSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(
-          l.lblDeleteAccount,
-          style: GoogleFonts.inter(
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-            color: AtrioColors.error,
-          ),
-        ),
-        content: Text(
-          l.dlgDeleteAccountConfirm,
-          style: GoogleFonts.inter(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w500,
-            color: AtrioColors.guestTextSecondary,
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(l.btnCancel,
-                  style: GoogleFonts.inter(
-                      color: AtrioColors.guestTextSecondary))),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(l.msgDeleteRequested)),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AtrioColors.error,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(l.btnDelete,
-                style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w800, color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ─── Toggle tile ─────────────────────────────────────────────

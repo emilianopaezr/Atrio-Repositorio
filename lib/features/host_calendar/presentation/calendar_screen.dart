@@ -778,12 +778,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
                 // ─── Action bar ───
                 _buildActionBar(),
-                // HostShell sets extendBody: true, which makes the
-                // body draw BEHIND the bottom nav. Reserve roughly
-                // the nav height + the system gesture inset so the
-                // legend / action bar don't get clipped.
+                // HostShell uses extendBody: true. Reserve just enough
+                // space at the bottom for the nav itself (~56 px) so
+                // the legend + action bar stay visible without
+                // squeezing the calendar grid above.
                 SizedBox(
-                  height: 72 +
+                  height: 56 +
                       MediaQuery.of(context).viewPadding.bottom,
                 ),
               ],
@@ -876,11 +876,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
+      // childAspectRatio: 1 forces every cell to be a square the same
+      // width as the column. With 6 rows × cell_width that overflows
+      // the Expanded constraint when the bottom nav + legend take
+      // their share, so the last row (29-30 / 31) was getting clipped.
+      // 1.18 keeps cells visually balanced while letting 6 rows fit
+      // comfortably on a 408px-wide / ~720px-tall guest area.
       child: GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 7,
-          childAspectRatio: 1,
+          childAspectRatio: 1.18,
         ),
         itemCount: 42,
         itemBuilder: (_, index) {

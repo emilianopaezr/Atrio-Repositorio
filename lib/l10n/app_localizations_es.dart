@@ -2686,6 +2686,141 @@ class AppLocalizationsEs extends AppLocalizations {
       'No se pudo eliminar la cuenta. Intenta de nuevo.';
 
   @override
+  String get pmSectionProcessor => 'Procesador';
+
+  @override
+  String get pmSectionHowItWorks => 'Cómo funciona';
+
+  @override
+  String get pmSectionSecurity => 'Seguridad';
+
+  @override
+  String get pmSectionHostPayouts => 'Cobros como host';
+
+  @override
+  String get pmHeroTitle => 'Paga con tarjeta\ndirecto en Atrio';
+
+  @override
+  String get pmHeroBody =>
+      'Sin salir de la app. Cada pago se cifra de extremo a extremo y lo procesa Mercado Pago.';
+
+  @override
+  String get pmBadgeInstant => 'INSTANTÁNEO';
+
+  @override
+  String get pmBadgeTest => 'TEST';
+
+  @override
+  String get pmBadgeActive => 'ACTIVO';
+
+  @override
+  String get pmMpSubtitle => 'Procesador oficial · Crédito, débito y prepagas';
+
+  @override
+  String get pmHostEarnings => 'Tus ganancias';
+
+  @override
+  String get pmHostEarningsBody =>
+      'Cada reserva aprobada se acredita a tu saldo en Atrio. Configura tu cuenta bancaria desde el Dashboard para retirar.';
+
+  @override
+  String get pmStep1Title => 'Toca \"Pagar\"';
+
+  @override
+  String get pmStep1Body => 'Se abre el formulario seguro de Atrio';
+
+  @override
+  String get pmStep2Title => 'Ingresa tu tarjeta';
+
+  @override
+  String get pmStep2Body => 'Numeración + vencimiento + CVV + RUT';
+
+  @override
+  String get pmStep3Title => 'Atrio cifra y envía a MP';
+
+  @override
+  String get pmStep3Body => 'Tus datos NUNCA se guardan en la app';
+
+  @override
+  String get pmStep4Title => 'Reserva confirmada';
+
+  @override
+  String get pmStep4Body => 'Tu reserva queda agendada al instante';
+
+  @override
+  String get pmSecurityTitle => 'Cifrado de extremo a extremo';
+
+  @override
+  String get pmSecurityBody =>
+      'Nunca almacenamos tu número de tarjeta. Cada transacción usa un token único emitido por Mercado Pago. Cumple PCI DSS.';
+
+  @override
+  String get pmSupportTitle => '¿Tienes un problema con un pago?';
+
+  @override
+  String get pmSupportSubtitle => 'Escríbenos al centro de ayuda';
+
+  @override
+  String get interestCooking => 'Cocina';
+
+  @override
+  String get interestTravel => 'Viajes';
+
+  @override
+  String get interestMusic => 'Música';
+
+  @override
+  String get interestCinema => 'Cine';
+
+  @override
+  String get interestPhotography => 'Fotografía';
+
+  @override
+  String get interestArt => 'Arte';
+
+  @override
+  String get interestReading => 'Lectura';
+
+  @override
+  String get interestNature => 'Naturaleza';
+
+  @override
+  String get interestYoga => 'Yoga';
+
+  @override
+  String get interestFitness => 'Fitness';
+
+  @override
+  String get interestSurf => 'Surf';
+
+  @override
+  String get interestHiking => 'Senderismo';
+
+  @override
+  String get interestWine => 'Vino';
+
+  @override
+  String get interestCoffee => 'Café';
+
+  @override
+  String get interestTech => 'Tecnología';
+
+  @override
+  String get interestDesign => 'Diseño';
+
+  @override
+  String get interestPets => 'Mascotas';
+
+  @override
+  String get interestPlants => 'Plantas';
+
+  @override
+  String get interestSports => 'Deporte';
+
+  @override
+  String get interestDance => 'Bailar';
+
+  @override
   String get profileHelpCenter => 'Centro de ayuda';
 
   @override

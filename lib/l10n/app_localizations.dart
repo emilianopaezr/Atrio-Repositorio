@@ -5041,6 +5041,270 @@ abstract class AppLocalizations {
   /// **'No se pudo eliminar la cuenta. Intenta de nuevo.'**
   String get deleteAccountError;
 
+  /// No description provided for @pmSectionProcessor.
+  ///
+  /// In es, this message translates to:
+  /// **'Procesador'**
+  String get pmSectionProcessor;
+
+  /// No description provided for @pmSectionHowItWorks.
+  ///
+  /// In es, this message translates to:
+  /// **'Cómo funciona'**
+  String get pmSectionHowItWorks;
+
+  /// No description provided for @pmSectionSecurity.
+  ///
+  /// In es, this message translates to:
+  /// **'Seguridad'**
+  String get pmSectionSecurity;
+
+  /// No description provided for @pmSectionHostPayouts.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobros como host'**
+  String get pmSectionHostPayouts;
+
+  /// No description provided for @pmHeroTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Paga con tarjeta\ndirecto en Atrio'**
+  String get pmHeroTitle;
+
+  /// No description provided for @pmHeroBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin salir de la app. Cada pago se cifra de extremo a extremo y lo procesa Mercado Pago.'**
+  String get pmHeroBody;
+
+  /// No description provided for @pmBadgeInstant.
+  ///
+  /// In es, this message translates to:
+  /// **'INSTANTÁNEO'**
+  String get pmBadgeInstant;
+
+  /// No description provided for @pmBadgeTest.
+  ///
+  /// In es, this message translates to:
+  /// **'TEST'**
+  String get pmBadgeTest;
+
+  /// No description provided for @pmBadgeActive.
+  ///
+  /// In es, this message translates to:
+  /// **'ACTIVO'**
+  String get pmBadgeActive;
+
+  /// No description provided for @pmMpSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Procesador oficial · Crédito, débito y prepagas'**
+  String get pmMpSubtitle;
+
+  /// No description provided for @pmHostEarnings.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus ganancias'**
+  String get pmHostEarnings;
+
+  /// No description provided for @pmHostEarningsBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada reserva aprobada se acredita a tu saldo en Atrio. Configura tu cuenta bancaria desde el Dashboard para retirar.'**
+  String get pmHostEarningsBody;
+
+  /// No description provided for @pmStep1Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Toca \"Pagar\"'**
+  String get pmStep1Title;
+
+  /// No description provided for @pmStep1Body.
+  ///
+  /// In es, this message translates to:
+  /// **'Se abre el formulario seguro de Atrio'**
+  String get pmStep1Body;
+
+  /// No description provided for @pmStep2Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Ingresa tu tarjeta'**
+  String get pmStep2Title;
+
+  /// No description provided for @pmStep2Body.
+  ///
+  /// In es, this message translates to:
+  /// **'Numeración + vencimiento + CVV + RUT'**
+  String get pmStep2Body;
+
+  /// No description provided for @pmStep3Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Atrio cifra y envía a MP'**
+  String get pmStep3Title;
+
+  /// No description provided for @pmStep3Body.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus datos NUNCA se guardan en la app'**
+  String get pmStep3Body;
+
+  /// No description provided for @pmStep4Title.
+  ///
+  /// In es, this message translates to:
+  /// **'Reserva confirmada'**
+  String get pmStep4Title;
+
+  /// No description provided for @pmStep4Body.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu reserva queda agendada al instante'**
+  String get pmStep4Body;
+
+  /// No description provided for @pmSecurityTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cifrado de extremo a extremo'**
+  String get pmSecurityTitle;
+
+  /// No description provided for @pmSecurityBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Nunca almacenamos tu número de tarjeta. Cada transacción usa un token único emitido por Mercado Pago. Cumple PCI DSS.'**
+  String get pmSecurityBody;
+
+  /// No description provided for @pmSupportTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'¿Tienes un problema con un pago?'**
+  String get pmSupportTitle;
+
+  /// No description provided for @pmSupportSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Escríbenos al centro de ayuda'**
+  String get pmSupportSubtitle;
+
+  /// No description provided for @interestCooking.
+  ///
+  /// In es, this message translates to:
+  /// **'Cocina'**
+  String get interestCooking;
+
+  /// No description provided for @interestTravel.
+  ///
+  /// In es, this message translates to:
+  /// **'Viajes'**
+  String get interestTravel;
+
+  /// No description provided for @interestMusic.
+  ///
+  /// In es, this message translates to:
+  /// **'Música'**
+  String get interestMusic;
+
+  /// No description provided for @interestCinema.
+  ///
+  /// In es, this message translates to:
+  /// **'Cine'**
+  String get interestCinema;
+
+  /// No description provided for @interestPhotography.
+  ///
+  /// In es, this message translates to:
+  /// **'Fotografía'**
+  String get interestPhotography;
+
+  /// No description provided for @interestArt.
+  ///
+  /// In es, this message translates to:
+  /// **'Arte'**
+  String get interestArt;
+
+  /// No description provided for @interestReading.
+  ///
+  /// In es, this message translates to:
+  /// **'Lectura'**
+  String get interestReading;
+
+  /// No description provided for @interestNature.
+  ///
+  /// In es, this message translates to:
+  /// **'Naturaleza'**
+  String get interestNature;
+
+  /// No description provided for @interestYoga.
+  ///
+  /// In es, this message translates to:
+  /// **'Yoga'**
+  String get interestYoga;
+
+  /// No description provided for @interestFitness.
+  ///
+  /// In es, this message translates to:
+  /// **'Fitness'**
+  String get interestFitness;
+
+  /// No description provided for @interestSurf.
+  ///
+  /// In es, this message translates to:
+  /// **'Surf'**
+  String get interestSurf;
+
+  /// No description provided for @interestHiking.
+  ///
+  /// In es, this message translates to:
+  /// **'Senderismo'**
+  String get interestHiking;
+
+  /// No description provided for @interestWine.
+  ///
+  /// In es, this message translates to:
+  /// **'Vino'**
+  String get interestWine;
+
+  /// No description provided for @interestCoffee.
+  ///
+  /// In es, this message translates to:
+  /// **'Café'**
+  String get interestCoffee;
+
+  /// No description provided for @interestTech.
+  ///
+  /// In es, this message translates to:
+  /// **'Tecnología'**
+  String get interestTech;
+
+  /// No description provided for @interestDesign.
+  ///
+  /// In es, this message translates to:
+  /// **'Diseño'**
+  String get interestDesign;
+
+  /// No description provided for @interestPets.
+  ///
+  /// In es, this message translates to:
+  /// **'Mascotas'**
+  String get interestPets;
+
+  /// No description provided for @interestPlants.
+  ///
+  /// In es, this message translates to:
+  /// **'Plantas'**
+  String get interestPlants;
+
+  /// No description provided for @interestSports.
+  ///
+  /// In es, this message translates to:
+  /// **'Deporte'**
+  String get interestSports;
+
+  /// No description provided for @interestDance.
+  ///
+  /// In es, this message translates to:
+  /// **'Bailar'**
+  String get interestDance;
+
   /// No description provided for @profileHelpCenter.
   ///
   /// In es, this message translates to:

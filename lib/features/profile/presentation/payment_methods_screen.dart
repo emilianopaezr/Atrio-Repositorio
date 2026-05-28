@@ -47,8 +47,11 @@ class PaymentMethodsScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _HeroPaymentCard(),
+                    // NOTE: the inner widgets (Hero / MpRow / etc.)
+                    // pick up AppLocalizations from their own context
+                    // so they stay const + clean to compose here.
                     const SizedBox(height: 22),
-                    const SectionEyebrow(text: 'Procesador'),
+                    SectionEyebrow(text: l.pmSectionProcessor),
                     const SizedBox(height: 12),
                     const _MpRow(),
                     const SizedBox(height: 22),
@@ -59,11 +62,11 @@ class PaymentMethodsScreen extends ConsumerWidget {
                       loading: () => const SizedBox.shrink(),
                       error: (_, _) => const SizedBox.shrink(),
                     ),
-                    const SectionEyebrow(text: 'Cómo funciona'),
+                    SectionEyebrow(text: l.pmSectionHowItWorks),
                     const SizedBox(height: 12),
                     const _HowItWorks(),
                     const SizedBox(height: 22),
-                    const SectionEyebrow(text: 'Seguridad'),
+                    SectionEyebrow(text: l.pmSectionSecurity),
                     const SizedBox(height: 12),
                     const _SecurityNote(),
                     const SizedBox(height: 22),
@@ -176,7 +179,7 @@ class _HeroPaymentCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Pagás con tarjeta\ndirecto en Atrio',
+            AppLocalizations.of(context).pmHeroTitle,
             style: GoogleFonts.inter(
               fontSize: 24,
               fontWeight: FontWeight.w800,
@@ -187,7 +190,7 @@ class _HeroPaymentCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Sin salir de la app. Cada pago se cifra de extremo a extremo y lo procesa Mercado Pago.',
+            AppLocalizations.of(context).pmHeroBody,
             style: GoogleFonts.inter(
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
@@ -219,7 +222,7 @@ class _HeroPaymentCard extends StatelessWidget {
                         size: 13, color: Colors.black),
                     const SizedBox(width: 3),
                     Text(
-                      'INSTANTÁNEO',
+                      AppLocalizations.of(context).pmBadgeInstant,
                       style: GoogleFonts.inter(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w800,
@@ -307,7 +310,7 @@ class _MpRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Procesador oficial · Crédito, débito y prepagas',
+                  AppLocalizations.of(context).pmMpSubtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
@@ -343,7 +346,9 @@ class _MpRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 3),
                 Text(
-                  isSandbox ? 'TEST' : 'ACTIVO',
+                  isSandbox
+                      ? AppLocalizations.of(context).pmBadgeTest
+                      : AppLocalizations.of(context).pmBadgeActive,
                   style: GoogleFonts.inter(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
@@ -372,7 +377,7 @@ class _HostPayoutSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionEyebrow(text: 'Cobros como host'),
+        SectionEyebrow(text: AppLocalizations.of(context).pmSectionHostPayouts),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -400,7 +405,7 @@ class _HostPayoutSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Tus ganancias',
+                      AppLocalizations.of(context).pmHostEarnings,
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -410,8 +415,7 @@ class _HostPayoutSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Cada reserva aprobada se acredita a tu saldo en Atrio. '
-                      'Configura tu cuenta bancaria desde el Dashboard para retirar.',
+                      AppLocalizations.of(context).pmHostEarningsBody,
                       style: GoogleFonts.inter(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
@@ -435,19 +439,15 @@ class _HostPayoutSection extends StatelessWidget {
 class _HowItWorks extends StatelessWidget {
   const _HowItWorks();
 
-  static const _steps = [
-    (Icons.touch_app_rounded, 'Tocás "Pagar"',
-        'Se abre el formulario seguro de Atrio'),
-    (Icons.credit_card_rounded, 'Ingresás tu tarjeta',
-        'Numeración + vencimiento + CVV + RUT'),
-    (Icons.lock_rounded, 'Atrio cifra y envía a MP',
-        'Tus datos NUNCA se guardan en la app'),
-    (Icons.check_circle_rounded, 'Reserva confirmada',
-        'Tu reserva queda agendada al instante'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final steps = <(IconData, String, String)>[
+      (Icons.touch_app_rounded, l.pmStep1Title, l.pmStep1Body),
+      (Icons.credit_card_rounded, l.pmStep2Title, l.pmStep2Body),
+      (Icons.lock_rounded, l.pmStep3Title, l.pmStep3Body),
+      (Icons.check_circle_rounded, l.pmStep4Title, l.pmStep4Body),
+    ];
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       decoration: BoxDecoration(
@@ -456,9 +456,9 @@ class _HowItWorks extends StatelessWidget {
         border: Border.all(color: AtrioColors.guestCardBorder),
       ),
       child: Column(
-        children: List.generate(_steps.length, (i) {
-          final step = _steps[i];
-          final isLast = i == _steps.length - 1;
+        children: List.generate(steps.length, (i) {
+          final step = steps[i];
+          final isLast = i == steps.length - 1;
           return Padding(
             padding: EdgeInsets.symmetric(vertical: isLast ? 12 : 0)
                 .add(EdgeInsets.only(top: i == 0 ? 12 : 0, bottom: 12)),
@@ -535,7 +535,7 @@ class _SecurityNote extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cifrado de extremo a extremo',
+                  AppLocalizations.of(context).pmSecurityTitle,
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -545,8 +545,7 @@ class _SecurityNote extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Nunca almacenamos tu número de tarjeta. Cada transacción usa un token único '
-                  'emitido por Mercado Pago. Cumple PCI DSS.',
+                  AppLocalizations.of(context).pmSecurityBody,
                   style: GoogleFonts.inter(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
@@ -603,7 +602,7 @@ class _SupportCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '¿Tienes un problema con un pago?',
+                      AppLocalizations.of(context).pmSupportTitle,
                       style: GoogleFonts.inter(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w800,
@@ -613,7 +612,7 @@ class _SupportCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Escríbenos al centro de ayuda',
+                      AppLocalizations.of(context).pmSupportSubtitle,
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
