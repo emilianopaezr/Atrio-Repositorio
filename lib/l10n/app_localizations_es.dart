@@ -1443,6 +1443,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get calendarViewDetails => 'Ver detalles';
 
   @override
+  String get calendarDay => 'día';
+
+  @override
+  String get calendarDays => 'días';
+
+  @override
   String get calendarMonthJan => 'Enero';
 
   @override

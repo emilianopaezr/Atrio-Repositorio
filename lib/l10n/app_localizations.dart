@@ -2756,6 +2756,18 @@ abstract class AppLocalizations {
   /// **'Ver detalles'**
   String get calendarViewDetails;
 
+  /// No description provided for @calendarDay.
+  ///
+  /// In es, this message translates to:
+  /// **'día'**
+  String get calendarDay;
+
+  /// No description provided for @calendarDays.
+  ///
+  /// In es, this message translates to:
+  /// **'días'**
+  String get calendarDays;
+
   /// No description provided for @calendarMonthJan.
   ///
   /// In es, this message translates to:

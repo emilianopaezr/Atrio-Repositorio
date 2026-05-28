@@ -1,15 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../../config/theme/app_colors.dart';
 import '../../../core/providers/listings_provider.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/realtime_service.dart';
 import '../../../l10n/app_localizations.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Calendar — minimalist redesign.
+///
+/// Editorial principles:
+///   1. The grid is the hero. Headers, toggles and status bars are
+///      reduced to the bare minimum so the dates breathe.
+///   2. State is conveyed by tinted cell backgrounds + numeral color.
+///      No dots, no badges, no extra chrome inside the cells.
+///   3. Lime is reserved for active states (today / selected / range
+///      endpoints). Booked and blocked use desaturated tints.
+///   4. The action bar mounts only when there is something to do.
+///
+/// All functionality from the previous version is preserved:
+/// listing pill picker, month nav, Today shortcut, Day/Range mode
+/// toggle, single-day tap → select, long-press → detail sheet,
+/// range selection with Block / Unblock, realtime updates.
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
@@ -31,27 +48,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
 
-  // Stats
-  int _totalBookings = 0;
-  int _blockedCount = 0;
-
+  // ─── Locale helpers ──────────────────────────────────────────────
   List<String> _months(AppLocalizations l) => [
-    l.calendarMonthJan, l.calendarMonthFeb, l.calendarMonthMar, l.calendarMonthApr,
-    l.calendarMonthMay, l.calendarMonthJun, l.calendarMonthJul, l.calendarMonthAug,
-    l.calendarMonthSep, l.calendarMonthOct, l.calendarMonthNov, l.calendarMonthDec,
-  ];
+        l.calendarMonthJan, l.calendarMonthFeb, l.calendarMonthMar,
+        l.calendarMonthApr, l.calendarMonthMay, l.calendarMonthJun,
+        l.calendarMonthJul, l.calendarMonthAug, l.calendarMonthSep,
+        l.calendarMonthOct, l.calendarMonthNov, l.calendarMonthDec,
+      ];
   List<String> _dayHeaders(AppLocalizations l) => [
-    l.calendarDayShortMon, l.calendarDayShortTue, l.calendarDayShortWed,
-    l.calendarDayShortThu, l.calendarDayShortFri, l.calendarDayShortSat, l.calendarDayShortSun,
-  ];
+        l.calendarDayShortMon, l.calendarDayShortTue, l.calendarDayShortWed,
+        l.calendarDayShortThu, l.calendarDayShortFri, l.calendarDayShortSat,
+        l.calendarDayShortSun,
+      ];
   List<String> _dayFullNames(AppLocalizations l) => [
-    l.calendarDayFullMon, l.calendarDayFullTue, l.calendarDayFullWed,
-    l.calendarDayFullThu, l.calendarDayFullFri, l.calendarDayFullSat, l.calendarDayFullSun,
-  ];
+        l.calendarDayFullMon, l.calendarDayFullTue, l.calendarDayFullWed,
+        l.calendarDayFullThu, l.calendarDayFullFri, l.calendarDayFullSat,
+        l.calendarDayFullSun,
+      ];
   List<String> _dayAbbrNames(AppLocalizations l) => [
-    l.calendarDayAbbrMon, l.calendarDayAbbrTue, l.calendarDayAbbrWed,
-    l.calendarDayAbbrThu, l.calendarDayAbbrFri, l.calendarDayAbbrSat, l.calendarDayAbbrSun,
-  ];
+        l.calendarDayAbbrMon, l.calendarDayAbbrTue, l.calendarDayAbbrWed,
+        l.calendarDayAbbrThu, l.calendarDayAbbrFri, l.calendarDayAbbrSat,
+        l.calendarDayAbbrSun,
+      ];
 
   @override
   void initState() {
@@ -65,6 +83,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     super.dispose();
   }
 
+  // ─── Realtime + data load ────────────────────────────────────────
   void _setupRealtime(String listingId) {
     if (_channel != null) RealtimeService.unsubscribe(_channel!);
     _channel = RealtimeService.subscribeToAvailability(
@@ -92,14 +111,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               _blockedDates.add(dateStr);
             } else {
               _bookedDates.add(dateStr);
-              _dateBookingStatus[dateStr] = d['booking_status']?.toString() ?? '';
+              _dateBookingStatus[dateStr] =
+                  d['booking_status']?.toString() ?? '';
               if (d['booking_id'] != null) {
                 _dateBookingId[dateStr] = d['booking_id'].toString();
               }
             }
           }
-          _totalBookings = _bookedDates.length;
-          _blockedCount = _blockedDates.length;
           _isLoading = false;
         });
       }
@@ -111,6 +129,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   String _dateKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+  // ─── Block / unblock mutations ───────────────────────────────────
   Future<void> _toggleBlock(DateTime date) async {
     if (_selectedListingId == null) return;
     final key = _dateKey(date);
@@ -121,7 +140,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
 
     final isCurrentlyBlocked = _blockedDates.contains(key);
-    final newIsAvailable = isCurrentlyBlocked; // unblock -> available
+    final newIsAvailable = isCurrentlyBlocked; // unblock → available
 
     try {
       await DatabaseService.setDateAvailability(
@@ -132,10 +151,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       setState(() {
         if (isCurrentlyBlocked) {
           _blockedDates.remove(key);
-          _blockedCount--;
         } else {
           _blockedDates.add(key);
-          _blockedCount++;
         }
       });
     } catch (_) {
@@ -144,16 +161,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _blockRange() async {
-    if (_selectedListingId == null || _rangeStart == null || _rangeEnd == null) return;
+    if (_selectedListingId == null ||
+        _rangeStart == null ||
+        _rangeEnd == null) {
+      return;
+    }
 
-    final start = _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
+    final start =
+        _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
     final end = _rangeStart!.isBefore(_rangeEnd!) ? _rangeEnd! : _rangeStart!;
 
-    // Check if any date in range has a booking
     var d = start;
     while (!d.isAfter(end)) {
       if (_bookedDates.contains(_dateKey(d))) {
-        _showSnack(AppLocalizations.of(context).calendarCannotBlockRangeBooked);
+        _showSnack(
+            AppLocalizations.of(context).calendarCannotBlockRangeBooked);
         return;
       }
       d = d.add(const Duration(days: 1));
@@ -174,17 +196,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _rangeEnd = null;
         _isRangeMode = false;
       });
-      if (mounted) _showSnack(AppLocalizations.of(context).calendarDatesBlocked);
+      if (mounted) {
+        _showSnack(AppLocalizations.of(context).calendarDatesBlocked);
+      }
     } catch (_) {
       setState(() => _isLoading = false);
-      if (mounted) _showSnack(AppLocalizations.of(context).calendarBlockRangeError);
+      if (mounted) {
+        _showSnack(AppLocalizations.of(context).calendarBlockRangeError);
+      }
     }
   }
 
   Future<void> _unblockRange() async {
-    if (_selectedListingId == null || _rangeStart == null || _rangeEnd == null) return;
+    if (_selectedListingId == null ||
+        _rangeStart == null ||
+        _rangeEnd == null) {
+      return;
+    }
 
-    final start = _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
+    final start =
+        _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
     final end = _rangeStart!.isBefore(_rangeEnd!) ? _rangeEnd! : _rangeStart!;
 
     setState(() => _isLoading = true);
@@ -202,28 +233,37 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _rangeEnd = null;
         _isRangeMode = false;
       });
-      if (mounted) _showSnack(AppLocalizations.of(context).calendarDatesUnblocked);
+      if (mounted) {
+        _showSnack(AppLocalizations.of(context).calendarDatesUnblocked);
+      }
     } catch (_) {
       setState(() => _isLoading = false);
-      if (mounted) _showSnack(AppLocalizations.of(context).calendarUnblockRangeError);
+      if (mounted) {
+        _showSnack(AppLocalizations.of(context).calendarUnblockRangeError);
+      }
     }
   }
 
   void _showSnack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: Colors.black)),
-      backgroundColor: AtrioColors.neonLime,
+      content: Text(msg,
+          style:
+              GoogleFonts.inter(fontWeight: FontWeight.w500, color: Colors.white)),
+      backgroundColor: const Color(0xFF1A1A1C),
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       duration: const Duration(seconds: 2),
     ));
   }
 
+  // ─── User interactions ───────────────────────────────────────────
   void _onDayTap(DateTime date) {
+    HapticFeedback.selectionClick();
     if (_isRangeMode) {
       setState(() {
-        if (_rangeStart == null || (_rangeStart != null && _rangeEnd != null)) {
+        if (_rangeStart == null ||
+            (_rangeStart != null && _rangeEnd != null)) {
           _rangeStart = date;
           _rangeEnd = null;
         } else {
@@ -232,7 +272,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _selectedDay = null;
       });
     } else {
-      // Tap on already-selected day deselects it (closes the action bar).
       final tappedSame = _selectedDay != null &&
           _selectedDay!.year == date.year &&
           _selectedDay!.month == date.month &&
@@ -245,10 +284,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
   }
 
-  /// Clears the current selection (single or range). Used by the close
-  /// button on the action bar so the user can dismiss the panel without
-  /// having to tap a different day.
   void _clearSelection() {
+    HapticFeedback.selectionClick();
     setState(() {
       _selectedDay = null;
       _rangeStart = null;
@@ -257,6 +294,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _goToToday() {
+    HapticFeedback.selectionClick();
     setState(() {
       _focusedMonth = DateTime.now();
       _selectedDay = DateTime.now();
@@ -265,6 +303,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _showDayDetail(DateTime date) {
+    HapticFeedback.selectionClick();
     final l = AppLocalizations.of(context);
     final key = _dateKey(date);
     final booked = _bookedDates.contains(key);
@@ -276,6 +315,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      useRootNavigator: true,
+      useSafeArea: true,
       builder: (ctx) => Container(
         decoration: const BoxDecoration(
           color: AtrioColors.hostSurface,
@@ -286,89 +327,86 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AtrioColors.hostCardBorder, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 20),
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 22),
             Text(
-              '$dayName ${date.day} de ${_months(l)[date.month - 1]}',
-              style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
-            ),
-            const SizedBox(height: 8),
-            // Status
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: booked
-                    ? Colors.green.withValues(alpha: 0.15)
-                    : blocked
-                        ? Colors.red.withValues(alpha: 0.15)
-                        : AtrioColors.neonLime.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+              '$dayName ${date.day} ${_months(l)[date.month - 1]}',
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.5,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    booked ? Icons.event_available : blocked ? Icons.block : Icons.check_circle_outline,
-                    size: 16,
-                    color: booked ? Colors.green : blocked ? Colors.red[400] : AtrioColors.neonLimeDark,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    booked
-                        ? (status.isNotEmpty ? l.calendarStatusReservedWith(status) : l.calendarStatusReserved)
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: booked
+                        ? const Color(0xFF4ADE80)
                         : blocked
-                            ? l.calendarStatusBlockedManually
-                            : l.calendarStatusAvailable,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: booked ? Colors.green : blocked ? Colors.red[400] : AtrioColors.neonLimeDark,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Actions
-            if (booked && bookingId != null)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    context.push('/booking-detail/$bookingId');
-                  },
-                  icon: const Icon(Icons.visibility_outlined, size: 18),
-                  label: Text(l.calendarViewBooking, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AtrioColors.neonLime,
-                    side: BorderSide(color: AtrioColors.neonLime.withValues(alpha: 0.3)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                            ? const Color(0xFFFCA5A5)
+                            : AtrioColors.neonLimeDark,
+                    shape: BoxShape.circle,
                   ),
                 ),
+                const SizedBox(width: 8),
+                Text(
+                  booked
+                      ? (status.isNotEmpty
+                          ? l.calendarStatusReservedWith(status)
+                          : l.calendarStatusReserved)
+                      : blocked
+                          ? l.calendarStatusBlockedManually
+                          : l.calendarStatusAvailable,
+                  style: GoogleFonts.inter(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: booked
+                        ? const Color(0xFF4ADE80)
+                        : blocked
+                            ? const Color(0xFFFCA5A5)
+                            : AtrioColors.hostTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            if (booked && bookingId != null)
+              _SheetButton(
+                icon: Icons.arrow_forward_rounded,
+                label: l.calendarViewBooking,
+                background: AtrioColors.neonLime,
+                foreground: Colors.black,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  context.push('/booking-detail/$bookingId');
+                },
               ),
             if (!booked)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _toggleBlock(date);
-                  },
-                  icon: Icon(blocked ? Icons.lock_open : Icons.block, size: 18),
-                  label: Text(
-                    blocked ? l.calendarUnblockDay : l.calendarBlockDay,
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: blocked ? AtrioColors.neonLime : Colors.red[400],
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                  ),
-                ),
+              _SheetButton(
+                icon: blocked ? Icons.lock_open_rounded : Icons.block_rounded,
+                label: blocked ? l.calendarUnblockDay : l.calendarBlockDay,
+                background: blocked
+                    ? AtrioColors.neonLime
+                    : const Color(0xFFEF4444),
+                foreground: blocked ? Colors.black : Colors.white,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _toggleBlock(date);
+                },
               ),
             SizedBox(height: MediaQuery.of(ctx).padding.bottom + 8),
           ],
@@ -379,11 +417,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   bool _isInRange(DateTime date) {
     if (_rangeStart == null || _rangeEnd == null) return false;
-    final start = _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
+    final start =
+        _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
     final end = _rangeStart!.isBefore(_rangeEnd!) ? _rangeEnd! : _rangeStart!;
     return !date.isBefore(start) && !date.isAfter(end);
   }
 
+  // ═════════════════════════════════════════════════════════════════
+  // BUILD
+  // ═════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -391,7 +433,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (userId == null) {
       return Scaffold(
         backgroundColor: AtrioColors.hostBackground,
-        body: Center(child: Text(l.calendarSignIn, style: const TextStyle(color: Colors.white))),
+        body: Center(
+          child: Text(l.calendarSignIn,
+              style: const TextStyle(color: Colors.white)),
+        ),
       );
     }
 
@@ -401,487 +446,264 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       backgroundColor: AtrioColors.hostBackground,
       body: listingsAsync.when(
         data: (listings) {
-          if (listings.isEmpty) {
-            // Editorial empty state: lime disc, headline, supporting
-            // copy, and a pill CTA — matches the language used on the
-            // guest "no bookings" screen.
-            return SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(26),
-                        decoration: BoxDecoration(
-                          color: AtrioColors.neonLime.withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.calendar_today_rounded,
-                          size: 40,
-                          color: AtrioColors.neonLime,
-                        ),
-                      ),
-                      const SizedBox(height: 26),
-                      Text(
-                        l.calendarEmptyTitle,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.6,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        l.calendarEmptySubtitle,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AtrioColors.hostTextSecondary,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      GestureDetector(
-                        onTap: () => context.push('/host/create-listing'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 22, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: AtrioColors.neonLime,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                l.calendarEmptyCta,
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.black,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.arrow_forward_rounded,
-                                  size: 16, color: Colors.black),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
+          if (listings.isEmpty) return _emptyState(l);
 
-          if (_selectedListingId == null && listings.isNotEmpty) {
+          // Auto-select the first listing on first render.
+          if (_selectedListingId == null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
-              setState(() => _selectedListingId = listings.first['id'] as String);
+              setState(
+                  () => _selectedListingId = listings.first['id'] as String);
               _setupRealtime(listings.first['id'] as String);
               _loadBookedDates(listings.first['id'] as String);
             });
           }
 
           return SafeArea(
+            bottom: false,
             child: Column(
               children: [
-                // ─── Editorial header (eyebrow removed by request) ───
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 20, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l.calendarTitle,
-                              style: GoogleFonts.inter(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w800,
-                                color: AtrioColors.hostTextPrimary,
-                                letterSpacing: -1.0,
-                                height: 1.05,
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: _goToToday,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                              decoration: BoxDecoration(
-                                color: AtrioColors.neonLime,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.today_rounded, size: 14, color: Colors.black),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    l.calendarToday,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.black,
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-
-                // ─── Listing selector chips ───
-                SizedBox(
-                  height: 40,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: listings.length,
-                    itemBuilder: (_, i) {
-                      final item = listings[i];
-                      final id = item['id'] as String;
-                      final selected = _selectedListingId == id;
-                      final type = item['type'] as String? ?? '';
-                      final icon = type == 'space' ? Icons.home_rounded : type == 'experience' ? Icons.explore_rounded : Icons.build_rounded;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedListingId = id;
-                              _selectedDay = null;
-                              _rangeStart = null;
-                              _rangeEnd = null;
-                            });
-                            _setupRealtime(id);
-                            _loadBookedDates(id);
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                            decoration: BoxDecoration(
-                              color: selected ? Colors.white : AtrioColors.hostSurface,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: selected ? Colors.white : AtrioColors.hostCardBorder,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(icon, size: 14, color: selected ? Colors.black : AtrioColors.hostTextTertiary),
-                                const SizedBox(width: 6),
-                                ConstrainedBox(
-                                  constraints: const BoxConstraints(maxWidth: 120),
-                                  child: Text(
-                                    item['title'] as String? ?? l.calendarNoTitle,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                                      color: selected ? Colors.black : AtrioColors.hostTextSecondary,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ─── Stats row ───
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      _statChip(Icons.event_available_rounded, '$_totalBookings', l.calendarStatReservations, const Color(0xFF22C55E)),
-                      const SizedBox(width: 8),
-                      _statChip(Icons.block_rounded, '$_blockedCount', l.calendarStatBlocked, const Color(0xFFEF4444)),
-                      const SizedBox(width: 8),
-                      _statChip(
-                        Icons.event_rounded,
-                        '${_daysInMonth() - _totalBookings - _blockedCount}',
-                        l.calendarStatAvailable,
-                        AtrioColors.neonLime,
-                      ),
-                    ],
-                  ),
-                ),
+                _header(l),
                 const SizedBox(height: 14),
-
-                // ─── Hero month card with nav + mode toggle ───
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF1A1A1C),
-                          Color(0xFF101012),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-                    ),
-                    child: Column(
-                      children: [
-                        // Month nav
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                setState(() => _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1));
-                                if (_selectedListingId != null) _loadBookedDates(_selectedListingId!);
-                              },
-                              child: Container(
-                                width: 36, height: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 22),
-                              ),
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      _months(l)[_focusedMonth.month - 1],
-                                      style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.3),
-                                    ),
-                                    Text(
-                                      '${_focusedMonth.year}',
-                                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: AtrioColors.hostTextTertiary, letterSpacing: 1),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() => _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1));
-                                if (_selectedListingId != null) _loadBookedDates(_selectedListingId!);
-                              },
-                              child: Container(
-                                width: 36, height: 36,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 22),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Mode toggle
-                        Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            children: [
-                              _modeButton(l.calendarModeDay, !_isRangeMode, () {
-                                setState(() {
-                                  _isRangeMode = false;
-                                  _rangeStart = null;
-                                  _rangeEnd = null;
-                                });
-                              }),
-                              _modeButton(l.calendarModeRange, _isRangeMode, () {
-                                setState(() {
-                                  _isRangeMode = true;
-                                  _selectedDay = null;
-                                });
-                              }),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // ─── Day headers ───
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: _dayHeaders(l).map((d) => Expanded(
-                      child: Center(
-                        child: Text(d.toUpperCase(), style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AtrioColors.hostTextTertiary, letterSpacing: 1)),
-                      ),
-                    )).toList(),
-                  ),
-                ),
-                const SizedBox(height: 6),
-
-                // ─── Calendar grid ───
-                // LayoutBuilder + computed aspect ratio guarantees the
-                // 6×7 grid always fills the Expanded constraint exactly,
-                // so the last week-row never gets clipped by the legend
-                // or the floating bottom nav — regardless of device.
+                _listingPicker(l, listings),
+                const SizedBox(height: 22),
+                _monthNav(l),
+                const SizedBox(height: 14),
+                _modeToggle(l),
+                const SizedBox(height: 18),
+                _dayHeadersRow(l),
+                const SizedBox(height: 4),
                 Expanded(
                   child: Stack(
                     children: [
                       LayoutBuilder(
-                        builder: (ctx, constraints) {
-                          final gridWidth = constraints.maxWidth - 40;
+                        builder: (ctx, c) {
+                          final gridWidth = c.maxWidth - 48;
                           final cellWidth = gridWidth / 7;
-                          final cellHeight = constraints.maxHeight / 6;
-                          final aspectRatio = cellHeight <= 0
-                              ? 1.4
+                          final cellHeight = c.maxHeight / 6;
+                          final aspect = cellHeight <= 0
+                              ? 1.0
                               : (cellWidth / cellHeight)
-                                  .clamp(0.9, 1.8)
+                                  .clamp(0.85, 1.6)
                                   .toDouble();
-                          return _buildCalendarGrid(aspectRatio);
+                          return _buildCalendarGrid(aspect);
                         },
                       ),
                       if (_isLoading)
                         Positioned.fill(
                           child: Container(
-                            color: AtrioColors.hostBackground.withValues(alpha: 0.5),
-                            child: const Center(child: CircularProgressIndicator(color: AtrioColors.neonLimeDark, strokeWidth: 2)),
+                            color: AtrioColors.hostBackground
+                                .withValues(alpha: 0.5),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: AtrioColors.neonLimeDark,
+                                strokeWidth: 2,
+                              ),
+                            ),
                           ),
                         ),
                     ],
                   ),
                 ),
-
-                // ─── Legend ───
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-                  child: Row(children: [
-                    _legend(Colors.green[400]!, l.calendarLegendReserved),
-                    const SizedBox(width: 12),
-                    _legend(Colors.red[400]!, l.calendarLegendBlocked),
-                    const SizedBox(width: 12),
-                    _legend(AtrioColors.hostSurface, l.calendarLegendAvailable),
-                    const SizedBox(width: 12),
-                    if (_isRangeMode) _legend(AtrioColors.neonLime.withValues(alpha: 0.3), l.calendarLegendSelection),
-                  ]),
-                ),
-
-                // ─── Action bar ───
-                _buildActionBar(),
-                // HostShell uses extendBody: true. Reserve just enough
-                // space at the bottom for the nav itself (~56 px) so
-                // the legend + action bar stay visible without
-                // squeezing the calendar grid above.
+                _buildActionBar(l),
                 SizedBox(
-                  height: 56 +
-                      MediaQuery.of(context).viewPadding.bottom,
+                  height: 72 + MediaQuery.of(context).viewPadding.bottom,
                 ),
               ],
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: AtrioColors.neonLimeDark, strokeWidth: 2)),
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+              color: AtrioColors.neonLimeDark, strokeWidth: 2),
+        ),
         error: (_, _) => Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.error_outline, size: 48, color: AtrioColors.hostTextTertiary),
+            const Icon(Icons.error_outline,
+                size: 48, color: AtrioColors.hostTextTertiary),
             const SizedBox(height: 12),
-            Text(l.calendarLoadError, style: GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
+            Text(l.calendarLoadError,
+                style:
+                    GoogleFonts.inter(color: AtrioColors.hostTextSecondary)),
           ]),
         ),
       ),
     );
   }
 
-  int _daysInMonth() => DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
-
-  Widget _statChip(IconData icon, String value, String label, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-        decoration: BoxDecoration(
-          color: AtrioColors.hostSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AtrioColors.hostCardBorder),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28, height: 28,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 15, color: color),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(value, style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, height: 1.0)),
-                  const SizedBox(height: 2),
-                  Text(label, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: AtrioColors.hostTextTertiary, letterSpacing: 0.4), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _modeButton(String label, bool isSelected, VoidCallback onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? AtrioColors.neonLime : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
+  // ─── Header ──────────────────────────────────────────────────────
+  Widget _header(AppLocalizations l) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 20, 0),
+      child: Row(
+        children: [
+          Expanded(
             child: Text(
-              label,
+              l.calendarTitle,
               style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? Colors.black : AtrioColors.hostTextSecondary,
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -1,
+                height: 1.05,
               ),
             ),
           ),
-        ),
+          GestureDetector(
+            onTap: _goToToday,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AtrioColors.neonLime,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                l.calendarToday,
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
+  // ─── Listing picker (horizontal pills) ───────────────────────────
+  Widget _listingPicker(AppLocalizations l, List<Map<String, dynamic>> listings) {
+    return SizedBox(
+      height: 32,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: listings.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final item = listings[i];
+          final id = item['id'] as String;
+          final selected = _selectedListingId == id;
+          return _ListingPill(
+            label: item['title'] as String? ?? l.calendarNoTitle,
+            selected: selected,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() {
+                _selectedListingId = id;
+                _selectedDay = null;
+                _rangeStart = null;
+                _rangeEnd = null;
+              });
+              _setupRealtime(id);
+              _loadBookedDates(id);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // ─── Month nav (subtle arrows + bold month name) ─────────────────
+  Widget _monthNav(AppLocalizations l) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          _NavArrow(
+            icon: Icons.chevron_left_rounded,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _focusedMonth = DateTime(
+                  _focusedMonth.year, _focusedMonth.month - 1, 1));
+              if (_selectedListingId != null) {
+                _loadBookedDates(_selectedListingId!);
+              }
+            },
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                '${_months(l)[_focusedMonth.month - 1]} ${_focusedMonth.year}',
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.4,
+                ),
+              ),
+            ),
+          ),
+          _NavArrow(
+            icon: Icons.chevron_right_rounded,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _focusedMonth = DateTime(
+                  _focusedMonth.year, _focusedMonth.month + 1, 1));
+              if (_selectedListingId != null) {
+                _loadBookedDates(_selectedListingId!);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Day / Range mode toggle ─────────────────────────────────────
+  Widget _modeToggle(AppLocalizations l) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: _ModeToggle(
+        dayLabel: l.calendarModeDay,
+        rangeLabel: l.calendarModeRange,
+        isRangeMode: _isRangeMode,
+        onTapDay: () {
+          HapticFeedback.selectionClick();
+          setState(() {
+            _isRangeMode = false;
+            _rangeStart = null;
+            _rangeEnd = null;
+          });
+        },
+        onTapRange: () {
+          HapticFeedback.selectionClick();
+          setState(() {
+            _isRangeMode = true;
+            _selectedDay = null;
+          });
+        },
+      ),
+    );
+  }
+
+  // ─── Weekday headers (Mo Tu We Th Fr Sa Su) ──────────────────────
+  Widget _dayHeadersRow(AppLocalizations l) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: _dayHeaders(l)
+            .map((d) => Expanded(
+                  child: Center(
+                    child: Text(
+                      d.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: AtrioColors.hostTextTertiary,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  // ─── Calendar grid ───────────────────────────────────────────────
   Widget _buildCalendarGrid(double aspectRatio) {
     final firstDay = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
     final lastDay = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
@@ -891,11 +713,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final todayKey = _dateKey(today);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      // The aspect ratio is computed by the parent LayoutBuilder so
-      // the 6×7 grid exactly fills the available Expanded constraint
-      // — the last week-row stays visible above the legend and the
-      // floating bottom nav, on any screen size.
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -909,40 +727,48 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
           final date = DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
           final key = _dateKey(date);
-          final isPast = date.isBefore(DateTime(today.year, today.month, today.day));
+          final isPast =
+              date.isBefore(DateTime(today.year, today.month, today.day));
           final isToday = key == todayKey;
           final booked = _bookedDates.contains(key);
           final blocked = _blockedDates.contains(key);
-          final selected = !_isRangeMode && _selectedDay != null && _dateKey(_selectedDay!) == key;
+          final selected = !_isRangeMode &&
+              _selectedDay != null &&
+              _dateKey(_selectedDay!) == key;
           final inRange = _isRangeMode && _isInRange(date);
-          final isRangeEndpoint = _isRangeMode && ((_rangeStart != null && _dateKey(_rangeStart!) == key) || (_rangeEnd != null && _dateKey(_rangeEnd!) == key));
+          final isRangeEndpoint = _isRangeMode &&
+              ((_rangeStart != null && _dateKey(_rangeStart!) == key) ||
+                  (_rangeEnd != null && _dateKey(_rangeEnd!) == key));
 
-          Color bgColor = Colors.transparent;
+          // ─── Resolve visual state (single source of truth) ───
+          Color bg = Colors.transparent;
           Color textColor = Colors.white;
           BoxBorder? border;
-          Color? statusDot;
+          FontWeight weight = FontWeight.w500;
 
           if (selected || isRangeEndpoint) {
-            bgColor = AtrioColors.neonLime;
+            bg = AtrioColors.neonLime;
             textColor = Colors.black;
+            weight = FontWeight.w800;
           } else if (inRange) {
-            bgColor = AtrioColors.neonLime.withValues(alpha: 0.18);
-            textColor = AtrioColors.neonLime;
+            bg = AtrioColors.neonLime.withValues(alpha: 0.16);
+            textColor = AtrioColors.neonLimeDark;
+            weight = FontWeight.w700;
           } else if (booked) {
-            // The tinted background + green text already conveys
-            // the booked state — the extra dot was visual noise.
-            bgColor = const Color(0xFF22C55E).withValues(alpha: 0.16);
+            bg = const Color(0xFF22C55E).withValues(alpha: 0.16);
             textColor = const Color(0xFF4ADE80);
+            weight = FontWeight.w700;
           } else if (blocked) {
-            bgColor = const Color(0xFFEF4444).withValues(alpha: 0.14);
+            bg = const Color(0xFFEF4444).withValues(alpha: 0.14);
             textColor = const Color(0xFFFCA5A5);
-            statusDot = const Color(0xFFEF4444);
+            weight = FontWeight.w700;
           } else if (isPast) {
-            textColor = AtrioColors.hostTextTertiary.withValues(alpha: 0.5);
+            textColor = Colors.white.withValues(alpha: 0.22);
           }
 
           if (isToday && !selected && !isRangeEndpoint) {
             border = Border.all(color: AtrioColors.neonLime, width: 1.5);
+            weight = FontWeight.w800;
           }
 
           return GestureDetector(
@@ -952,30 +778,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               duration: const Duration(milliseconds: 150),
               margin: const EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color: bgColor,
+                color: bg,
                 borderRadius: BorderRadius.circular(12),
                 border: border,
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Text(
-                    '$dayNum',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: (selected || isRangeEndpoint || isToday) ? FontWeight.w800 : FontWeight.w500,
-                      color: textColor,
-                    ),
+              child: Center(
+                child: Text(
+                  '$dayNum',
+                  style: GoogleFonts.inter(
+                    fontSize: 14.5,
+                    fontWeight: weight,
+                    color: textColor,
+                    height: 1.0,
                   ),
-                  if (statusDot != null && !selected && !isRangeEndpoint)
-                    Positioned(
-                      bottom: 5,
-                      child: Container(
-                        width: 4, height: 4,
-                        decoration: BoxDecoration(color: statusDot, shape: BoxShape.circle),
-                      ),
-                    ),
-                ],
+                ),
               ),
             ),
           );
@@ -984,224 +800,597 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  /// Bottom action bar — context-aware. Wrapped in [AnimatedSize] so the
-  /// transitions between empty / single-day / range-pending / range-ready
-  /// states feel smooth, and a close (X) chip on every populated variant
-  /// gives the user an explicit way to dismiss the panel without having
-  /// to tap another day.
-  Widget _buildActionBar() {
+  // ─── Contextual action card (AnimatedSize) ───────────────────────
+  Widget _buildActionBar(AppLocalizations l) {
     return AnimatedSize(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
       alignment: Alignment.topCenter,
-      child: _actionBarContent(),
+      child: _actionBarContent(l),
     );
   }
 
-  Widget _actionBarContent() {
-    final l = AppLocalizations.of(context);
-
-    BoxDecoration decoration() => BoxDecoration(
-          color: AtrioColors.hostSurface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          border: Border(
-            top: BorderSide(color: AtrioColors.hostCardBorder),
-            left: BorderSide(color: AtrioColors.hostCardBorder),
-            right: BorderSide(color: AtrioColors.hostCardBorder),
-          ),
-        );
-
-    Widget closeButton() => GestureDetector(
-          onTap: _clearSelection,
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.close_rounded,
-                size: 18, color: Colors.white),
-          ),
-        );
-
-    // ── Range mode: both endpoints picked → Block / Unblock + close ─────
+  Widget _actionBarContent(AppLocalizations l) {
+    // Range complete → Block / Unblock buttons + summary.
     if (_isRangeMode && _rangeStart != null && _rangeEnd != null) {
-      return Container(
+      final start =
+          _rangeStart!.isBefore(_rangeEnd!) ? _rangeStart! : _rangeEnd!;
+      final end = _rangeStart!.isBefore(_rangeEnd!) ? _rangeEnd! : _rangeStart!;
+      final days = end.difference(start).inDays + 1;
+      return _ActionCard(
         key: const ValueKey('range-ready'),
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: decoration(),
-        child: Row(
-          children: [
-            closeButton(),
-            const SizedBox(width: 10),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _blockRange,
-                icon: const Icon(Icons.block, size: 16),
-                label: Text(l.calendarBlock,
-                    style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700, fontSize: 13)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[400],
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  elevation: 0,
-                ),
-              ),
+        title: _formatRangeTitle(l, start, end),
+        statusLabel:
+            '$days ${days == 1 ? l.calendarDay : l.calendarDays}',
+        statusColor: AtrioColors.neonLimeDark,
+        primary: Row(children: [
+          Expanded(
+            child: _ActionButton(
+              label: l.calendarBlock,
+              icon: Icons.block_rounded,
+              background: const Color(0xFFEF4444),
+              foreground: Colors.white,
+              onTap: _blockRange,
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: _unblockRange,
-                icon: const Icon(Icons.lock_open, size: 16),
-                label: Text(l.calendarUnblock,
-                    style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700, fontSize: 13)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AtrioColors.neonLime,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  elevation: 0,
-                ),
-              ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _ActionButton(
+              label: l.calendarUnblock,
+              icon: Icons.lock_open_rounded,
+              background: AtrioColors.neonLime,
+              foreground: Colors.black,
+              onTap: _unblockRange,
             ),
-          ],
-        ),
+          ),
+        ]),
+        onClose: _clearSelection,
       );
     }
 
-    // ── Single-day selected → Status + Block/Unblock/Detail + close ─────
+    // Single day selected → status + Block / View detail.
     if (!_isRangeMode && _selectedDay != null) {
       final key = _dateKey(_selectedDay!);
       final booked = _bookedDates.contains(key);
       final blocked = _blockedDates.contains(key);
       final dayName = _dayAbbrNames(l)[_selectedDay!.weekday - 1];
+      final title =
+          '$dayName ${_selectedDay!.day} ${_months(l)[_selectedDay!.month - 1]}';
 
-      return Container(
+      final Widget primary;
+      if (booked) {
+        primary = _ActionButton(
+          label: l.calendarViewDetails,
+          icon: Icons.arrow_forward_rounded,
+          background: AtrioColors.neonLime,
+          foreground: Colors.black,
+          onTap: () => _showDayDetail(_selectedDay!),
+        );
+      } else {
+        primary = _ActionButton(
+          label: blocked ? l.calendarUnblock : l.calendarBlock,
+          icon: blocked ? Icons.lock_open_rounded : Icons.block_rounded,
+          background:
+              blocked ? AtrioColors.neonLime : const Color(0xFFEF4444),
+          foreground: blocked ? Colors.black : Colors.white,
+          onTap: () => _toggleBlock(_selectedDay!),
+        );
+      }
+
+      return _ActionCard(
         key: const ValueKey('single-day'),
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: decoration(),
-        child: Row(
-          children: [
-            closeButton(),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$dayName ${_selectedDay!.day} ${_months(l)[_selectedDay!.month - 1]}',
-                    style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white),
+        title: title,
+        statusLabel: booked
+            ? l.calendarStatusReserved
+            : blocked
+                ? l.calendarStatusBlocked
+                : l.calendarStatusAvailable,
+        statusColor: booked
+            ? const Color(0xFF4ADE80)
+            : blocked
+                ? const Color(0xFFFCA5A5)
+                : AtrioColors.neonLimeDark,
+        primary: primary,
+        onClose: _clearSelection,
+      );
+    }
+
+    // Range mode but incomplete → soft hint card.
+    if (_isRangeMode && (_rangeStart == null || _rangeEnd == null)) {
+      return _HintCard(
+        key: const ValueKey('range-hint'),
+        text: _rangeStart == null
+            ? l.calendarSelectStartDate
+            : l.calendarSelectEndDate,
+        onClose: _clearSelection,
+      );
+    }
+
+    return const SizedBox(key: ValueKey('empty'), height: 0);
+  }
+
+  String _formatRangeTitle(
+      AppLocalizations l, DateTime start, DateTime end) {
+    final months = _months(l);
+    final sameMonth =
+        start.month == end.month && start.year == end.year;
+    if (sameMonth) {
+      return '${start.day} – ${end.day} ${months[start.month - 1]}';
+    }
+    return '${start.day} ${months[start.month - 1]} – ${end.day} ${months[end.month - 1]}';
+  }
+
+  // ─── Empty state (no listings) ───────────────────────────────────
+  Widget _emptyState(AppLocalizations l) {
+    return SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(26),
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLime.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.calendar_today_rounded,
+                  size: 40,
+                  color: AtrioColors.neonLime,
+                ),
+              ),
+              const SizedBox(height: 26),
+              Text(
+                l.calendarEmptyTitle,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.6,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                l.calendarEmptySubtitle,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AtrioColors.hostTextSecondary,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+              GestureDetector(
+                onTap: () => context.push('/host/create-listing'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 22, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: AtrioColors.neonLime,
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                  Text(
-                    booked
-                        ? l.calendarStatusReserved
-                        : blocked
-                            ? l.calendarStatusBlocked
-                            : l.calendarStatusAvailable,
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: booked
-                          ? Colors.green
-                          : blocked
-                              ? Colors.red[400]
-                              : AtrioColors.neonLimeDark,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l.calendarEmptyCta,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded,
+                          size: 16, color: Colors.black),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════
+// SUB-WIDGETS
+// ═════════════════════════════════════════════════════════════════
+
+class _ListingPill extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ListingPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color:
+                selected ? Colors.white : Colors.white.withValues(alpha: 0.10),
+            width: 1,
+          ),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 150),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 12.5,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color: selected
+                  ? Colors.black
+                  : Colors.white.withValues(alpha: 0.72),
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavArrow extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _NavArrow({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 36,
+        height: 36,
+        child: Icon(
+          icon,
+          color: Colors.white.withValues(alpha: 0.85),
+          size: 24,
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeToggle extends StatelessWidget {
+  final String dayLabel;
+  final String rangeLabel;
+  final bool isRangeMode;
+  final VoidCallback onTapDay;
+  final VoidCallback onTapRange;
+  const _ModeToggle({
+    required this.dayLabel,
+    required this.rangeLabel,
+    required this.isRangeMode,
+    required this.onTapDay,
+    required this.onTapRange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: _modeBtn(dayLabel, !isRangeMode, onTapDay)),
+          Expanded(child: _modeBtn(rangeLabel, isRangeMode, onTapRange)),
+        ],
+      ),
+    );
+  }
+
+  Widget _modeBtn(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12.5,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              color: selected
+                  ? Colors.black
+                  : Colors.white.withValues(alpha: 0.65),
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Floating contextual card at the bottom of the screen.
+class _ActionCard extends StatelessWidget {
+  final String title;
+  final String? statusLabel;
+  final Color? statusColor;
+  final Widget primary;
+  final VoidCallback onClose;
+  const _ActionCard({
+    super.key,
+    required this.title,
+    this.statusLabel,
+    this.statusColor,
+    required this.primary,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        decoration: BoxDecoration(
+          color: AtrioColors.hostSurface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12, right: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (statusLabel != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: statusColor ?? Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                statusLabel!,
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: statusColor ?? Colors.white,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: onClose,
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: Colors.white.withValues(alpha: 0.65),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            if (!booked)
-              ElevatedButton.icon(
-                onPressed: () => _toggleBlock(_selectedDay!),
-                icon: Icon(blocked ? Icons.lock_open : Icons.block, size: 16),
-                label: Text(
-                  blocked ? l.calendarUnblock : l.calendarBlock,
-                  style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700, fontSize: 13),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      blocked ? AtrioColors.neonLime : Colors.red[400],
-                  foregroundColor: blocked ? Colors.black : Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  elevation: 0,
-                ),
-              ),
-            if (booked)
-              OutlinedButton(
-                onPressed: () => _showDayDetail(_selectedDay!),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AtrioColors.neonLime,
-                  side: BorderSide(
-                      color: AtrioColors.neonLime.withValues(alpha: 0.3)),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                ),
-                child: Text(l.calendarViewDetails,
-                    style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600, fontSize: 13)),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: primary,
+            ),
           ],
         ),
-      );
-    }
+      ),
+    );
+  }
+}
 
-    // ── Range mode but not yet complete → hint + close ─────────────────
-    // No bottomPad inside the padding: the SizedBox(56 + viewPadding.bottom)
-    // beneath the action bar already accounts for the floating nav, so
-    // adding bottomPad here would push the hint upward off-center.
-    if (_isRangeMode && (_rangeStart == null || _rangeEnd == null)) {
-      return Container(
-        key: const ValueKey('range-hint'),
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: decoration(),
+class _HintCard extends StatelessWidget {
+  final String text;
+  final VoidCallback onClose;
+  const _HintCard({
+    super.key,
+    required this.text,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+        decoration: BoxDecoration(
+          color: AtrioColors.hostSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
         child: Row(
           children: [
-            closeButton(),
-            const SizedBox(width: 12),
-            const Icon(Icons.info_outline,
-                size: 16, color: AtrioColors.hostTextTertiary),
-            const SizedBox(width: 8),
+            Icon(Icons.info_outline_rounded,
+                size: 16, color: Colors.white.withValues(alpha: 0.55)),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                _rangeStart == null
-                    ? l.calendarSelectStartDate
-                    : l.calendarSelectEndDate,
+                text,
                 style: GoogleFonts.inter(
-                    fontSize: 13, color: AtrioColors.hostTextSecondary),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.78),
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: onClose,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Icon(Icons.close_rounded,
+                    size: 16, color: Colors.white.withValues(alpha: 0.55)),
               ),
             ),
           ],
         ),
-      );
-    }
-
-    // No selection → no extra reservation; the SizedBox below the
-    // action bar already accounts for the floating nav + safe area.
-    return const SizedBox(key: ValueKey('empty'), height: 0);
+      ),
+    );
   }
+}
 
-  Widget _legend(Color color, String label) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: 4),
-      Text(label, style: GoogleFonts.inter(fontSize: 10, color: AtrioColors.hostTextSecondary)),
-    ]);
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color background;
+  final Color foreground;
+  final VoidCallback onTap;
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: foreground),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: foreground,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color background;
+  final Color foreground;
+  final VoidCallback onTap;
+  const _SheetButton({
+    required this.icon,
+    required this.label,
+    required this.background,
+    required this.foreground,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: foreground),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: foreground,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

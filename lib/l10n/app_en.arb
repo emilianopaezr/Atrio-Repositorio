@@ -484,6 +484,8 @@
   "calendarSelectStartDate": "Select start date",
   "calendarSelectEndDate": "Select end date",
   "calendarViewDetails": "View details",
+  "calendarDay": "day",
+  "calendarDays": "days",
   "calendarMonthJan": "January",
   "calendarMonthFeb": "February",
   "calendarMonthMar": "March",
