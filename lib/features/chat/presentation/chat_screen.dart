@@ -205,13 +205,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 16),
             ListTile(
-              leading: const Icon(Icons.photo_library_rounded, color: AtrioColors.neonLimeDark),
-              title: Text(l.chatGallery),
+              leading: Icon(Icons.photo_library_outlined,
+                  color: AtrioColors.guestTextPrimary),
+              title: Text(
+                l.chatGallery,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AtrioColors.guestTextPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             ListTile(
-              leading: const Icon(Icons.camera_alt_rounded, color: AtrioColors.neonLimeDark),
-              title: Text(l.chatCamera),
+              leading: Icon(Icons.photo_camera_outlined,
+                  color: AtrioColors.guestTextPrimary),
+              title: Text(
+                l.chatCamera,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AtrioColors.guestTextPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             const SizedBox(height: 8),
@@ -302,7 +320,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(height: 12),
             if (!isImage)
               ListTile(
-                leading: const Icon(Icons.copy_rounded, color: AtrioColors.neonLimeDark),
+                leading: Icon(Icons.copy_rounded,
+                    color: AtrioColors.guestTextPrimary),
                 title: Text(l.chatCopyText),
                 onTap: () {
                   Clipboard.setData(ClipboardData(text: msg['text'] as String? ?? ''));
@@ -314,7 +333,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             if (isMe && !isImage)
               ListTile(
-                leading: const Icon(Icons.edit_rounded, color: AtrioColors.neonLimeDark),
+                leading: Icon(Icons.edit_outlined,
+                    color: AtrioColors.guestTextPrimary),
                 title: Text(l.chatEditMessage),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -469,7 +489,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const SizedBox(height: 12),
             if (listingId != null && listingId.isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.storefront_rounded, color: AtrioColors.neonLimeDark),
+                leading: Icon(Icons.storefront_outlined,
+                    color: AtrioColors.guestTextPrimary),
                 title: Text(l.chatViewListing),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -477,7 +498,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.cleaning_services_rounded, color: AtrioColors.neonLimeDark),
+              leading: Icon(Icons.delete_outline_rounded,
+                  color: AtrioColors.guestTextPrimary),
               title: Text(l.chatClearMyMessages),
               subtitle: Text(l.chatClearMyMessagesDesc),
               onTap: () {
@@ -718,62 +740,44 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         bottom: false,
         child: Column(
           children: [
-            // ─── EDITORIAL HEADER ───
+            // ─── EDITORIAL HEADER — matches the Mensajes inbox row:
+            //    plain back arrow, circular 44px avatar, title + small
+            //    "online" status, "···" affordance. No lime accent,
+            //    no bordered chip wrappers. ───
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 12),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).maybePop(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: border),
-                      ),
-                      child: Icon(Icons.arrow_back_rounded, size: 18, color: textPrimary),
-                    ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: Icon(Icons.arrow_back_ios_new_rounded,
+                        size: 18, color: textPrimary),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                        minWidth: 40, minHeight: 40),
                   ),
-                  const SizedBox(width: 12),
-                  Stack(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: AtrioColors.neonLime,
-                          borderRadius: BorderRadius.circular(13),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.chat_bubble_rounded,
-                            size: 18, color: Colors.black),
+                  const SizedBox(width: 4),
+                  ClipOval(
+                    child: SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: Container(
+                        color: AtrioColors.guestSurfaceVariant,
+                        child: Icon(Icons.person_rounded,
+                            color: AtrioColors.guestTextTertiary, size: 22),
                       ),
-                      Positioned(
-                        bottom: -1,
-                        right: -1,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: AtrioColors.success,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: bg, width: 2),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           listingTitle,
                           style: GoogleFonts.inter(
-                            fontSize: 15,
+                            fontSize: 15.5,
                             fontWeight: FontWeight.w800,
                             color: textPrimary,
                             letterSpacing: -0.3,
@@ -792,14 +796,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 6),
                             Text(
                               l.chatOnline,
                               style: GoogleFonts.inter(
                                 fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: AtrioColors.success,
-                                letterSpacing: 0.2,
+                                fontWeight: FontWeight.w600,
+                                color: textSecondary,
+                                letterSpacing: -0.1,
                               ),
                             ),
                           ],
@@ -807,18 +811,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: _showConversationMenu,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: border),
-                      ),
-                      child: Icon(Icons.more_horiz_rounded, size: 20, color: textPrimary),
-                    ),
+                  IconButton(
+                    onPressed: _showConversationMenu,
+                    icon: Icon(Icons.more_horiz_rounded,
+                        size: 22, color: textPrimary),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                        minWidth: 40, minHeight: 40),
                   ),
                 ],
               ),
