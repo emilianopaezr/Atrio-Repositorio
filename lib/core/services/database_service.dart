@@ -704,6 +704,11 @@ class DatabaseService {
   /// Includes `listing.host_id` so the chat list can split between
   /// "Anfitrión" (the signed-in user is the host of this thread) and
   /// "Huésped" (the user is the guest writing to someone else's host).
+  ///
+  /// Also resolves the OTHER participant for each conversation and
+  /// attaches `other_user` ({id, display_name, photo_url}) so the
+  /// inbox can show a real per-user avatar + name instead of the
+  /// listing's title.
   static Future<List<Map<String, dynamic>>> getConversations(String userId) async {
     final response = await _client
         .from(AppConstants.tableConversations)
@@ -711,7 +716,41 @@ class DatabaseService {
         .contains('participant_ids', [userId])
         .order('last_message_at', ascending: false);
 
-    return List<Map<String, dynamic>>.from(response);
+    final convs = List<Map<String, dynamic>>.from(response);
+    if (convs.isEmpty) return convs;
+
+    // Collect every "other" participant id across the conversations.
+    final otherIds = <String>{};
+    for (final c in convs) {
+      final parts = List<String>.from(c['participant_ids'] ?? const []);
+      for (final id in parts) {
+        if (id != userId) otherIds.add(id);
+      }
+    }
+    if (otherIds.isEmpty) return convs;
+
+    // Batch-fetch the profiles in one round trip.
+    final profileRows = await _client
+        .from(AppConstants.tableProfiles)
+        .select('id, display_name, photo_url')
+        .inFilter('id', otherIds.toList());
+    final byId = <String, Map<String, dynamic>>{
+      for (final p in (profileRows as List).cast<Map<String, dynamic>>())
+        p['id'].toString(): p,
+    };
+
+    // Attach the resolved other_user to each conversation row.
+    for (final c in convs) {
+      final parts = List<String>.from(c['participant_ids'] ?? const []);
+      final otherId = parts.firstWhere(
+        (id) => id != userId,
+        orElse: () => '',
+      );
+      if (otherId.isNotEmpty && byId.containsKey(otherId)) {
+        c['other_user'] = byId[otherId];
+      }
+    }
+    return convs;
   }
 
   /// Get or create conversation between two users

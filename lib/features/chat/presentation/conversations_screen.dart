@@ -184,7 +184,19 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
             orElse: () => '',
           );
           final listing = asStringMap(conv['listing']);
-          final images = List<String>.from(listing?['images'] ?? []);
+          final other = asStringMap(conv['other_user']);
+          // Prefer the OTHER user's avatar + name (real per-user
+          // identity). Fall back to the listing photo + title when
+          // there's no resolved profile yet.
+          final otherName = (other?['display_name'] as String?)?.trim();
+          final otherPhoto = other?['photo_url'] as String?;
+          final listingImages = List<String>.from(listing?['images'] ?? []);
+          final cardTitle = (otherName != null && otherName.isNotEmpty)
+              ? otherName
+              : (listing?['title']?.toString() ?? l.chatDefault);
+          final cardImage = (otherPhoto != null && otherPhoto.isNotEmpty)
+              ? otherPhoto
+              : (listingImages.isNotEmpty ? listingImages.first : null);
           final lastMessage = conv['last_message_text'] as String? ?? '';
           final lastSender = conv['last_message_sender'] as String?;
           final isMe = lastSender == currentUserId;
@@ -193,8 +205,8 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen>
               : null;
 
           return _ConversationCard(
-            title: listing?['title'] ?? l.chatDefault,
-            imageUrl: images.isNotEmpty ? images.first : null,
+            title: cardTitle,
+            imageUrl: cardImage,
             lastMessage: lastMessage,
             isMe: isMe,
             time: lastMessageAt,
