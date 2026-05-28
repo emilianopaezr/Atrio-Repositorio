@@ -2457,6 +2457,174 @@ class AppLocalizationsEs extends AppLocalizations {
   String get profilePaymentMethods => 'Métodos de pago';
 
   @override
+  String get profilePayoutMP => 'Cobros (Mercado Pago)';
+
+  @override
+  String get mpConnectTitle => 'Cuenta de pago';
+
+  @override
+  String get mpConnectHeroConnected => 'Tu cuenta está conectada';
+
+  @override
+  String get mpConnectHeroDisconnected =>
+      'Conecta tu cuenta para recibir pagos';
+
+  @override
+  String get mpConnectBodyConnected =>
+      'Cada vez que un huésped pague una reserva, Mercado Pago depositará el precio base directamente a tu cuenta. Atrio retiene únicamente el Servicio Atrio.';
+
+  @override
+  String get mpConnectBodyDisconnected =>
+      'Cuando conectas Mercado Pago, los pagos de tus reservas van directamente a tu cuenta. Sin esperas ni transferencias manuales.';
+
+  @override
+  String get mpConnectNotConfigured =>
+      'MP Marketplace aún no está habilitado en este build. Atrio cobra todo a su cuenta y te transfiere manualmente.';
+
+  @override
+  String get mpConnectButtonConnect => 'Conectar Mercado Pago';
+
+  @override
+  String get mpConnectButtonReconnect => 'Volver a conectar Mercado Pago';
+
+  @override
+  String get mpConnectRefresh => 'Actualizar estado';
+
+  @override
+  String get mpConnectStatusConnected => 'CONECTADO';
+
+  @override
+  String get mpConnectStatusDisconnected => 'NO CONECTADO';
+
+  @override
+  String get mpConnectStatusExpired => 'EXPIRADO O INACTIVO';
+
+  @override
+  String mpConnectStatusSubConnected(String userId) {
+    return 'Tus reservas se depositan en MP user $userId';
+  }
+
+  @override
+  String get mpConnectStatusSubDisconnected =>
+      'Necesitas conectar tu cuenta MP para recibir pagos.';
+
+  @override
+  String mpConnectConnectedAt(String date) {
+    return 'Conectado: $date';
+  }
+
+  @override
+  String get mpConnectBrowserError => 'No se pudo abrir el navegador.';
+
+  @override
+  String get mpConnectGenericError =>
+      'Error inesperado al iniciar la conexión.';
+
+  @override
+  String get mpConnectNotEnabledShort =>
+      'MP Marketplace aún no está habilitado en este build.';
+
+  @override
+  String get editProfileEyebrow => 'Tu perfil';
+
+  @override
+  String get editProfileUploadingPhoto => 'Subiendo…';
+
+  @override
+  String get editProfileSectionPersonal => 'DATOS PERSONALES';
+
+  @override
+  String get editProfileFieldName => 'Nombre completo';
+
+  @override
+  String get editProfileFieldEmail => 'Correo electrónico';
+
+  @override
+  String get editProfileEmailVerified => 'VERIFICADO';
+
+  @override
+  String get editProfileEmailCannotChange => 'No se puede cambiar.';
+
+  @override
+  String get editProfileFieldPhone => 'Teléfono';
+
+  @override
+  String get editProfileSectionAbout => 'ACERCA DE TI';
+
+  @override
+  String get editProfileFieldBio => 'Biografía';
+
+  @override
+  String get editProfileBioHelp =>
+      'Cuenta a los huéspedes quién eres. Aumenta la confianza para tus reservas.';
+
+  @override
+  String get editProfileFieldProfession => 'A qué te dedicas';
+
+  @override
+  String get editProfileProfessionHint =>
+      'Ej. Arquitecto, Diseñadora, Estudiante';
+
+  @override
+  String get editProfileFieldDecade => 'Década en que naciste';
+
+  @override
+  String get editProfileFieldLanguages => 'Idiomas que hablas';
+
+  @override
+  String get editProfileFieldInterests => 'Tus intereses';
+
+  @override
+  String get editProfileInterestsHelp =>
+      'Marca algunas cosas que te apasionen — ayuda a los huéspedes a conocerte.';
+
+  @override
+  String get langPortuguese => 'Portugués';
+
+  @override
+  String get langFrench => 'Francés';
+
+  @override
+  String get langItalian => 'Italiano';
+
+  @override
+  String get langGerman => 'Alemán';
+
+  @override
+  String get userInfoEyebrow => 'Tu actividad';
+
+  @override
+  String get favoritesEyebrow => 'Tus guardados';
+
+  @override
+  String get notificationsEyebrow => 'Tu actividad';
+
+  @override
+  String get paymentMethodsEyebrow => 'Tus medios';
+
+  @override
+  String get reviewsHostReplyLabel => 'RESPUESTA DEL ANFITRIÓN';
+
+  @override
+  String get reviewsAddReply => 'Responder';
+
+  @override
+  String get reviewsEditReply => 'Editar respuesta';
+
+  @override
+  String get reviewsReplySheetTitle => 'Tu respuesta pública';
+
+  @override
+  String get reviewsReplyHint =>
+      'Agradece la reseña, aclara dudas o cuenta el contexto. Será visible para todos.';
+
+  @override
+  String get reviewsReplySave => 'Guardar respuesta';
+
+  @override
+  String get reviewsReplySaved => 'Respuesta publicada';
+
+  @override
   String get profileHelpCenter => 'Centro de ayuda';
 
   @override
@@ -4904,18 +5072,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get listingChatWithHost => 'Mensajea con el anfitrión';
-
-  @override
-  String get langPortuguese => 'Portugués';
-
-  @override
-  String get langFrench => 'Francés';
-
-  @override
-  String get langItalian => 'Italiano';
-
-  @override
-  String get langGerman => 'Alemán';
 
   @override
   String get qsEmptyNoRequests => 'Sin solicitudes';

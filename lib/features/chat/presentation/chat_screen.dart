@@ -28,6 +28,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
   Map<String, dynamic>? _conversation;
+  /// Profile of the other participant (display_name, photo_url).
+  /// Resolved by [_loadConversation] so the editorial header can
+  /// render a real avatar + name instead of a generic icon.
+  Map<String, dynamic>? _otherProfile;
   bool _isLoading = true;
   bool _isSending = false;
   bool _otherIsTyping = false;
@@ -98,6 +102,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           .eq('id', widget.conversationId)
           .maybeSingle();
       if (mounted) setState(() => _conversation = data);
+      // Resolve the other participant's profile so the header can
+      // show their real avatar + display name. participant_ids
+      // comes back as a list; pick the one that isn't us.
+      final parts = List<String>.from(
+        (data?['participant_ids'] as List?) ?? const [],
+      );
+      final otherId = parts.firstWhere(
+        (id) => id != _currentUserId,
+        orElse: () => '',
+      );
+      if (otherId.isNotEmpty) {
+        final prof = await SupabaseConfig.client
+            .from('profiles')
+            .select('id, display_name, photo_url')
+            .eq('id', otherId)
+            .maybeSingle();
+        if (mounted) setState(() => _otherProfile = prof);
+      }
     } catch (e) { AppLogger.w('chat: $e', tag: 'chat'); }
   }
 
@@ -761,11 +783,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     child: SizedBox(
                       width: 44,
                       height: 44,
-                      child: Container(
-                        color: AtrioColors.guestSurfaceVariant,
-                        child: Icon(Icons.person_rounded,
-                            color: AtrioColors.guestTextTertiary, size: 22),
-                      ),
+                      child: _otherProfile?['photo_url'] != null &&
+                              (_otherProfile?['photo_url'] as String).isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: _otherProfile!['photo_url'] as String,
+                              fit: BoxFit.cover,
+                              placeholder: (_, _) => Container(
+                                  color: AtrioColors.guestSurfaceVariant),
+                              errorWidget: (_, _, _) => Container(
+                                color: AtrioColors.guestSurfaceVariant,
+                                child: Icon(Icons.person_rounded,
+                                    color: AtrioColors.guestTextTertiary,
+                                    size: 22),
+                              ),
+                            )
+                          : Container(
+                              color: AtrioColors.guestSurfaceVariant,
+                              child: Icon(Icons.person_rounded,
+                                  color: AtrioColors.guestTextTertiary,
+                                  size: 22),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -775,7 +812,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          listingTitle,
+                          (_otherProfile?['display_name'] as String?) ??
+                              listingTitle,
                           style: GoogleFonts.inter(
                             fontSize: 15.5,
                             fontWeight: FontWeight.w800,

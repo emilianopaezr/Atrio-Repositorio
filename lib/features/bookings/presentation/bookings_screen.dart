@@ -540,7 +540,7 @@ class _BookingCard extends StatelessWidget {
                   borderRadius: const BorderRadius.horizontal(
                       left: Radius.circular(19)),
                   child: SizedBox(
-                    width: 140,
+                    width: 118,
                     child: firstImage != null
                         ? CachedNetworkImage(
                             imageUrl: firstImage,

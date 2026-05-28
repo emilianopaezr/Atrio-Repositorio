@@ -4621,6 +4621,312 @@ abstract class AppLocalizations {
   /// **'Métodos de pago'**
   String get profilePaymentMethods;
 
+  /// No description provided for @profilePayoutMP.
+  ///
+  /// In es, this message translates to:
+  /// **'Cobros (Mercado Pago)'**
+  String get profilePayoutMP;
+
+  /// No description provided for @mpConnectTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta de pago'**
+  String get mpConnectTitle;
+
+  /// No description provided for @mpConnectHeroConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta está conectada'**
+  String get mpConnectHeroConnected;
+
+  /// No description provided for @mpConnectHeroDisconnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Conecta tu cuenta para recibir pagos'**
+  String get mpConnectHeroDisconnected;
+
+  /// No description provided for @mpConnectBodyConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Cada vez que un huésped pague una reserva, Mercado Pago depositará el precio base directamente a tu cuenta. Atrio retiene únicamente el Servicio Atrio.'**
+  String get mpConnectBodyConnected;
+
+  /// No description provided for @mpConnectBodyDisconnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuando conectas Mercado Pago, los pagos de tus reservas van directamente a tu cuenta. Sin esperas ni transferencias manuales.'**
+  String get mpConnectBodyDisconnected;
+
+  /// No description provided for @mpConnectNotConfigured.
+  ///
+  /// In es, this message translates to:
+  /// **'MP Marketplace aún no está habilitado en este build. Atrio cobra todo a su cuenta y te transfiere manualmente.'**
+  String get mpConnectNotConfigured;
+
+  /// No description provided for @mpConnectButtonConnect.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectar Mercado Pago'**
+  String get mpConnectButtonConnect;
+
+  /// No description provided for @mpConnectButtonReconnect.
+  ///
+  /// In es, this message translates to:
+  /// **'Volver a conectar Mercado Pago'**
+  String get mpConnectButtonReconnect;
+
+  /// No description provided for @mpConnectRefresh.
+  ///
+  /// In es, this message translates to:
+  /// **'Actualizar estado'**
+  String get mpConnectRefresh;
+
+  /// No description provided for @mpConnectStatusConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'CONECTADO'**
+  String get mpConnectStatusConnected;
+
+  /// No description provided for @mpConnectStatusDisconnected.
+  ///
+  /// In es, this message translates to:
+  /// **'NO CONECTADO'**
+  String get mpConnectStatusDisconnected;
+
+  /// No description provided for @mpConnectStatusExpired.
+  ///
+  /// In es, this message translates to:
+  /// **'EXPIRADO O INACTIVO'**
+  String get mpConnectStatusExpired;
+
+  /// No description provided for @mpConnectStatusSubConnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus reservas se depositan en MP user {userId}'**
+  String mpConnectStatusSubConnected(String userId);
+
+  /// No description provided for @mpConnectStatusSubDisconnected.
+  ///
+  /// In es, this message translates to:
+  /// **'Necesitas conectar tu cuenta MP para recibir pagos.'**
+  String get mpConnectStatusSubDisconnected;
+
+  /// No description provided for @mpConnectConnectedAt.
+  ///
+  /// In es, this message translates to:
+  /// **'Conectado: {date}'**
+  String mpConnectConnectedAt(String date);
+
+  /// No description provided for @mpConnectBrowserError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo abrir el navegador.'**
+  String get mpConnectBrowserError;
+
+  /// No description provided for @mpConnectGenericError.
+  ///
+  /// In es, this message translates to:
+  /// **'Error inesperado al iniciar la conexión.'**
+  String get mpConnectGenericError;
+
+  /// No description provided for @mpConnectNotEnabledShort.
+  ///
+  /// In es, this message translates to:
+  /// **'MP Marketplace aún no está habilitado en este build.'**
+  String get mpConnectNotEnabledShort;
+
+  /// No description provided for @editProfileEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu perfil'**
+  String get editProfileEyebrow;
+
+  /// No description provided for @editProfileUploadingPhoto.
+  ///
+  /// In es, this message translates to:
+  /// **'Subiendo…'**
+  String get editProfileUploadingPhoto;
+
+  /// No description provided for @editProfileSectionPersonal.
+  ///
+  /// In es, this message translates to:
+  /// **'DATOS PERSONALES'**
+  String get editProfileSectionPersonal;
+
+  /// No description provided for @editProfileFieldName.
+  ///
+  /// In es, this message translates to:
+  /// **'Nombre completo'**
+  String get editProfileFieldName;
+
+  /// No description provided for @editProfileFieldEmail.
+  ///
+  /// In es, this message translates to:
+  /// **'Correo electrónico'**
+  String get editProfileFieldEmail;
+
+  /// No description provided for @editProfileEmailVerified.
+  ///
+  /// In es, this message translates to:
+  /// **'VERIFICADO'**
+  String get editProfileEmailVerified;
+
+  /// No description provided for @editProfileEmailCannotChange.
+  ///
+  /// In es, this message translates to:
+  /// **'No se puede cambiar.'**
+  String get editProfileEmailCannotChange;
+
+  /// No description provided for @editProfileFieldPhone.
+  ///
+  /// In es, this message translates to:
+  /// **'Teléfono'**
+  String get editProfileFieldPhone;
+
+  /// No description provided for @editProfileSectionAbout.
+  ///
+  /// In es, this message translates to:
+  /// **'ACERCA DE TI'**
+  String get editProfileSectionAbout;
+
+  /// No description provided for @editProfileFieldBio.
+  ///
+  /// In es, this message translates to:
+  /// **'Biografía'**
+  String get editProfileFieldBio;
+
+  /// No description provided for @editProfileBioHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuenta a los huéspedes quién eres. Aumenta la confianza para tus reservas.'**
+  String get editProfileBioHelp;
+
+  /// No description provided for @editProfileFieldProfession.
+  ///
+  /// In es, this message translates to:
+  /// **'A qué te dedicas'**
+  String get editProfileFieldProfession;
+
+  /// No description provided for @editProfileProfessionHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Ej. Arquitecto, Diseñadora, Estudiante'**
+  String get editProfileProfessionHint;
+
+  /// No description provided for @editProfileFieldDecade.
+  ///
+  /// In es, this message translates to:
+  /// **'Década en que naciste'**
+  String get editProfileFieldDecade;
+
+  /// No description provided for @editProfileFieldLanguages.
+  ///
+  /// In es, this message translates to:
+  /// **'Idiomas que hablas'**
+  String get editProfileFieldLanguages;
+
+  /// No description provided for @editProfileFieldInterests.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus intereses'**
+  String get editProfileFieldInterests;
+
+  /// No description provided for @editProfileInterestsHelp.
+  ///
+  /// In es, this message translates to:
+  /// **'Marca algunas cosas que te apasionen — ayuda a los huéspedes a conocerte.'**
+  String get editProfileInterestsHelp;
+
+  /// No description provided for @langPortuguese.
+  ///
+  /// In es, this message translates to:
+  /// **'Portugués'**
+  String get langPortuguese;
+
+  /// No description provided for @langFrench.
+  ///
+  /// In es, this message translates to:
+  /// **'Francés'**
+  String get langFrench;
+
+  /// No description provided for @langItalian.
+  ///
+  /// In es, this message translates to:
+  /// **'Italiano'**
+  String get langItalian;
+
+  /// No description provided for @langGerman.
+  ///
+  /// In es, this message translates to:
+  /// **'Alemán'**
+  String get langGerman;
+
+  /// No description provided for @userInfoEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu actividad'**
+  String get userInfoEyebrow;
+
+  /// No description provided for @favoritesEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus guardados'**
+  String get favoritesEyebrow;
+
+  /// No description provided for @notificationsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu actividad'**
+  String get notificationsEyebrow;
+
+  /// No description provided for @paymentMethodsEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Tus medios'**
+  String get paymentMethodsEyebrow;
+
+  /// No description provided for @reviewsHostReplyLabel.
+  ///
+  /// In es, this message translates to:
+  /// **'RESPUESTA DEL ANFITRIÓN'**
+  String get reviewsHostReplyLabel;
+
+  /// No description provided for @reviewsAddReply.
+  ///
+  /// In es, this message translates to:
+  /// **'Responder'**
+  String get reviewsAddReply;
+
+  /// No description provided for @reviewsEditReply.
+  ///
+  /// In es, this message translates to:
+  /// **'Editar respuesta'**
+  String get reviewsEditReply;
+
+  /// No description provided for @reviewsReplySheetTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu respuesta pública'**
+  String get reviewsReplySheetTitle;
+
+  /// No description provided for @reviewsReplyHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Agradece la reseña, aclara dudas o cuenta el contexto. Será visible para todos.'**
+  String get reviewsReplyHint;
+
+  /// No description provided for @reviewsReplySave.
+  ///
+  /// In es, this message translates to:
+  /// **'Guardar respuesta'**
+  String get reviewsReplySave;
+
+  /// No description provided for @reviewsReplySaved.
+  ///
+  /// In es, this message translates to:
+  /// **'Respuesta publicada'**
+  String get reviewsReplySaved;
+
   /// No description provided for @profileHelpCenter.
   ///
   /// In es, this message translates to:
@@ -8858,30 +9164,6 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Mensajea con el anfitrión'**
   String get listingChatWithHost;
-
-  /// No description provided for @langPortuguese.
-  ///
-  /// In es, this message translates to:
-  /// **'Portugués'**
-  String get langPortuguese;
-
-  /// No description provided for @langFrench.
-  ///
-  /// In es, this message translates to:
-  /// **'Francés'**
-  String get langFrench;
-
-  /// No description provided for @langItalian.
-  ///
-  /// In es, this message translates to:
-  /// **'Italiano'**
-  String get langItalian;
-
-  /// No description provided for @langGerman.
-  ///
-  /// In es, this message translates to:
-  /// **'Alemán'**
-  String get langGerman;
 
   /// No description provided for @qsEmptyNoRequests.
   ///

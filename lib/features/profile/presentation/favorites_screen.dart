@@ -79,7 +79,7 @@ class FavoritesScreen extends ConsumerWidget {
                         const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                   const SizedBox(height: 6),
-                  const PageEyebrow(text: 'Guardados'),
+                  PageEyebrow(text: l.favoritesEyebrow),
                   const SizedBox(height: 10),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,

@@ -87,6 +87,7 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
       child: Column(
@@ -100,7 +101,7 @@ class _Header extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
           ),
           const SizedBox(height: 6),
-          const PageEyebrow(text: 'Cobros y pagos'),
+          PageEyebrow(text: l.paymentMethodsEyebrow),
           const SizedBox(height: 10),
           FittedBox(
             fit: BoxFit.scaleDown,

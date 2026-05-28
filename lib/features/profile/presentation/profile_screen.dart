@@ -264,7 +264,7 @@ class ProfileScreen extends ConsumerWidget {
                       // directly.
                       _SettingsItem(
                         icon: Icons.account_balance_wallet_outlined,
-                        title: 'Cobros (Mercado Pago)',
+                        title: l.profilePayoutMP,
                         accentBg: const Color(0xFFCCEEFB),
                         accentFg: const Color(0xFF009EE3),
                         darkAccent: const Color(0xFF35B6EB),

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../core/services/host_payment_service.dart';
 import '../../../core/utils/app_logger.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/atrio_snackbar.dart';
 
 /// Lets a host connect (or re-check) their Mercado Pago account so
@@ -72,11 +73,9 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
 
   Future<void> _connect() async {
     HapticFeedback.lightImpact();
+    final l = AppLocalizations.of(context);
     if (!HostPaymentService.marketplaceConfigured) {
-      AtrioSnackbar.info(
-        context,
-        'MP Marketplace aún no está habilitado en este build.',
-      );
+      AtrioSnackbar.info(context, l.mpConnectNotEnabledShort);
       return;
     }
     setState(() => _connecting = true);
@@ -87,19 +86,13 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
         mode: LaunchMode.externalApplication,
       );
       if (!ok && mounted) {
-        AtrioSnackbar.danger(
-          context,
-          'No se pudo abrir el navegador.',
-        );
+        AtrioSnackbar.danger(context, l.mpConnectBrowserError);
       }
     } on HostPaymentException catch (e) {
       if (mounted) AtrioSnackbar.danger(context, e.message);
     } catch (e) {
       if (mounted) {
-        AtrioSnackbar.danger(
-          context,
-          'Error inesperado al iniciar la conexión.',
-        );
+        AtrioSnackbar.danger(context, l.mpConnectGenericError);
       }
     } finally {
       if (mounted) setState(() => _connecting = false);
@@ -108,6 +101,7 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark
         ? AtrioColors.hostBackground
@@ -140,7 +134,7 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Cuenta de pago',
+          l.mpConnectTitle,
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
@@ -168,8 +162,8 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
             const SizedBox(height: 12),
             Text(
               connected
-                  ? 'Tu cuenta está conectada'
-                  : 'Conecta tu cuenta para recibir pagos',
+                  ? l.mpConnectHeroConnected
+                  : l.mpConnectHeroDisconnected,
               style: GoogleFonts.inter(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
@@ -181,8 +175,8 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
             const SizedBox(height: 8),
             Text(
               connected
-                  ? 'Cada vez que un huésped pague una reserva, Mercado Pago depositará el precio base directamente a tu cuenta. Atrio retiene únicamente el Servicio Atrio.'
-                  : 'Cuando conectas Mercado Pago, los pagos de tus reservas van directamente a tu cuenta. Sin esperas ni transferencias manuales.',
+                  ? l.mpConnectBodyConnected
+                  : l.mpConnectBodyDisconnected,
               style: GoogleFonts.inter(
                 fontSize: 13.5,
                 color: textS,
@@ -219,7 +213,7 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'MP Marketplace aún no está habilitado en este build. Atrio cobra todo a su cuenta y te transfiere manualmente.',
+                        l.mpConnectNotConfigured,
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -260,8 +254,8 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
                       )
                     : Text(
                         connected
-                            ? 'Volver a conectar Mercado Pago'
-                            : 'Conectar Mercado Pago',
+                            ? l.mpConnectButtonReconnect
+                            : l.mpConnectButtonConnect,
                         style: GoogleFonts.inter(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w800,
@@ -276,7 +270,7 @@ class _HostPaymentConnectScreenState extends State<HostPaymentConnectScreen>
                 onPressed: _refresh,
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: Text(
-                  'Actualizar estado',
+                  l.mpConnectRefresh,
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -333,16 +327,19 @@ class _StatusCard extends StatelessWidget {
       );
     }
 
+    final l = AppLocalizations.of(context);
     final connected = status?.isUsable ?? false;
     final accent = connected
         ? AtrioColors.neonLime
         : AtrioColors.vibrantOrange;
     final label = connected
-        ? 'CONECTADO'
-        : (status == null ? 'NO CONECTADO' : 'EXPIRADO O INACTIVO');
+        ? l.mpConnectStatusConnected
+        : (status == null
+            ? l.mpConnectStatusDisconnected
+            : l.mpConnectStatusExpired);
     final sub = connected
-        ? 'Tus reservas se depositan en MP user ${status?.mpUserId ?? "—"}'
-        : 'Necesitas conectar tu cuenta MP para recibir pagos.';
+        ? l.mpConnectStatusSubConnected(status?.mpUserId ?? '—')
+        : l.mpConnectStatusSubDisconnected;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
@@ -395,7 +392,7 @@ class _StatusCard extends StatelessWidget {
                 if (status?.connectedAt != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Conectado: ${_fmtDate(status!.connectedAt!)}',
+                    l.mpConnectConnectedAt(_fmtDate(status!.connectedAt!)),
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       color: textT,

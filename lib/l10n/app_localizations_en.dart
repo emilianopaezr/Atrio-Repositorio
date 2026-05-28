@@ -2447,6 +2447,173 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profilePaymentMethods => 'Payment methods';
 
   @override
+  String get profilePayoutMP => 'Payouts (Mercado Pago)';
+
+  @override
+  String get mpConnectTitle => 'Payout account';
+
+  @override
+  String get mpConnectHeroConnected => 'Your account is connected';
+
+  @override
+  String get mpConnectHeroDisconnected =>
+      'Connect your account to receive payouts';
+
+  @override
+  String get mpConnectBodyConnected =>
+      'Every time a guest pays a booking, Mercado Pago deposits the base price straight into your account. Atrio keeps only the Atrio Service fee.';
+
+  @override
+  String get mpConnectBodyDisconnected =>
+      'When you connect Mercado Pago, your booking payouts land directly in your account. No waiting, no manual transfers.';
+
+  @override
+  String get mpConnectNotConfigured =>
+      'MP Marketplace isn\'t enabled in this build yet. Atrio collects everything and transfers to you manually.';
+
+  @override
+  String get mpConnectButtonConnect => 'Connect Mercado Pago';
+
+  @override
+  String get mpConnectButtonReconnect => 'Reconnect Mercado Pago';
+
+  @override
+  String get mpConnectRefresh => 'Refresh status';
+
+  @override
+  String get mpConnectStatusConnected => 'CONNECTED';
+
+  @override
+  String get mpConnectStatusDisconnected => 'NOT CONNECTED';
+
+  @override
+  String get mpConnectStatusExpired => 'EXPIRED OR INACTIVE';
+
+  @override
+  String mpConnectStatusSubConnected(String userId) {
+    return 'Your bookings deposit into MP user $userId';
+  }
+
+  @override
+  String get mpConnectStatusSubDisconnected =>
+      'You need to connect your MP account to receive payouts.';
+
+  @override
+  String mpConnectConnectedAt(String date) {
+    return 'Connected: $date';
+  }
+
+  @override
+  String get mpConnectBrowserError => 'Couldn\'t open the browser.';
+
+  @override
+  String get mpConnectGenericError =>
+      'Unexpected error starting the connection.';
+
+  @override
+  String get mpConnectNotEnabledShort =>
+      'MP Marketplace isn\'t enabled in this build yet.';
+
+  @override
+  String get editProfileEyebrow => 'Your profile';
+
+  @override
+  String get editProfileUploadingPhoto => 'Uploading…';
+
+  @override
+  String get editProfileSectionPersonal => 'PERSONAL INFO';
+
+  @override
+  String get editProfileFieldName => 'Full name';
+
+  @override
+  String get editProfileFieldEmail => 'Email';
+
+  @override
+  String get editProfileEmailVerified => 'VERIFIED';
+
+  @override
+  String get editProfileEmailCannotChange => 'Can\'t be changed.';
+
+  @override
+  String get editProfileFieldPhone => 'Phone';
+
+  @override
+  String get editProfileSectionAbout => 'ABOUT YOU';
+
+  @override
+  String get editProfileFieldBio => 'Bio';
+
+  @override
+  String get editProfileBioHelp =>
+      'Tell guests who you are. Builds trust for your bookings.';
+
+  @override
+  String get editProfileFieldProfession => 'What you do';
+
+  @override
+  String get editProfileProfessionHint => 'e.g. Architect, Designer, Student';
+
+  @override
+  String get editProfileFieldDecade => 'Decade you were born';
+
+  @override
+  String get editProfileFieldLanguages => 'Languages you speak';
+
+  @override
+  String get editProfileFieldInterests => 'Your interests';
+
+  @override
+  String get editProfileInterestsHelp =>
+      'Pick a few things you love — helps guests get to know you.';
+
+  @override
+  String get langPortuguese => 'Portuguese';
+
+  @override
+  String get langFrench => 'French';
+
+  @override
+  String get langItalian => 'Italian';
+
+  @override
+  String get langGerman => 'German';
+
+  @override
+  String get userInfoEyebrow => 'Your activity';
+
+  @override
+  String get favoritesEyebrow => 'Your saves';
+
+  @override
+  String get notificationsEyebrow => 'Your activity';
+
+  @override
+  String get paymentMethodsEyebrow => 'Your methods';
+
+  @override
+  String get reviewsHostReplyLabel => 'HOST\'S REPLY';
+
+  @override
+  String get reviewsAddReply => 'Reply';
+
+  @override
+  String get reviewsEditReply => 'Edit reply';
+
+  @override
+  String get reviewsReplySheetTitle => 'Your public reply';
+
+  @override
+  String get reviewsReplyHint =>
+      'Thank the guest, clarify questions, or give context. Visible to everyone.';
+
+  @override
+  String get reviewsReplySave => 'Save reply';
+
+  @override
+  String get reviewsReplySaved => 'Reply published';
+
+  @override
   String get profileHelpCenter => 'Help center';
 
   @override
@@ -4882,18 +5049,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listingChatWithHost => 'Message host';
-
-  @override
-  String get langPortuguese => 'Portuguese';
-
-  @override
-  String get langFrench => 'French';
-
-  @override
-  String get langItalian => 'Italian';
-
-  @override
-  String get langGerman => 'German';
 
   @override
   String get qsEmptyNoRequests => 'No requests yet';

@@ -840,7 +840,8 @@ class DatabaseService {
   // REVIEWS
   // =============================================
 
-  /// Get reviews for a listing
+  /// Get reviews for a listing, including the reviewer's profile and
+  /// host_reply fields so the UI can show "Respuesta del anfitrión".
   static Future<List<Map<String, dynamic>>> getListingReviews(
     String listingId, {
     int limit = 20,
@@ -848,7 +849,8 @@ class DatabaseService {
   }) async {
     final response = await _client
         .from(AppConstants.tableReviews)
-        .select('*, reviewer:profiles!reviewer_id(id, display_name, photo_url)')
+        .select(
+            '*, reviewer:profiles!reviewer_id(id, display_name, photo_url)')
         .eq('listing_id', listingId)
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
@@ -865,6 +867,23 @@ class DatabaseService {
         .single();
 
     return response;
+  }
+
+  /// Host adds (or updates) their public reply to a review. The RLS
+  /// policy on `reviews` already restricts UPDATE to auth.uid() ==
+  /// host_id, so the server enforces that only the listing's host can
+  /// reply.
+  static Future<void> setHostReply({
+    required String reviewId,
+    required String reply,
+  }) async {
+    await _client
+        .from(AppConstants.tableReviews)
+        .update({
+          'host_reply': reply.trim().isEmpty ? null : reply.trim(),
+          'host_reply_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', reviewId);
   }
 
   // =============================================

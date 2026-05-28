@@ -278,7 +278,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
                     const SizedBox(height: 6),
-                    const PageEyebrow(text: 'Tu perfil'),
+                    PageEyebrow(text: l.editProfileEyebrow),
                     const SizedBox(height: 10),
                     FittedBox(
                       fit: BoxFit.scaleDown,
@@ -335,7 +335,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   ),
                                   child: Text(
                                     _uploadingAvatar
-                                        ? 'Subiendo…'
+                                        ? l.editProfileUploadingPhoto
                                         : l.editProfileChangePhoto,
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
@@ -351,10 +351,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               const SizedBox(height: 32),
 
                               // ─── Section: Datos personales ───
-                              _SectionHeader(label: 'DATOS PERSONALES'),
+                              _SectionHeader(label: l.editProfileSectionPersonal),
                               const SizedBox(height: 14),
 
-                              _FieldLabel('Nombre completo'),
+                              _FieldLabel(l.editProfileFieldName),
                               const SizedBox(height: 6),
                               _Field(
                                 controller: _nameController,
@@ -367,7 +367,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              _FieldLabel('Correo electrónico'),
+                              _FieldLabel(l.editProfileFieldEmail),
                               const SizedBox(height: 6),
                               _ReadOnlyField(
                                 value: email,
@@ -381,7 +381,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    'VERIFICADO',
+                                    l.editProfileEmailVerified,
                                     style: GoogleFonts.inter(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w800,
@@ -395,7 +395,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 4),
                                 child: Text(
-                                  'No se puede cambiar.',
+                                  l.editProfileEmailCannotChange,
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w500,
@@ -405,7 +405,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              _FieldLabel('Teléfono'),
+                              _FieldLabel(l.editProfileFieldPhone),
                               const SizedBox(height: 6),
                               _Field(
                                 controller: _phoneController,
@@ -421,10 +421,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               const SizedBox(height: 28),
 
                               // ─── Section: Acerca de ti ───
-                              _SectionHeader(label: 'ACERCA DE TI'),
+                              _SectionHeader(label: l.editProfileSectionAbout),
                               const SizedBox(height: 14),
 
-                              _FieldLabel('Biografía'),
+                              _FieldLabel(l.editProfileFieldBio),
                               const SizedBox(height: 6),
                               _Field(
                                 controller: _bioController,
@@ -436,8 +436,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 4),
                                 child: Text(
-                                  'Contale a los huéspedes quién sos. '
-                                  'Aumenta la confianza para tus reservas.',
+                                  l.editProfileBioHelp,
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w500,
@@ -448,17 +447,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              _FieldLabel('A qué te dedicas'),
+                              _FieldLabel(l.editProfileFieldProfession),
                               const SizedBox(height: 6),
                               _Field(
                                 controller: _professionController,
-                                hint: 'Ej. Arquitecto, Diseñadora, Estudiante',
+                                hint: l.editProfileProfessionHint,
                                 maxLength: 40,
                                 prefixIcon: Icons.work_outline_rounded,
                               ),
                               const SizedBox(height: 16),
 
-                              _FieldLabel('Década en que naciste'),
+                              _FieldLabel(l.editProfileFieldDecade),
                               const SizedBox(height: 8),
                               Wrap(
                                 spacing: 8,
@@ -504,18 +503,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              _FieldLabel('Idiomas que hablás'),
+                              _FieldLabel(l.editProfileFieldLanguages),
                               const SizedBox(height: 8),
                               Wrap(
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
-                                  ('es', 'Español'),
-                                  ('en', 'Inglés'),
-                                  ('pt', 'Portugués'),
-                                  ('fr', 'Francés'),
-                                  ('it', 'Italiano'),
-                                  ('de', 'Alemán'),
+                                  ('es', l.langSpanish),
+                                  ('en', l.langEnglish),
+                                  ('pt', l.langPortuguese),
+                                  ('fr', l.langFrench),
+                                  ('it', l.langItalian),
+                                  ('de', l.langGerman),
                                 ].map((lang) {
                                   final selected =
                                       _languages.contains(lang.$1);
@@ -559,13 +558,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              _FieldLabel('Tus intereses'),
+                              _FieldLabel(l.editProfileFieldInterests),
                               const SizedBox(height: 4),
                               Padding(
                                 padding: const EdgeInsets.only(left: 4),
                                 child: Text(
-                                  'Marcá algunas cosas que te apasionen — '
-                                  'ayuda a los huéspedes a conocerte.',
+                                  l.editProfileInterestsHelp,
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w500,

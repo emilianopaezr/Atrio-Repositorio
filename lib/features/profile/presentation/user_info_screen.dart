@@ -12,6 +12,7 @@ import '../../../core/providers/user_provider.dart';
 import '../../../core/providers/host_stats_provider.dart';
 import '../../../core/providers/guest_stats_provider.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/level_progress.dart';
 import '../../../shared/widgets/section_eyebrow.dart';
 import 'widgets/badges_section.dart';
@@ -24,6 +25,7 @@ class UserInfoScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final appMode = ref.watch(appModeProvider);
     final isDark = appMode == AppMode.host;
     final userAsync = ref.watch(userProfileStreamProvider);
@@ -75,10 +77,10 @@ class UserInfoScreen extends ConsumerWidget {
                         const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                   const SizedBox(height: 6),
-                  PageEyebrow(text: 'Perfil', dark: isDark),
+                  PageEyebrow(text: l.userInfoEyebrow, dark: isDark),
                   const SizedBox(height: 10),
                   Text(
-                    'Tu información',
+                    l.profileUserInfo,
                     textAlign: TextAlign.left,
                     style: GoogleFonts.inter(
                       fontSize: 28,
