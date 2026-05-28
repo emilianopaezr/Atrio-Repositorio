@@ -747,10 +747,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 const SizedBox(height: 6),
 
                 // ─── Calendar grid ───
+                // LayoutBuilder + computed aspect ratio guarantees the
+                // 6×7 grid always fills the Expanded constraint exactly,
+                // so the last week-row never gets clipped by the legend
+                // or the floating bottom nav — regardless of device.
                 Expanded(
                   child: Stack(
                     children: [
-                      _buildCalendarGrid(),
+                      LayoutBuilder(
+                        builder: (ctx, constraints) {
+                          final gridWidth = constraints.maxWidth - 40;
+                          final cellWidth = gridWidth / 7;
+                          final cellHeight = constraints.maxHeight / 6;
+                          final aspectRatio = cellHeight <= 0
+                              ? 1.4
+                              : (cellWidth / cellHeight)
+                                  .clamp(0.9, 1.8)
+                                  .toDouble();
+                          return _buildCalendarGrid(aspectRatio);
+                        },
+                      ),
                       if (_isLoading)
                         Positioned.fill(
                           child: Container(
@@ -866,7 +882,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  Widget _buildCalendarGrid() {
+  Widget _buildCalendarGrid(double aspectRatio) {
     final firstDay = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
     final lastDay = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
     final startWeekday = (firstDay.weekday - 1) % 7;
@@ -876,17 +892,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      // childAspectRatio: 1 forces every cell to be a square the same
-      // width as the column. With 6 rows × cell_width that overflows
-      // the Expanded constraint when the bottom nav + legend take
-      // their share, so the last row (29-30 / 31) was getting clipped.
-      // 1.18 keeps cells visually balanced while letting 6 rows fit
-      // comfortably on a 408px-wide / ~720px-tall guest area.
+      // The aspect ratio is computed by the parent LayoutBuilder so
+      // the 6×7 grid exactly fills the available Expanded constraint
+      // — the last week-row stays visible above the legend and the
+      // floating bottom nav, on any screen size.
       child: GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 7,
-          childAspectRatio: 1.18,
+          childAspectRatio: aspectRatio,
         ),
         itemCount: 42,
         itemBuilder: (_, index) {

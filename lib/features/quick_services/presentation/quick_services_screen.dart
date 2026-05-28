@@ -906,6 +906,11 @@ class _QuickServicesScreenState extends ConsumerState<QuickServicesScreen>
     showModalBottomSheet(
       context: detailCtx,
       backgroundColor: Colors.transparent,
+      // Lift the sheet above the floating bottom nav so the last
+      // option ("Delete service") isn't clipped on host shells with
+      // extendBody: true.
+      useRootNavigator: true,
+      useSafeArea: true,
       builder: (ctx) => Container(
         decoration: const BoxDecoration(
           color: AtrioColors.guestBackground,

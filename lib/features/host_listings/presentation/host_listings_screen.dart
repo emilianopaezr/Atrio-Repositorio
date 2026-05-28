@@ -283,11 +283,12 @@ class HostListingsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      // The host shell sets extendBody: true; without `useSafeArea`,
-      // the modal slides under the gesture bar on Android 15 and
-      // the "Eliminar anuncio" tile gets clipped. Combined with the
-      // SafeArea(bottom) wrapper below, this gives a comfortable
-      // breath at the bottom of the sheet on every device.
+      // The host shell sets extendBody: true with a floating
+      // bottomNavigationBar. Mounting on the local navigator means the
+      // sheet is drawn UNDER that nav — clipping the "Eliminar anuncio"
+      // tile. useRootNavigator lifts the sheet above the host shell's
+      // nav. useSafeArea additionally honors the system gesture inset.
+      useRootNavigator: true,
       useSafeArea: true,
       builder: (ctx) => Container(
         decoration: const BoxDecoration(
