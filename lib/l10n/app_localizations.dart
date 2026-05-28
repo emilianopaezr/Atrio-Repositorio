@@ -398,6 +398,12 @@ abstract class AppLocalizations {
   /// **'Finanzas'**
   String get navFinance;
 
+  /// No description provided for @navInsights.
+  ///
+  /// In es, this message translates to:
+  /// **'Métricas'**
+  String get navInsights;
+
   /// No description provided for @commonLoading.
   ///
   /// In es, this message translates to:
@@ -4926,6 +4932,114 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Respuesta publicada'**
   String get reviewsReplySaved;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar cuenta'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountEyebrow.
+  ///
+  /// In es, this message translates to:
+  /// **'Borrado permanente'**
+  String get deleteAccountEyebrow;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Eliminar tu cuenta'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountSubtitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Antes de continuar, cuéntanos por qué te vas. Es opcional pero nos ayuda a mejorar.'**
+  String get deleteAccountSubtitle;
+
+  /// No description provided for @deleteReasonNotUseful.
+  ///
+  /// In es, this message translates to:
+  /// **'No me resulta útil'**
+  String get deleteReasonNotUseful;
+
+  /// No description provided for @deleteReasonExpensive.
+  ///
+  /// In es, this message translates to:
+  /// **'Demasiado caro'**
+  String get deleteReasonExpensive;
+
+  /// No description provided for @deleteReasonAnotherApp.
+  ///
+  /// In es, this message translates to:
+  /// **'Uso otra app'**
+  String get deleteReasonAnotherApp;
+
+  /// No description provided for @deleteReasonNoTime.
+  ///
+  /// In es, this message translates to:
+  /// **'No tengo tiempo de usarla'**
+  String get deleteReasonNoTime;
+
+  /// No description provided for @deleteReasonPrivacy.
+  ///
+  /// In es, this message translates to:
+  /// **'Preocupaciones de privacidad'**
+  String get deleteReasonPrivacy;
+
+  /// No description provided for @deleteReasonBugs.
+  ///
+  /// In es, this message translates to:
+  /// **'Problemas o errores'**
+  String get deleteReasonBugs;
+
+  /// No description provided for @deleteReasonOther.
+  ///
+  /// In es, this message translates to:
+  /// **'Otro motivo'**
+  String get deleteReasonOther;
+
+  /// No description provided for @deleteReasonOtherHint.
+  ///
+  /// In es, this message translates to:
+  /// **'Cuéntanos brevemente (opcional)'**
+  String get deleteReasonOtherHint;
+
+  /// No description provided for @deleteAccountWarningTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Esto no se puede deshacer'**
+  String get deleteAccountWarningTitle;
+
+  /// No description provided for @deleteAccountWarningBody.
+  ///
+  /// In es, this message translates to:
+  /// **'Vamos a borrar permanentemente tu perfil, publicaciones, reservas, mensajes y reseñas. Las transacciones pagadas pueden conservarse por motivos contables.'**
+  String get deleteAccountWarningBody;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In es, this message translates to:
+  /// **'Confirmar eliminación'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountSelectReason.
+  ///
+  /// In es, this message translates to:
+  /// **'Selecciona un motivo para continuar.'**
+  String get deleteAccountSelectReason;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In es, this message translates to:
+  /// **'Tu cuenta fue eliminada.'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @deleteAccountError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo eliminar la cuenta. Intenta de nuevo.'**
+  String get deleteAccountError;
 
   /// No description provided for @profileHelpCenter.
   ///

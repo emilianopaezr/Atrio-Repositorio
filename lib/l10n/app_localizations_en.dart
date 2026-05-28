@@ -160,6 +160,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navFinance => 'Finance';
 
   @override
+  String get navInsights => 'Insights';
+
+  @override
   String get commonLoading => 'Loading...';
 
   @override
@@ -2612,6 +2615,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reviewsReplySaved => 'Reply published';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountEyebrow => 'Permanent removal';
+
+  @override
+  String get deleteAccountTitle => 'Delete your account';
+
+  @override
+  String get deleteAccountSubtitle =>
+      'Before you go, tell us why. It\'s optional but helps us improve.';
+
+  @override
+  String get deleteReasonNotUseful => 'Not useful for me';
+
+  @override
+  String get deleteReasonExpensive => 'Too expensive';
+
+  @override
+  String get deleteReasonAnotherApp => 'I use another app';
+
+  @override
+  String get deleteReasonNoTime => 'I don\'t have time to use it';
+
+  @override
+  String get deleteReasonPrivacy => 'Privacy concerns';
+
+  @override
+  String get deleteReasonBugs => 'Bugs or issues';
+
+  @override
+  String get deleteReasonOther => 'Another reason';
+
+  @override
+  String get deleteReasonOtherHint => 'Tell us briefly (optional)';
+
+  @override
+  String get deleteAccountWarningTitle => 'This can\'t be undone';
+
+  @override
+  String get deleteAccountWarningBody =>
+      'We\'ll permanently delete your profile, listings, bookings, messages and reviews. Paid transactions may be retained for accounting.';
+
+  @override
+  String get deleteAccountConfirm => 'Confirm deletion';
+
+  @override
+  String get deleteAccountSelectReason => 'Pick a reason to continue.';
+
+  @override
+  String get deleteAccountSuccess => 'Your account was deleted.';
+
+  @override
+  String get deleteAccountError => 'Couldn\'t delete the account. Try again.';
 
   @override
   String get profileHelpCenter => 'Help center';

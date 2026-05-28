@@ -436,6 +436,34 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+
+              // ─── DELETE ACCOUNT (quieter than logout — text-only) ───
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () => context.push('/delete-account'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AtrioColors.error,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                    ),
+                    child: Text(
+                      l.deleteAccount,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AtrioColors.error,
+                        decoration: TextDecoration.underline,
+                        decorationColor:
+                            AtrioColors.error.withValues(alpha: 0.4),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

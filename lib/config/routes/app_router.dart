@@ -22,6 +22,7 @@ import '../../features/profile/presentation/user_info_screen.dart';
 import '../../features/profile/presentation/about_screen.dart';
 import '../../features/profile/presentation/terms_screen.dart';
 import '../../features/profile/presentation/privacy_screen.dart';
+import '../../features/profile/presentation/delete_account_screen.dart';
 import '../../features/profile/presentation/host_payment_connect_screen.dart';
 import '../../features/profile/presentation/payment_methods_screen.dart';
 import '../../features/profile/presentation/kyc_screen.dart';
@@ -356,6 +357,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/host/payment-connect',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const HostPaymentConnectScreen(),
+      ),
+      // Self-serve account deletion + leave-reason survey.
+      GoRoute(
+        path: '/delete-account',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const DeleteAccountScreen(),
       ),
       // Identity verification hub (3 cards: email / phone / KYC)
       GoRoute(

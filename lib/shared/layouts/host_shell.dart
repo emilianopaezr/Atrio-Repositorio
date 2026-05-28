@@ -61,7 +61,7 @@ class HostShell extends StatelessWidget {
                 _NavItem(
                   icon: Icons.insights_outlined,
                   activeIcon: Icons.insights,
-                  label: 'Métricas',
+                  label: l.navInsights,
                   isSelected: navigationShell.currentIndex == 3,
                   onTap: () => navigationShell.goBranch(3),
                 ),

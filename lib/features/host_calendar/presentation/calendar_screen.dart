@@ -778,6 +778,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
                 // ─── Action bar ───
                 _buildActionBar(),
+                // HostShell sets extendBody: true, which makes the
+                // body draw BEHIND the bottom nav. Reserve roughly
+                // the nav height + the system gesture inset so the
+                // legend / action bar don't get clipped.
+                SizedBox(
+                  height: 72 +
+                      MediaQuery.of(context).viewPadding.bottom,
+                ),
               ],
             ),
           );

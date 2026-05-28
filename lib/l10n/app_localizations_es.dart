@@ -160,6 +160,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navFinance => 'Finanzas';
 
   @override
+  String get navInsights => 'Métricas';
+
+  @override
   String get commonLoading => 'Cargando...';
 
   @override
@@ -2623,6 +2626,64 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get reviewsReplySaved => 'Respuesta publicada';
+
+  @override
+  String get deleteAccount => 'Eliminar cuenta';
+
+  @override
+  String get deleteAccountEyebrow => 'Borrado permanente';
+
+  @override
+  String get deleteAccountTitle => 'Eliminar tu cuenta';
+
+  @override
+  String get deleteAccountSubtitle =>
+      'Antes de continuar, cuéntanos por qué te vas. Es opcional pero nos ayuda a mejorar.';
+
+  @override
+  String get deleteReasonNotUseful => 'No me resulta útil';
+
+  @override
+  String get deleteReasonExpensive => 'Demasiado caro';
+
+  @override
+  String get deleteReasonAnotherApp => 'Uso otra app';
+
+  @override
+  String get deleteReasonNoTime => 'No tengo tiempo de usarla';
+
+  @override
+  String get deleteReasonPrivacy => 'Preocupaciones de privacidad';
+
+  @override
+  String get deleteReasonBugs => 'Problemas o errores';
+
+  @override
+  String get deleteReasonOther => 'Otro motivo';
+
+  @override
+  String get deleteReasonOtherHint => 'Cuéntanos brevemente (opcional)';
+
+  @override
+  String get deleteAccountWarningTitle => 'Esto no se puede deshacer';
+
+  @override
+  String get deleteAccountWarningBody =>
+      'Vamos a borrar permanentemente tu perfil, publicaciones, reservas, mensajes y reseñas. Las transacciones pagadas pueden conservarse por motivos contables.';
+
+  @override
+  String get deleteAccountConfirm => 'Confirmar eliminación';
+
+  @override
+  String get deleteAccountSelectReason =>
+      'Selecciona un motivo para continuar.';
+
+  @override
+  String get deleteAccountSuccess => 'Tu cuenta fue eliminada.';
+
+  @override
+  String get deleteAccountError =>
+      'No se pudo eliminar la cuenta. Intenta de nuevo.';
 
   @override
   String get profileHelpCenter => 'Centro de ayuda';

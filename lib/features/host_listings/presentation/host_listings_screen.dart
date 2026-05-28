@@ -283,10 +283,12 @@ class HostListingsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      // Devices with gesture navigation (and the Honor 400 Lite is one)
-      // overlap a few px of the system nav bar onto the sheet, which
-      // was eating the last option. SafeArea(bottom) + a 12px breath at
-      // the end of the column protects against that.
+      // The host shell sets extendBody: true; without `useSafeArea`,
+      // the modal slides under the gesture bar on Android 15 and
+      // the "Eliminar anuncio" tile gets clipped. Combined with the
+      // SafeArea(bottom) wrapper below, this gives a comfortable
+      // breath at the bottom of the sheet on every device.
+      useSafeArea: true,
       builder: (ctx) => Container(
         decoration: const BoxDecoration(
           color: AtrioColors.hostBackground,
