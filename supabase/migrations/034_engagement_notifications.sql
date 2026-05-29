@@ -22,7 +22,8 @@
 -- Requires:
 --   • pg_net (already enabled by 017_push_on_notification)
 --   • pg_cron (already enabled by 018_auto_complete_bookings)
---   • supabase_url + supabase_service_role_key in app_settings
+--   • app.edge_function_url + app.edge_function_key as ALTER DATABASE
+--     settings (same as 017_push_on_notification's setup).
 -- ============================================================
 
 -- Tracks which engagement pushes we've already sent so we don't spam.
@@ -64,14 +65,15 @@ CREATE OR REPLACE FUNCTION send_engagement_push(
 ) RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, extensions, net
 AS $$
 DECLARE
-  v_url        TEXT;
-  v_service    TEXT;
+  v_url        TEXT := current_setting('app.edge_function_url', TRUE);
+  v_key        TEXT := current_setting('app.edge_function_key', TRUE);
   v_notif_id   UUID;
 BEGIN
   -- Idempotency window: skip if we sent the same campaign to this
-  -- user in the last 24 hours.
+  -- user in the last 20 hours.
   IF EXISTS (
     SELECT 1 FROM engagement_log
     WHERE user_id = p_user_id
@@ -81,17 +83,11 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Resolve Edge Function endpoint from app_settings.
-  SELECT value INTO v_url FROM app_settings WHERE key = 'supabase_url';
-  SELECT value INTO v_service
-    FROM app_settings WHERE key = 'supabase_service_role_key';
-  IF v_url IS NULL OR v_service IS NULL THEN
-    RAISE NOTICE 'send_engagement_push: missing supabase_url or service key';
-    RETURN;
-  END IF;
-
   -- Inbox row (so the user sees it in /notifications even if push
-  -- delivery fails).
+  -- delivery fails). The existing trigger trg_notify_push from
+  -- migration 017 also fires send-push from this INSERT, so the
+  -- explicit net.http_post below is belt-and-suspenders for the
+  -- engagement-log idempotency layer.
   INSERT INTO notifications (
     user_id, type, title, body, route, data, created_at
   )
@@ -106,12 +102,24 @@ BEGIN
   )
   RETURNING id INTO v_notif_id;
 
-  -- Fire the actual push (pg_net is async — we don't block on it).
+  -- Skip the explicit push if DB settings are missing — trigger 017
+  -- will still try (and also no-op cleanly). Lets the DB work even
+  -- before the one-time setup is done.
+  IF v_url IS NULL OR v_url = '' OR v_key IS NULL OR v_key = '' THEN
+    INSERT INTO engagement_log (user_id, campaign, payload)
+    VALUES (
+      p_user_id,
+      p_campaign,
+      jsonb_build_object('title', p_title, 'route', p_route, 'push_skipped', true)
+    );
+    RETURN;
+  END IF;
+
   PERFORM net.http_post(
-    url     := v_url || '/functions/v1/send-push',
+    url     := v_url,
     headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || v_service
+      'content-type',   'application/json',
+      'authorization',  'Bearer ' || v_key
     ),
     body    := jsonb_build_object(
       'user_id', p_user_id,
@@ -120,7 +128,7 @@ BEGIN
       'data',    jsonb_build_object(
         'route', p_route,
         'type',  p_type,
-        'notification_id', v_notif_id
+        'notification_id', v_notif_id::text
       )
     )
   );
@@ -130,6 +138,14 @@ BEGIN
     p_user_id,
     p_campaign,
     jsonb_build_object('title', p_title, 'route', p_route)
+  );
+EXCEPTION WHEN OTHERS THEN
+  -- Never let a push delivery error break a campaign run.
+  INSERT INTO engagement_log (user_id, campaign, payload)
+  VALUES (
+    p_user_id,
+    p_campaign,
+    jsonb_build_object('title', p_title, 'route', p_route, 'error', SQLERRM)
   );
 END;
 $$;
