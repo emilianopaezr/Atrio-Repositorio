@@ -37,6 +37,30 @@ class BookingDetailScreen extends ConsumerWidget {
     }
   }
 
+  /// Format a 'HH:MM:SS' string (Postgres TIME) → '9:00 AM'.
+  /// Returns '--' on null/parse failure.
+  static String _formatTimeStr(String? raw) {
+    if (raw == null || raw.isEmpty) return '--';
+    try {
+      final parts = raw.split(':');
+      final h = int.parse(parts[0]);
+      final m = parts.length > 1 ? int.parse(parts[1]) : 0;
+      final dt = DateTime(2000, 1, 1, h, m);
+      return DateFormat('h:mm a').format(dt);
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  /// "1 hora" / "1.5 horas" — half-hour aware.
+  static String _formatDuration(AppLocalizations l, double hours) {
+    if (hours <= 1) return l.bookingDurationOneHour;
+    if (hours == hours.roundToDouble()) {
+      return l.bookingDurationHours(hours.toInt());
+    }
+    return l.bookingDurationHoursDecimal(hours.toStringAsFixed(1));
+  }
+
   String _statusLabel(BuildContext context, String status) {
     final l = AppLocalizations.of(context);
     switch (status) {
@@ -144,6 +168,18 @@ class BookingDetailScreen extends ConsumerWidget {
         final status = bookingData['status'] as String? ?? 'pending';
         final checkIn = DateTime.tryParse(bookingData['check_in'] ?? '');
         final checkOut = DateTime.tryParse(bookingData['check_out'] ?? '');
+        // Time-slot bookings (hours mode for experiences/services) only
+        // span one day; check_out is set to next-day midnight purely as a
+        // calendar marker. We surface the real start/end TIME instead.
+        final rentalMode = bookingData['rental_mode'] as String? ?? 'nights';
+        final bookingDateStr = bookingData['booking_date'] as String?;
+        final bookingDate = bookingDateStr != null
+            ? DateTime.tryParse(bookingDateStr)
+            : checkIn;
+        final startTimeStr = bookingData['start_time'] as String?;
+        final endTimeStr = bookingData['end_time'] as String?;
+        final durationHours =
+            (bookingData['duration_hours'] as num?)?.toDouble();
         final guestsCount = bookingData['guests_count'] as int? ?? 1;
         final baseTotal = (bookingData['base_total'] as num?)?.toDouble() ?? 0;
         final cleaningFee = (bookingData['cleaning_fee'] as num?)?.toDouble() ?? 0;
@@ -342,10 +378,21 @@ class BookingDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 26),
 
-                      const SectionEyebrow(text: 'Fechas', small: true),
+                      SectionEyebrow(
+                        text: rentalMode == 'nights'
+                            ? l.bookingSectionDates
+                            : l.bookingSectionDateTime,
+                        small: true,
+                      ),
                       const SizedBox(height: 12),
 
-                      // Date Section
+                      // Date / Time Section — adapts to rental mode.
+                      // - 'nights': ENTRADA → SALIDA (multi-day spaces)
+                      // - 'hours': FECHA + start_time → end_time (e.g. a
+                      //   1h experience). check_out is next-day midnight
+                      //   from the booking but that is NOT a real
+                      //   check-out, so we show the actual time window.
+                      // - 'full_day': FECHA only (whole-day rentals)
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -361,58 +408,121 @@ class BookingDetailScreen extends ConsumerWidget {
                         ),
                         child: Column(
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _DateBlock(
-                                    label: l.bookingCheckIn,
-                                    date: checkIn != null ? dateFormat.format(checkIn) : '--',
-                                    time: checkIn != null ? timeFormat.format(checkIn) : '--',
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AtrioColors.neonLimeDark.withValues(alpha: 0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.arrow_forward,
-                                    size: 16,
-                                    color: AtrioColors.neonLimeDark,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _DateBlock(
-                                    label: l.bookingCheckOut,
-                                    date: checkOut != null ? dateFormat.format(checkOut) : '--',
-                                    time: checkOut != null ? timeFormat.format(checkOut) : '--',
-                                    isEnd: true,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: AtrioColors.guestBackground,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            if (rentalMode == 'nights') ...[
+                              Row(
                                 children: [
-                                  _InfoChip(
-                                    icon: Icons.nights_stay_outlined,
-                                    label: l.bookingNights(nights),
+                                  Expanded(
+                                    child: _DateBlock(
+                                      label: l.bookingCheckIn,
+                                      date: checkIn != null
+                                          ? dateFormat.format(checkIn)
+                                          : '--',
+                                      time: checkIn != null
+                                          ? timeFormat.format(checkIn)
+                                          : '--',
+                                    ),
                                   ),
-                                  _InfoChip(
-                                    icon: Icons.people_outline,
-                                    label: l.bookingPeople(guestsCount),
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AtrioColors.neonLimeDark
+                                          .withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.arrow_forward,
+                                      size: 16,
+                                      color: AtrioColors.neonLimeDark,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _DateBlock(
+                                      label: l.bookingCheckOut,
+                                      date: checkOut != null
+                                          ? dateFormat.format(checkOut)
+                                          : '--',
+                                      time: checkOut != null
+                                          ? timeFormat.format(checkOut)
+                                          : '--',
+                                      isEnd: true,
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AtrioColors.guestBackground,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _InfoChip(
+                                      icon: Icons.nights_stay_outlined,
+                                      label: l.bookingNights(nights),
+                                    ),
+                                    _InfoChip(
+                                      icon: Icons.people_outline,
+                                      label: l.bookingPeople(guestsCount),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ] else ...[
+                              // Single-day (hours / full_day) layout
+                              _SingleDayDateBlock(
+                                date: bookingDate != null
+                                    ? dateFormat.format(bookingDate)
+                                    : '--',
+                                fullDate: bookingDate != null
+                                    ? DateFormat('EEEE d \'de\' MMMM', 'es')
+                                        .format(bookingDate)
+                                    : '',
+                                showTimeRange: rentalMode == 'hours' &&
+                                    startTimeStr != null &&
+                                    endTimeStr != null,
+                                startTime: _formatTimeStr(startTimeStr),
+                                endTime: _formatTimeStr(endTimeStr),
+                                modeLabel: rentalMode == 'hours'
+                                    ? l.bookingModeHours
+                                    : l.bookingModeFullDay,
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AtrioColors.guestBackground,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    if (rentalMode == 'hours' &&
+                                        durationHours != null)
+                                      _InfoChip(
+                                        icon: Icons.schedule_outlined,
+                                        label: _formatDuration(
+                                            l, durationHours),
+                                      )
+                                    else
+                                      _InfoChip(
+                                        icon: Icons.wb_sunny_outlined,
+                                        label: l.bookingFullDay,
+                                      ),
+                                    _InfoChip(
+                                      icon: Icons.people_outline,
+                                      label: l.bookingPeople(guestsCount),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -1123,6 +1233,116 @@ class _PolicyItem extends StatelessWidget {
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Single-day date block used for `hours` and `full_day` bookings.
+/// Shows the date once + (optionally) a time-range underneath instead
+/// of the misleading ENTRADA → SALIDA pair we use for multi-night stays.
+class _SingleDayDateBlock extends StatelessWidget {
+  final String date;
+  final String fullDate;
+  final bool showTimeRange;
+  final String startTime;
+  final String endTime;
+  final String modeLabel;
+  const _SingleDayDateBlock({
+    required this.date,
+    required this.fullDate,
+    required this.showTimeRange,
+    required this.startTime,
+    required this.endTime,
+    required this.modeLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              modeLabel.toUpperCase(),
+              style: AtrioTypography.caption.copyWith(
+                color: AtrioColors.guestTextSecondary,
+                letterSpacing: 1,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          date,
+          style: GoogleFonts.inter(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: AtrioColors.guestTextPrimary,
+            letterSpacing: -0.6,
+            height: 1.0,
+          ),
+        ),
+        if (fullDate.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            fullDate,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AtrioColors.guestTextSecondary,
+            ),
+          ),
+        ],
+        if (showTimeRange) ...[
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLimeDark.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  startTime,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AtrioColors.neonLimeDark,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                size: 14,
+                color: AtrioColors.guestTextSecondary,
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AtrioColors.neonLimeDark.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  endTime,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AtrioColors.neonLimeDark,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

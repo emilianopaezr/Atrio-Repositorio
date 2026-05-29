@@ -777,6 +777,34 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get bookingSectionDates => 'Fechas';
+
+  @override
+  String get bookingSectionDateTime => 'Fecha y horario';
+
+  @override
+  String get bookingModeHours => 'Día reservado';
+
+  @override
+  String get bookingModeFullDay => 'Día reservado';
+
+  @override
+  String get bookingFullDay => 'Día completo';
+
+  @override
+  String get bookingDurationOneHour => '1 hora';
+
+  @override
+  String bookingDurationHours(int count) {
+    return '$count horas';
+  }
+
+  @override
+  String bookingDurationHoursDecimal(String count) {
+    return '$count horas';
+  }
+
+  @override
   String get bookingHost => 'Anfitrión';
 
   @override

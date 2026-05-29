@@ -1526,6 +1526,54 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{1 persona} other{{count} personas}}'**
   String bookingPeople(int count);
 
+  /// No description provided for @bookingSectionDates.
+  ///
+  /// In es, this message translates to:
+  /// **'Fechas'**
+  String get bookingSectionDates;
+
+  /// No description provided for @bookingSectionDateTime.
+  ///
+  /// In es, this message translates to:
+  /// **'Fecha y horario'**
+  String get bookingSectionDateTime;
+
+  /// No description provided for @bookingModeHours.
+  ///
+  /// In es, this message translates to:
+  /// **'Día reservado'**
+  String get bookingModeHours;
+
+  /// No description provided for @bookingModeFullDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Día reservado'**
+  String get bookingModeFullDay;
+
+  /// No description provided for @bookingFullDay.
+  ///
+  /// In es, this message translates to:
+  /// **'Día completo'**
+  String get bookingFullDay;
+
+  /// No description provided for @bookingDurationOneHour.
+  ///
+  /// In es, this message translates to:
+  /// **'1 hora'**
+  String get bookingDurationOneHour;
+
+  /// No description provided for @bookingDurationHours.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} horas'**
+  String bookingDurationHours(int count);
+
+  /// No description provided for @bookingDurationHoursDecimal.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} horas'**
+  String bookingDurationHoursDecimal(String count);
+
   /// No description provided for @bookingHost.
   ///
   /// In es, this message translates to:

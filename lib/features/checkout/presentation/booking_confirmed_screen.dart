@@ -64,25 +64,10 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Brand mark
-              Center(
-                child: Image.asset(
-                  'assets/images/logo_negro.png',
-                  height: 28,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => Text(
-                    'ATRIO',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: AtrioColors.guestTextPrimary,
-                      letterSpacing: 4,
-                    ),
-                  ),
-                ),
-              ),
-
-              const Spacer(),
+              // Top breathing room (no brand logo by request).
+              // 1.2× spacer pushes the success mark visually lower than
+              // dead-center so the headline + cards below feel balanced.
+              const Spacer(flex: 5),
 
               // Success mark with rings
               Center(
@@ -145,31 +130,8 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
                 opacity: _contentFade,
                 child: Column(
                   children: [
-                    // Eyebrow
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: AtrioColors.neonLime,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'CONFIRMADO',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AtrioColors.guestTextTertiary,
-                            letterSpacing: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                    // (Eyebrow "CONFIRMADO" removed by request — the
+                    // success mark + headline already communicate it.)
                     Text(
                       l.checkoutConfirmedTitle,
                       style: GoogleFonts.inter(
@@ -218,7 +180,7 @@ class _BookingConfirmedScreenState extends State<BookingConfirmedScreen>
                 ),
               ),
 
-              const Spacer(),
+              const Spacer(flex: 4),
 
               FadeTransition(
                 opacity: _contentFade,
