@@ -88,16 +88,18 @@ BEGIN
   -- migration 017 also fires send-push from this INSERT, so the
   -- explicit net.http_post below is belt-and-suspenders for the
   -- engagement-log idempotency layer.
+  -- NOTE: `notifications` has no `route` column — the route is stored inside
+  -- the `data` JSONB (data->>'route'), which is the convention the FCM handler
+  -- and trigger 017 (trg_notify_push) read. Merge it in here.
   INSERT INTO notifications (
-    user_id, type, title, body, route, data, created_at
+    user_id, type, title, body, data, created_at
   )
   VALUES (
     p_user_id,
     p_type,
     p_title,
     p_body,
-    p_route,
-    p_data,
+    COALESCE(p_data, '{}'::jsonb) || jsonb_build_object('route', p_route),
     NOW()
   )
   RETURNING id INTO v_notif_id;
