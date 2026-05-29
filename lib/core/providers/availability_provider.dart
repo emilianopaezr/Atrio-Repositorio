@@ -1,10 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/database_service.dart';
 
-/// Booked dates for a listing in a date range
+/// Booked dates for a listing in a date range.
+/// Used by the HOST calendar — any booking (including a single hour slot)
+/// marks the date so the host sees all activity on their grid.
 final bookedDatesProvider = FutureProvider.family<List<Map<String, dynamic>>, BookedDatesParams>(
   (ref, params) async {
     return DatabaseService.getBookedDates(
+      params.listingId,
+      params.startDate,
+      params.endDate,
+    );
+  },
+);
+
+/// Public booked dates for a listing.
+/// Used by the listing detail mini-calendar that guests see. For hours-mode
+/// bookings, a day is only reported as booked when ALL hours in the
+/// operating window are taken; partial-day bookings stay green so other
+/// guests can still book the remaining slots.
+final publicBookedDatesProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, BookedDatesParams>(
+  (ref, params) async {
+    return DatabaseService.getPublicBookedDates(
       params.listingId,
       params.startDate,
       params.endDate,

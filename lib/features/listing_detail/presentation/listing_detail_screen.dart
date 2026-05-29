@@ -1078,7 +1078,10 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
     final startDate = DateTime(now.year, now.month, 1);
     final endDate = DateTime(now.year, now.month + 3, 0);
 
-    final bookedAsync = ref.watch(bookedDatesProvider(BookedDatesParams(
+    // Public calendar uses the rental-mode-aware RPC: hours-mode bookings
+    // only mark the day as red when ALL slots are taken, so a single
+    // 1-hour reservation no longer blocks the whole day for other guests.
+    final bookedAsync = ref.watch(publicBookedDatesProvider(BookedDatesParams(
       listingId: listing.id,
       startDate: startDate,
       endDate: endDate,

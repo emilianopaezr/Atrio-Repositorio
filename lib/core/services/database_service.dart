@@ -513,6 +513,35 @@ class DatabaseService {
     }
   }
 
+  /// Public-facing booked dates used by the listing detail mini-calendar.
+  /// For hours-mode bookings, a date is only reported booked when the SUM
+  /// of duration_hours equals or exceeds the listing's operating window —
+  /// so a 1-hour reservation no longer blocks the entire day for other
+  /// guests browsing the listing.
+  ///
+  /// Server side: migration 035_public_availability_rpc.sql. Falls back to
+  /// the host RPC if the public one isn't deployed yet, so the UI still
+  /// renders something useful.
+  static Future<List<Map<String, dynamic>>> getPublicBookedDates(
+    String listingId,
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    try {
+      final response = await _client.rpc('get_public_booked_dates', params: {
+        'p_listing_id': listingId,
+        'p_start_date': startDate.toIso8601String().split('T')[0],
+        'p_end_date': endDate.toIso8601String().split('T')[0],
+      });
+      return List<Map<String, dynamic>>.from(response ?? []);
+    } catch (_) {
+      // Server doesn't have the new RPC yet — fall back to the legacy one
+      // so the calendar still loads (will overshoot on hours-mode bookings
+      // until the migration is applied).
+      return getBookedDates(listingId, startDate, endDate);
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> _getBookedDatesFallback(
     String listingId,
     DateTime startDate,
