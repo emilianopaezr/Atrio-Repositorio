@@ -176,7 +176,7 @@ BEGIN
        AND NOT EXISTS (
          SELECT 1 FROM messages m
           WHERE m.sender_id = p.id
-            AND m.created_at > NOW() - INTERVAL '7 days'
+            AND m.sent_at > NOW() - INTERVAL '7 days'
        )
        -- Don't pester users who already got this push in the last 6 days.
        AND NOT EXISTS (
@@ -238,7 +238,7 @@ BEGIN
      OR EXISTS (
        SELECT 1 FROM messages m
         WHERE m.sender_id = p.id
-          AND m.created_at > NOW() - INTERVAL '30 days'
+          AND m.sent_at > NOW() - INTERVAL '30 days'
      )
   LOOP
     PERFORM send_engagement_push(
